@@ -23,23 +23,23 @@ TextField {
     property var from: null
     property var to: null
     property var value: 0
-    text: value.toFixed(0)
+    text: Number(value).toFixed(0)
     onEditingFinished: {
         if (text.length == 0) {
-            text = Qt.binding(() => value.toFixed(0));
+            text = Qt.binding(() => Number(value).toFixed(0));
             return;
         }
         let newValue = parseInt(text);
         if (isNaN(newValue)) {
-            text = Qt.binding(() => value.toFixed(0));
+            text = Qt.binding(() => Number(value).toFixed(0));
             return;
         }
         if (from != null && newValue < from) {
             newValue = from;
-            text = Qt.binding(() => value.toFixed(0));
+            text = Qt.binding(() => Number(value).toFixed(0));
         } else if (to != null && newValue > to) {
             newValue = to;
-            text = Qt.binding(() => value.toFixed(0));
+            text = Qt.binding(() => Number(value).toFixed(0));
         }
         if (newValue == value)
             return;
