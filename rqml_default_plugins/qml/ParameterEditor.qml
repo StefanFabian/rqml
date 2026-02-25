@@ -18,9 +18,11 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import Ros2
 import RQml.Elements
 import RQml.Fonts
+import RQml.Utils
 import "interfaces"
 
 Rectangle {
@@ -28,6 +30,9 @@ Rectangle {
     anchors.fill: parent
     property var kddockwidgets_min_size: Qt.size(350, 500)
     color: palette.base
+
+    property alias saveDialog: saveFileDialog
+    property alias loadDialog: loadFileDialog
 
     property QtObject d: QtObject {
         id: internalState
@@ -37,6 +42,128 @@ Rectangle {
         property int totalParams: 0
         property var treeElements: []
         property var knownNodeStates: ({})
+
+        function saveGroupParams(nodeName, fullPath, filePath) {
+            let data = ParameterService.getNodeData(nodeName);
+            if (!data || !data.loaded) return;
+            let groupParams = {};
+
+            let relativePath = fullPath || "";
+            if (relativePath.startsWith(nodeName + "/")) {
+                relativePath = relativePath.substring(nodeName.length + 1);
+            } else if (relativePath === nodeName) {
+                relativePath = "";
+            }
+
+            let prefix = relativePath ? relativePath + "." : "";
+
+            for (let paramName in data.parameters) {
+                if (!relativePath || paramName.startsWith(prefix)) {
+                    let key = relativePath ? paramName.substring(prefix.length) : paramName;
+
+                    let p = data.parameters[paramName];
+                    let val = p.value;
+
+                    // Force casting to JS primitives because QVariants might be ignored by JSON.stringify
+                    if (p.type === ParameterService.typeBool) val = !!val;
+                    else if (p.type === ParameterService.typeInteger) val = Number(val);
+                    else if (p.type === ParameterService.typeDouble) val = Number(val);
+                    else if (p.type === ParameterService.typeString) val = String(val);
+                    else if (p.type >= ParameterService.typeByteArray) {
+                        val = MessageUtils.toJavaScriptObject(val);
+                        if (!Array.isArray(val)) {
+                            // Fallback if not an array for some reason
+                            val = [val];
+                        }
+                    }
+
+                    // Create nested ROS 2 standard format
+                    let parts = key.split(".");
+                    let current = groupParams;
+                    for (let j = 0; j < parts.length - 1; j++) {
+                        if (!current[parts[j]]) current[parts[j]] = {};
+                        current = current[parts[j]];
+                    }
+                    current[parts[parts.length - 1]] = val;
+                }
+            }
+
+            if (filePath.endsWith(".json")) {
+                let success = RQml.writeFile(filePath, JSON.stringify(groupParams, null, 2));
+                if (!success) console.warn("Failed to save JSON to", filePath);
+            } else if (filePath.endsWith(".yaml") || filePath.endsWith(".yml")) {
+                let success = Ros2.io.writeYaml(filePath, groupParams);
+                if (!success) console.warn("Failed to save YAML to", filePath);
+            }
+        }
+
+        function loadGroupParams(nodeName, fullPath, filePath) {
+            let groupParams = null;
+            if (filePath.endsWith(".json")) {
+                let text = RQml.readFile(filePath);
+                if (text) {
+                    try { groupParams = JSON.parse(text); } catch (e) { console.warn("Failed to parse JSON", e); }
+                }
+            } else if (filePath.endsWith(".yaml") || filePath.endsWith(".yml")) {
+                let result = Ros2.io.readYaml(filePath);
+                if (result && typeof result === "object") {
+                    groupParams = result;
+                }
+            }
+            if (!groupParams) {
+                console.warn("Failed to load parameters from", filePath);
+                return;
+            }
+
+            // Flatten the loaded parameters
+            let flatParams = {};
+            function flatten(obj, pfx) {
+                let kList = [];
+                for (let k in obj) kList.push(k);
+
+                for (let i = 0; i < kList.length; i++) {
+                    let k = kList[i];
+                    if (obj[k] !== null && typeof obj[k] === "object" && !Array.isArray(obj[k])) {
+                        flatten(obj[k], pfx + k + ".");
+                    } else {
+                        flatParams[pfx + k] = obj[k];
+                    }
+                }
+            }
+            flatten(groupParams, "");
+
+            let data = ParameterService.getNodeData(nodeName);
+            if (!data || !data.loaded) return;
+
+            let relativePath = fullPath || "";
+            if (relativePath.startsWith(nodeName + "/")) {
+                relativePath = relativePath.substring(nodeName.length + 1);
+            } else if (relativePath === nodeName) {
+                relativePath = "";
+            }
+
+            let targetPrefix = relativePath ? relativePath + "." : "";
+
+            for (let incomingKey in flatParams) {
+                let valToSet = flatParams[incomingKey];
+
+                // If it's a specific group context
+                let paramName = targetPrefix + incomingKey;
+                if (data.parameters[paramName]) {
+                     ParameterService.setParameter(nodeName, paramName, valToSet, data.parameters[paramName].type);
+                } else if (data.parameters[incomingKey]) {
+                     ParameterService.setParameter(nodeName, incomingKey, valToSet, data.parameters[incomingKey].type);
+                } else {
+                     // Check if there is ros__parameters root namespace, standard for ros2 param dump
+                     let nakedKey = incomingKey.replace(/^.+?\.ros__parameters\./, "");
+                     if (data.parameters[nakedKey]) {
+                         ParameterService.setParameter(nodeName, nakedKey, valToSet, data.parameters[nakedKey].type);
+                     } else if (data.parameters[targetPrefix + nakedKey]) {
+                         ParameterService.setParameter(nodeName, targetPrefix + nakedKey, valToSet, data.parameters[targetPrefix + nakedKey].type);
+                     }
+                }
+            }
+        }
 
         function buildParameterTree(treeParams) {
             let rootNode = { __children: {}, __param: null };
@@ -61,7 +188,9 @@ Rectangle {
             let currentName = groupName;
             let currentNode = node;
             while (true) {
-                let childrenKeys = Object.keys(currentNode.__children);
+                let childrenKeys = [];
+                for (let k in currentNode.__children) childrenKeys.push(k);
+
                 if (childrenKeys.length === 1 && !currentNode.__param && currentName !== "") {
                     let childKey = childrenKeys[0];
                     if (!currentNode.__children[childKey].__param) {
@@ -75,7 +204,7 @@ Rectangle {
             return { compressedName: currentName, compressedNode: currentNode };
         }
 
-        function flattenTree(groupName, node, parentFullPath, depth, nodeName, filterText, showStarredOnly) {
+        function flattenTree(groupName, node, parentFullPath, depth, nodeName, filterText, showStarredOnly, parentIsStarred) {
             let compressed = internalState.compressTree(groupName, node);
             let currentName = compressed.compressedName;
             let currentNode = compressed.compressedNode;
@@ -84,22 +213,27 @@ Rectangle {
             if (currentName === "") fullPath = nodeName;
 
             let childrenObj = currentNode.__children;
-            let childrenKeys = Object.keys(childrenObj).sort();
+            let childrenKeys = [];
+            for (let k in childrenObj) childrenKeys.push(k);
+            childrenKeys.sort();
 
             let hasVisibleChildren = false;
             let hasStarredDescendant = false;
             let items = [];
             let currentParamCount = 0;
 
+            let isGroupStarred = context.quickAccess.indexOf(fullPath) !== -1;
+            let effectivelyStarred = parentIsStarred || isGroupStarred;
+
             if (currentNode.__param) {
                 currentParamCount++;
                 let p = currentNode.__param;
                 let paramFullPath = fullPath;
                 let isStarred = context.quickAccess.indexOf(paramFullPath) !== -1;
-                if (isStarred) hasStarredDescendant = true;
+                if (isStarred || effectivelyStarred) hasStarredDescendant = true;
 
                 let matchesFilter = filterText === "" || p.name.toLowerCase().indexOf(filterText) !== -1 || nodeName.toLowerCase().indexOf(filterText) !== -1;
-                let visible = matchesFilter && (!showStarredOnly || isStarred);
+                let visible = matchesFilter && (!showStarredOnly || isStarred || effectivelyStarred);
 
                 if (visible) {
                     hasVisibleChildren = true;
@@ -124,7 +258,7 @@ Rectangle {
 
             let childItems = [];
             for (let k = 0; k < childrenKeys.length; k++) {
-                let childRes = internalState.flattenTree(childrenKeys[k], childrenObj[childrenKeys[k]], fullPath, depth + 1, nodeName, filterText, showStarredOnly);
+                let childRes = internalState.flattenTree(childrenKeys[k], childrenObj[childrenKeys[k]], fullPath, depth + 1, nodeName, filterText, showStarredOnly, effectivelyStarred);
                 currentParamCount += childRes.paramCount;
                 if (childRes.hasVisibleChildren) hasVisibleChildren = true;
                 if (childRes.hasStarredDescendant) hasStarredDescendant = true;
@@ -137,12 +271,14 @@ Rectangle {
             if (filterText !== "" || showStarredOnly) isExpanded = true;
 
             let groupItem = null;
-            if (currentName !== "" && Object.keys(childrenObj).length > 0) {
-                let isStarredGroup = context.quickAccess.indexOf(fullPath) !== -1;
-                if (isStarredGroup) hasStarredDescendant = true;
+            let childrenCount = 0;
+            for (let c in childrenObj) childrenCount++;
+
+            if (currentName !== "" && childrenCount > 0) {
+                if (isGroupStarred || effectivelyStarred) hasStarredDescendant = true;
 
                 let groupMatches = filterText === "" || fullPath.toLowerCase().indexOf(filterText) !== -1;
-                let groupVisible = hasVisibleChildren || (groupMatches && !showStarredOnly);
+                let groupVisible = hasVisibleChildren || (groupMatches && (!showStarredOnly || effectivelyStarred));
 
                 if (groupVisible) {
                     hasVisibleChildren = true;
@@ -152,7 +288,7 @@ Rectangle {
                         fullPath: fullPath,
                         depth: depth,
                         expanded: isExpanded,
-                        starred: isStarredGroup,
+                        starred: isGroupStarred,
                         nodeName: nodeName,
                         paramName: ""
                     };
@@ -203,24 +339,27 @@ Rectangle {
                     _totalParams += paramCount;
                 }
 
-                let childrenKeys = Object.keys(rootNode.__children).sort();
+                let childrenKeys = [];
+                for (let k in rootNode.__children) childrenKeys.push(k);
+                childrenKeys.sort();
+
                 let nodeChildItems = [];
                 let nodeHasVisibleChildren = false;
                 let nodeHasStarred = false;
 
                 if (filterText !== "" || showStarredOnly) isNodeExpanded = true;
 
+                let nodeIsStarred = context.quickAccess.indexOf(nodeName) !== -1;
+                if (nodeIsStarred) nodeHasStarred = true;
+
                 for (let k = 0; k < childrenKeys.length; k++) {
-                    let childRes = internalState.flattenTree(childrenKeys[k], rootNode.__children[childrenKeys[k]], nodeName, 1, nodeName, filterText, showStarredOnly);
+                    let childRes = internalState.flattenTree(childrenKeys[k], rootNode.__children[childrenKeys[k]], nodeName, 1, nodeName, filterText, showStarredOnly, nodeIsStarred);
                     if (childRes.hasVisibleChildren) nodeHasVisibleChildren = true;
                     if (childRes.hasStarredDescendant) nodeHasStarred = true;
                     if (childRes.items.length > 0) {
                         nodeChildItems = nodeChildItems.concat(childRes.items);
                     }
                 }
-
-                let nodeIsStarred = context.quickAccess.indexOf(nodeName) !== -1;
-                if (nodeIsStarred) nodeHasStarred = true;
 
                 let nodeMatches = filterText === "" || nodeName.toLowerCase().indexOf(filterText) !== -1;
                 let nodeVisible = (nodeMatches || nodeHasVisibleChildren) && (!showStarredOnly || nodeHasStarred || nodeHasVisibleChildren);
@@ -305,7 +444,10 @@ Rectangle {
             let loadedChanged = state.loaded !== nodeData.loaded;
             let loadingChanged = state.loading !== nodeData.loading;
 
-            let currentParamCount = Object.keys(nodeData.parameters || {}).length;
+            let currentParamCount = 0;
+            if (nodeData.parameters) {
+                for (let k in nodeData.parameters) currentParamCount++;
+            }
             let paramCountChanged = state.paramCount !== currentParamCount;
 
             if (parameterEditor.d.treeElements) {
@@ -384,6 +526,35 @@ Rectangle {
                     ParameterService.discoverNodes();
                     animate = false;
                 }
+            }
+        }
+        FileDialog {
+            id: saveFileDialog
+            objectName: "saveFileDialog"
+            title: qsTr("Save Parameters")
+            fileMode: FileDialog.SaveFile
+            nameFilters: ["JSON/YAML Files (*.json *.yaml *.yml)", "All Files (*)"]
+            property string activeNode: ""
+            property string activePath: ""
+            onAccepted: {
+                let path = saveFileDialog.selectedFile.toString();
+                if (path.startsWith("file://")) path = path.slice(7);
+                parameterEditor.d.saveGroupParams(activeNode, activePath, path);
+            }
+        }
+
+        FileDialog {
+            id: loadFileDialog
+            objectName: "loadFileDialog"
+            title: qsTr("Load Parameters")
+            fileMode: FileDialog.OpenFile
+            nameFilters: ["JSON/YAML Files (*.json *.yaml *.yml)", "All Files (*)"]
+            property string activeNode: ""
+            property string activePath: ""
+            onAccepted: {
+                let path = loadFileDialog.selectedFile.toString();
+                if (path.startsWith("file://")) path = path.slice(7);
+                parameterEditor.d.loadGroupParams(activeNode, activePath, path);
             }
         }
 
@@ -516,10 +687,49 @@ Rectangle {
                     }
 
                     IconButton {
-                        text: IconFont.iconStar
+                        objectName: "reloadButton_" + (modelData.nodeName || "")
                         Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                        opacity: modelData.starred ? 1.0 : (hoverHandler.hovered ? 0.6 : 0.1)
+                        flat: true
+                        text: IconFont.iconRefresh
+                        visible: modelData.rowType === "node"
+                        tooltipText: qsTr("Reload parameters...")
+                        onClicked: {
+                            ParameterService.refresh(modelData.nodeName);
+                        }
+                    }
+
+                    IconButton {
+                        Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                        flat: true
+                        text: IconFont.iconSave
+                        visible: modelData.rowType === "node" || modelData.rowType === "group"
+                        tooltipText: qsTr("Save parameters...")
+                        onClicked: {
+                            saveFileDialog.activeNode = modelData.nodeName;
+                            saveFileDialog.activePath = modelData.rowType === "group" ? modelData.fullPath : "";
+                            saveFileDialog.open();
+                        }
+                    }
+
+                    IconButton {
+                        Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                        flat: true
+                        text: IconFont.iconLoad
+                        visible: modelData.rowType === "node" || modelData.rowType === "group"
+                        tooltipText: qsTr("Load parameters...")
+                        onClicked: {
+                            loadFileDialog.activeNode = modelData.nodeName;
+                            loadFileDialog.activePath = modelData.rowType === "group" ? modelData.fullPath : "";
+                            loadFileDialog.open();
+                        }
+                    }
+
+                    IconButton {
+                        Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                        flat: true
+                        text: IconFont.iconStar
                         visible: modelData.rowType !== "loading"
+                        opacity: modelData.starred ? 1.0 : (hovered ? 0.7 : 0.2)
                         onClicked: {
                             let qa = context.quickAccess.slice();
                             let idx = qa.indexOf(modelData.fullPath);
@@ -594,7 +804,7 @@ Rectangle {
         title: qsTr("Edit Array Parameter")
         standardButtons: Dialog.Ok | Dialog.Cancel
         width: Math.min(parent.width * 0.8, 600)
-        height: Math.min(parent.height * 0.6, 400)
+        height: Math.min(parent.height * 0.8, 500)
         anchors.centerIn: parent
         modal: true
 
@@ -612,37 +822,110 @@ Rectangle {
                 Layout.fillWidth: true
             }
 
-            ScrollView {
+            Label {
+                text: qsTr("Items: %1").arg(arrayListModel.count)
+            }
+
+            ListModel {
+                id: arrayListModel
+            }
+
+            ListView {
+                id: arrayListView
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                TextArea {
-                    id: arrayTextArea
-                    wrapMode: TextEdit.Wrap
-                    font.family: "Monospace"
-                    selectByMouse: true
-                    background: Rectangle {
-                        color: palette.base
-                        border.color: palette.mid
+                clip: true
+                model: arrayListModel
+
+                ScrollBar.vertical: ScrollBar { active: true }
+
+                delegate: RowLayout {
+                    width: ListView.view.width - (ListView.view.ScrollBar.vertical.visible ? ListView.view.ScrollBar.vertical.width : 0)
+
+                    Label {
+                        text: "[" + index + "]"
+                        font.family: "Monospace"
+                        Layout.preferredWidth: 50
+                    }
+
+                    TextField {
+                        Layout.fillWidth: true
+                        text: model.value !== undefined ? String(model.value) : ""
+                        selectByMouse: true
+                        onEditingFinished: {
+                            let pType = arrayEditDialog.paramModel.paramType;
+                            let parsed = text;
+                            if (pType === ParameterService.typeIntegerArray) parsed = parseInt(text, 10) || 0;
+                            else if (pType === ParameterService.typeDoubleArray) parsed = parseFloat(text) || 0.0;
+                            else if (pType === ParameterService.typeBoolArray) parsed = (text.toLowerCase() === "true" || text === "1");
+
+                            arrayListModel.setProperty(index, "value", parsed);
+                        }
+                    }
+
+                    IconButton {
+                        text: IconFont.iconTrash
+                        tooltipText: qsTr("Remove Item")
+                        onClicked: {
+                            arrayListModel.remove(index);
+                        }
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Button {
+                    text: qsTr("Add Item")
+                    onClicked: {
+                        arrayListModel.append({ "value": "" });
+                        arrayListView.positionViewAtEnd();
+                    }
+                }
+                Item { Layout.fillWidth: true }
+                Button {
+                    text: qsTr("Clear All")
+                    onClicked: {
+                        arrayListModel.clear();
                     }
                 }
             }
         }
 
-        function openDialog(model) {
+        function openDialog(model, arrValue) {
             paramModel = model;
-            arrayTextArea.text = JSON.stringify(model.value, null, 2);
+            let tempArray = [];
+
+            let sourceVal = arrValue !== undefined ? arrValue : model.value;
+            let jsObj = MessageUtils.toJavaScriptObject(sourceVal);
+
+            if (Array.isArray(jsObj)) {
+                tempArray = jsObj;
+            } else if (jsObj !== null && jsObj !== undefined) {
+                tempArray = [jsObj]; // Fallback
+            }
+
+            arrayListModel.clear();
+            for (let i = 0; i < tempArray.length; i++) {
+                arrayListModel.append({ "value": tempArray[i] });
+            }
+
             open();
         }
 
         onAccepted: {
             if (!paramModel) return;
-            try {
-                let parsed = JSON.parse(arrayTextArea.text);
-                if (!Array.isArray(parsed)) throw new Error("JSON is not an array");
-                ParameterService.setParameter(paramModel.nodeName, paramModel.paramName, parsed, paramModel.paramType);
-            } catch (e) {
-                Ros2.warn("Invalid array JSON: " + e);
+            let pType = paramModel.paramType;
+            let finalArray = [];
+            for (let i = 0; i < arrayListModel.count; i++) {
+                let v = arrayListModel.get(i).value;
+                if (pType === ParameterService.typeIntegerArray) finalArray.push(parseInt(v, 10) || 0);
+                else if (pType === ParameterService.typeDoubleArray) finalArray.push(parseFloat(v) || 0.0);
+                else if (pType === ParameterService.typeBoolArray) finalArray.push(v === "true" || v === true || v === "1");
+                else finalArray.push(String(v));
             }
+
+            ParameterService.setParameter(paramModel.nodeName, paramModel.paramName, finalArray, paramModel.paramType);
         }
     }
 
@@ -670,12 +953,23 @@ Rectangle {
             property var paramValue: null
             property var localParamValue: typeof paramValue !== 'undefined' && paramValue !== null ? paramValue : modelData.value
             property var range: modelData.integerRange || {}
-            property bool hasRange: range.from !== undefined && range.to !== undefined && range.from < range.to
+            property bool hasFrom: range.from !== undefined && range.from !== null && !isNaN(range.from)
+            property bool hasTo: range.to !== undefined && range.to !== null && !isNaN(range.to)
+            property bool hasRange: hasFrom && hasTo && range.from < range.to
 
             onLocalParamValueChanged: {
-                intField.value = localParamValue;
-                intField.text = Number(localParamValue).toFixed(0);
-                if (hasRange) intSlider.value = localParamValue;
+                if (localParamValue !== undefined && localParamValue !== null) {
+                    intField.value = localParamValue;
+                    intField.text = Number(localParamValue).toFixed(0);
+                    if (hasRange) intSlider.value = localParamValue;
+                }
+            }
+
+            Label {
+                objectName: "minLabel_" + (modelData.paramName ?? "")
+                text: parent.hasRange ? parent.range.from : (parent.hasFrom ? qsTr("Min: ") + parent.range.from : "")
+                visible: parent.hasRange || parent.hasFrom
+                Layout.alignment: Qt.AlignVCenter
             }
 
             Slider {
@@ -696,6 +990,13 @@ Rectangle {
                     intField.text = Number(value).toFixed(0);
                     intField.value = value;
                 }
+            }
+
+            Label {
+                objectName: "maxLabel_" + (modelData.paramName ?? "")
+                text: parent.hasRange ? parent.range.to : (parent.hasTo ? qsTr("Max: ") + parent.range.to : "")
+                visible: parent.hasRange || parent.hasTo
+                Layout.alignment: Qt.AlignVCenter
             }
 
             IntegerInputField {
@@ -722,12 +1023,23 @@ Rectangle {
             property var paramValue: null
             property var localParamValue: typeof paramValue !== 'undefined' && paramValue !== null ? paramValue : modelData.value
             property var range: modelData.floatingPointRange || {}
-            property bool hasRange: range.from !== undefined && range.to !== undefined && range.from < range.to
+            property bool hasFrom: range.from !== undefined && range.from !== null && !isNaN(range.from)
+            property bool hasTo: range.to !== undefined && range.to !== null && !isNaN(range.to)
+            property bool hasRange: hasFrom && hasTo && range.from < range.to
 
             onLocalParamValueChanged: {
-                doubleField.value = localParamValue;
-                doubleField.text = localParamValue.toPrecision(doubleField.decimals);
-                if (hasRange) doubleSlider.value = localParamValue;
+                if (localParamValue !== undefined && localParamValue !== null) {
+                    doubleField.value = localParamValue;
+                    doubleField.text = Number(localParamValue).toPrecision(doubleField.decimals ?? 2);
+                    if (hasRange) doubleSlider.value = localParamValue;
+                }
+            }
+
+            Label {
+                objectName: "minLabel_" + (modelData.paramName ?? "")
+                text: parent.hasRange ? parent.range.from : (parent.hasFrom ? qsTr("Min: ") + parent.range.from : "")
+                visible: parent.hasRange || parent.hasFrom
+                Layout.alignment: Qt.AlignVCenter
             }
 
             Slider {
@@ -748,6 +1060,13 @@ Rectangle {
                     doubleField.text = value.toPrecision(doubleField.decimals);
                     doubleField.value = value;
                 }
+            }
+
+            Label {
+                objectName: "maxLabel_" + (modelData.paramName ?? "")
+                text: parent.hasRange ? parent.range.to : (parent.hasTo ? qsTr("Max: ") + parent.range.to : "")
+                visible: parent.hasRange || parent.hasTo
+                Layout.alignment: Qt.AlignVCenter
             }
 
             DecimalInputField {
@@ -793,12 +1112,40 @@ Rectangle {
             property var modelData: ({})
             property var paramValue: null
             property var localParamValue: typeof paramValue !== 'undefined' && paramValue !== null ? paramValue : modelData.value
-            onLocalParamValueChanged: if (localParamValue !== undefined) arrayValueLabel.text = JSON.stringify(localParamValue)
+
+            function formatArray(val) {
+                if (val === null || val === undefined) return "[]";
+
+                let jsObj = MessageUtils.toJavaScriptObject(val);
+                if (!Array.isArray(jsObj)) {
+                    return JSON.stringify(jsObj);
+                }
+
+                let len = jsObj.length;
+                if (len === 0) return "[]";
+
+                let preview = [];
+                let maxPreview = Math.min(len, 10);
+                for (let i = 0; i < maxPreview; i++) {
+                    preview.push(JSON.stringify(jsObj[i]));
+                }
+
+                if (len > 10) {
+                    return "[" + preview.join(", ") + ", ... (" + len + " items)]";
+                }
+                return "[" + preview.join(", ") + "]";
+            }
+
+            onLocalParamValueChanged: {
+                if (localParamValue !== undefined && localParamValue !== null) {
+                    arrayValueLabel.text = formatArray(localParamValue);
+                }
+            }
 
             TruncatedLabel {
                 id: arrayValueLabel
                 Layout.fillWidth: true
-                text: JSON.stringify(modelData.value)
+                text: formatArray(localParamValue)
                 color: palette.text
                 opacity: 0.8
                 font.family: "Monospace"
@@ -807,7 +1154,7 @@ Rectangle {
                 text: IconFont.iconEdit
                 enabled: !modelData.readOnly
                 onClicked: {
-                    arrayEditDialog.openDialog(modelData);
+                    arrayEditDialog.openDialog(modelData, localParamValue);
                 }
             }
         }

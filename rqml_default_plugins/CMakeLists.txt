@@ -17,6 +17,8 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   find_package(Qt6 REQUIRED COMPONENTS QuickTest)
+  find_package(yaml-cpp REQUIRED)
+  find_package(qml6_ros2_plugin REQUIRED)
 
   add_executable(test_parameter_editor test/test_parameter_editor.cpp)
   target_compile_definitions(test_parameter_editor
@@ -28,6 +30,8 @@ if(BUILD_TESTING)
     Qt6::QuickTest
     Qt6::Qml
     Qt6::Quick
+    yaml-cpp
+    qml6_ros2_plugin::qml6_ros2_plugin
   )
   set(TEST_RESULT_DIR "${CMAKE_BINARY_DIR}/test_results/${PROJECT_NAME}")
   ament_add_test(

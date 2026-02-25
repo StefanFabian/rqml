@@ -143,6 +143,31 @@ public:
     return QFile::exists( path );
   }
 
+  Q_INVOKABLE QString readFile( const QString &path ) const
+  {
+    if ( path.isEmpty() )
+      return QString();
+    QFile file( path );
+    if ( !file.open( QIODevice::ReadOnly | QIODevice::Text ) ) {
+      qWarning() << "Failed to open file for reading:" << path;
+      return QString();
+    }
+    return QString::fromUtf8( file.readAll() );
+  }
+
+  Q_INVOKABLE bool writeFile( const QString &path, const QString &text ) const
+  {
+    if ( path.isEmpty() )
+      return false;
+    QFile file( path );
+    if ( !file.open( QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate ) ) {
+      qWarning() << "Failed to open file for writing:" << path;
+      return false;
+    }
+    file.write( text.toUtf8() );
+    return true;
+  }
+
   QVariantMap currentConfig() const
   {
     const auto &config = RQml::instance().configManager().currentConfig();

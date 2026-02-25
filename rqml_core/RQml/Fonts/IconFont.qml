@@ -31,6 +31,7 @@ FontLoader {
   readonly property string iconFatal: "\uf714"
   readonly property string iconFilter: "\uf0b0"
   readonly property string iconInfo: "\uf05a"
+  readonly property string iconLoad: "\uf56f"
   readonly property string iconPause: "\uf04c"
   readonly property string iconPlay: "\uf04b"
   readonly property string iconRefresh: "\uf021"
