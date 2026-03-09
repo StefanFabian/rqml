@@ -74,6 +74,7 @@ Rectangle {
                 onTextChanged: typeSelect.refresh()
                 function refresh() {
                     model = Ros2.queryTopics();
+                    if (!text) text = model.length > 0 ? model[0] : "";
                 }
                 Component.onCompleted: refresh()
             }
@@ -85,16 +86,13 @@ Rectangle {
                 }
             }
 
-            Label {
-                text: "Message Type:"
-                font.bold: true
-            }
             FuzzySelector {
                 id: typeSelect
                 Layout.fillWidth: true
                 placeholderText: qsTr("Message Type")
                 function refresh() {
                     model = Ros2.getTopicTypes(topicSelect.text);
+                    if (model.length > 0) text = model[0];
                 }
                 Component.onCompleted: refresh()
             }

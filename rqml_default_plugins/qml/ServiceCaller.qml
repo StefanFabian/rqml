@@ -69,7 +69,11 @@ Rectangle {
                     if (types.length == 0)
                         types = context.type ? [context.type] : [];
                     typeSelect.model = types;
-                    typeSelect.text = types.length > 0 ? types[0] : "";
+                    if (context.type && types.includes(context.type)) {
+                        typeSelect.text = context.type
+                    } else {
+                        typeSelect.text = types.length > 0 ? types[0] : "";
+                    }
                 }
                 Component.onCompleted: refresh()
             }
@@ -231,7 +235,7 @@ Rectangle {
         }
         onClientChanged: {
             resetState();
-            if (client && (!requestModel.message || requestModel.message["#messageType"] != context.type)) {
+            if (client && (!requestModel.message || requestModel.message["#messageType"] !== context.type + "_Request")) {
                 context.request = Ros2.createEmptyServiceRequest(context.type);
                 requestModel.message = context.request;
             }
