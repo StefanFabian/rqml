@@ -3,6 +3,7 @@ ChangeSlider 1.0 ChangeSlider.qml
 DecimalInputField 1.0 DecimalInputField.qml
 DecimalSpinBox 1.0 DecimalSpinBox.qml
 EditMessageDialog 1.0 EditMessageDialog.qml
+FuzzySelector 1.0 FuzzySelector.qml
 IconButton 1.0 IconButton.qml
 IconToggleButton 1.0 IconToggleButton.qml
 IntegerInputField 1.0 IntegerInputField.qml

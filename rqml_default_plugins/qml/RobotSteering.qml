@@ -184,7 +184,7 @@ Rectangle {
         SpeedSlider {
             id: angularSlider
             Layout.fillWidth: true
-            enabled: context.enabled
+            enabled: !!context.enabled
             direction: Qt.Horizontal
             from: context.angular.min ?? -1.0
             onFromChanged: context.angular.min = from
