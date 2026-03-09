@@ -12,26 +12,10 @@ Rectangle {
     color: palette.base
 
     Component.onCompleted: {
-        if (context.enabled === undefined)
-            context.enabled = true;
-        if (context.stamped === undefined)
-            context.stamped = false;
-        if (!context.topic)
-            context.topic = "cmd_vel";
-        if (context.rate === undefined)
-            context.rate = 10;
         if (!context.linear)
             context.linear = {};
-        if (!context.linear.min)
-            context.linear.min = -1;
-        if (!context.linear.max)
-            context.linear.max = 1;
         if (!context.angular)
             context.angular = {};
-        if (!context.angular.min)
-            context.angular.min = -1;
-        if (!context.angular.max)
-            context.angular.max = 1;
     }
 
     QtObject {
@@ -92,12 +76,61 @@ Rectangle {
         anchors.margins: 8
 
         RowLayout {
+            FuzzySelector {
+                id: topicSelect
+                Layout.fillWidth: true
+                placeholderText: qsTr("Velocity Topic")
+                onTextChanged: {
+                    if (text === context.topic)
+                        return;
+                    context.enabled = false;
+                    context.topic = text;
+                    if (!Ros2.isValidTopic(text))
+                        return;
+                    const types = Ros2.queryTopicTypes(text);
+                    const hasTwist = types.includes("geometry_msgs/msg/Twist");
+                    const hasStamped = types.includes("geometry_msgs/msg/TwistStamped");
+                    if (hasTwist && !hasStamped)
+                        stampedCheckBox.checked = false;
+                    else if (hasStamped && !hasTwist)
+                        stampedCheckBox.checked = true;
+                }
+                function refresh() {
+                    let topics = Ros2.queryTopics("geometry_msgs/msg/Twist");
+                    let stampedTopics = Ros2.queryTopics("geometry_msgs/msg/TwistStamped");
+                    topics = topics.concat(stampedTopics);
+                    // Deduplicate (a topic could appear in both)
+                    topics = [...new Set(topics)];
+                    topics.sort();
+                    if (!!context.topic) {
+                        const index = topics.indexOf(context.topic);
+                        if (index !== -1)
+                            topics.splice(index, 1);
+                        topics.unshift(context.topic);
+                    }
+                    model = topics;
+                }
+                Component.onCompleted: {
+                    text = context.topic ?? "/cmd_vel";
+                    refresh();
+                }
+            }
+            RefreshButton {
+                onClicked: {
+                    animate = true;
+                    topicSelect.refresh();
+                    animate = false;
+                }
+            }
+        }
+
+        RowLayout {
             spacing: 10
             CheckBox {
                 id: stampedCheckBox
                 display: AbstractButton.TextUnderIcon
                 text: "Stamped"
-                checked: context.stamped
+                checked: !!context.stamped
                 onCheckedChanged: context.stamped = checked
             }
 
@@ -110,30 +143,19 @@ Rectangle {
                 from: 0
                 to: 100
                 stepSize: 1
-                value: context.rate
-                onValueChanged: {
-                    context.rate = value;
-                }
+                onValueChanged: context.rate = value
+                Component.onCompleted: value = context.rate ?? 10
             }
-        }
-        GridLayout {
-            columns: width > 300 ? 2 : 1
-            TextField {
-                id: topic
+            // Spacer
+            Item {
                 Layout.fillWidth: true
-                selectByMouse: true
-                text: context.topic
-                onTextChanged: {
-                    context.enabled = false;
-                    context.topic = text;
-                }
             }
             Button {
                 id: playButton
                 implicitHeight: 48
                 implicitWidth: 48
                 checkable: true
-                checked: context.enabled
+                checked: !!context.enabled
                 onCheckedChanged: context.enabled = checked
                 ToolTip.visible: hovered
                 ToolTip.text: checked ? "Click to pause" : "Click to start"
@@ -148,6 +170,7 @@ Rectangle {
             id: linearSlider
             Layout.alignment: Qt.AlignHCenter
             Layout.fillHeight: true
+            enabled: !!context.enabled
             from: context.linear.min ?? -1.0
             onFromChanged: context.linear.min = from
             to: context.linear.max ?? 1.0
@@ -161,6 +184,7 @@ Rectangle {
         SpeedSlider {
             id: angularSlider
             Layout.fillWidth: true
+            enabled: context.enabled
             direction: Qt.Horizontal
             from: context.angular.min ?? -1.0
             onFromChanged: context.angular.min = from

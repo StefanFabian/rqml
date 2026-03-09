@@ -1,0 +1,198 @@
+/*
+ * Copyright (C) 2025  Stefan Fabian
+ *
+ * This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import QtQuick
+import QtQuick.Controls
+
+// A TextField with a fuzzy-filtered dropdown.
+//
+// Usage:
+//   FuzzySelector {
+//       text: context.service
+//       model: []
+//       onTextChanged: context.service = text
+//       Component.onCompleted: model = Ros2.queryServices()
+//   }
+Item {
+    id: control
+
+    implicitHeight: field.implicitHeight
+    implicitWidth: field.implicitWidth
+
+    // The current text value. Initialise from outside; updated by user typing or item selection.
+    property string text: ""
+
+    property string placeholderText: ""
+
+    // Full item list to search through.
+    property var model: []
+
+    // Returns a score >= 0 when str matches pattern as a fuzzy subsequence, -1 otherwise.
+    // Consecutive matched characters and word-boundary hits (after /, _, -, space) score higher.
+    function fuzzyScore(str, pattern) {
+        if (!pattern)
+            return 0;
+        const s = str.toLowerCase();
+        const p = pattern.toLowerCase();
+        let score = 0;
+        let si = 0;
+        let pi = 0;
+        let consecutive = 0;
+        while (si < s.length && pi < p.length) {
+            if (s[si] === p[pi]) {
+                consecutive++;
+                score += consecutive * consecutive; // quadratic bonus for consecutive runs
+                if (si === 0 || "/_- ".includes(s[si - 1]))
+                    score += 5; // word-boundary bonus
+                pi++;
+            } else {
+                consecutive = 0;
+            }
+            si++;
+        }
+        return pi === p.length ? score : -1;
+    }
+
+    // Filtered and sorted subset of model based on the current text.
+    readonly property var filteredItems: {
+        const pattern = control.text;
+        const items = control.model || [];
+        if (!pattern)
+            return items.slice().sort();
+        const scored = [];
+        for (const item of items) {
+            const s = control.fuzzyScore(item, pattern);
+            if (s >= 0)
+                scored.push({
+                    item,
+                    s
+                });
+        }
+        scored.sort((a, b) => b.s - a.s);
+        return scored.map(x => x.item);
+    }
+
+    // Sync field text when control.text is changed programmatically.
+    onTextChanged: {
+        if (field.text !== text)
+            field.text = text;
+    }
+
+    onFilteredItemsChanged: {
+        if (filteredItems.length === 0 && popup.visible)
+            popup.close();
+    }
+
+    TextField {
+        id: field
+        anchors.fill: parent
+        placeholderText: control.placeholderText
+        selectByMouse: true
+
+        onTextEdited: {
+            control.text = text;
+            if (!popup.visible && control.filteredItems.length > 0)
+                popup.open();
+            listView.currentIndex = -1;
+        }
+
+        Keys.onDownPressed: function (event) {
+            if (!popup.visible) {
+                if (control.filteredItems.length > 0)
+                    popup.open();
+            } else {
+                const next = listView.currentIndex + 1;
+                if (next < listView.count) {
+                    listView.currentIndex = next;
+                    listView.positionViewAtIndex(next, ListView.Contain);
+                }
+            }
+            event.accepted = true;
+        }
+
+        Keys.onUpPressed: function (event) {
+            if (listView.currentIndex > 0) {
+                const prev = listView.currentIndex - 1;
+                listView.currentIndex = prev;
+                listView.positionViewAtIndex(prev, ListView.Contain);
+            }
+            event.accepted = true;
+        }
+
+        Keys.onReturnPressed: function (event) {
+            if (popup.visible && listView.currentIndex >= 0 && listView.currentIndex < control.filteredItems.length) {
+                control.text = control.filteredItems[listView.currentIndex];
+                popup.close();
+            }
+            event.accepted = true;
+        }
+
+        Keys.onEscapePressed: function (event) {
+            popup.close();
+            event.accepted = true;
+        }
+    }
+
+    Popup {
+        id: popup
+        x: 0
+        y: control.height
+        width: control.width
+        padding: 0
+        margins: 0
+        modal: false
+        focus: false
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        onOpened: listView.currentIndex = -1
+
+        contentItem: ListView {
+            id: listView
+            implicitHeight: Math.min(contentHeight, 300)
+            model: control.filteredItems
+            clip: true
+            currentIndex: -1
+            // Proxy properties: required properties in the delegate cut off outer scope access.
+            property Item theControl: control
+            property Popup thePopup: popup
+            property Item theField: field
+
+            ScrollBar.vertical: ScrollBar {}
+
+            delegate: ItemDelegate {
+                required property string modelData
+                required property int index
+                width: ListView.view.width
+                text: modelData
+                highlighted: ListView.isCurrentItem
+
+                onClicked: {
+                    ListView.view.theControl.text = modelData;
+                    ListView.view.currentIndex = index;
+                    ListView.view.thePopup.close();
+                    ListView.view.theField.forceActiveFocus();
+                }
+            }
+        }
+
+        background: Rectangle {
+            color: control.palette.base
+            border.color: control.palette.mid
+            border.width: 1
+        }
+    }
+}

@@ -19,18 +19,17 @@ Rectangle {
         anchors.margins: 8
 
         RowLayout {
-            ComboBox {
+            FuzzySelector {
                 id: topicSelect
                 Layout.fillWidth: true
-                editable: true
-                selectTextByMouse: true
-                editText: context.topic
-                onEditTextChanged: {
-                    if (editText == null || editText == context.topic)
+                placeholderText: qsTr("Image Topic")
+                text: context.topic ?? ""
+                onTextChanged: {
+                    if (text === context.topic)
                         return;
-                    if (!Ros2.isValidTopic(editText))
+                    if (!Ros2.isValidTopic(text))
                         return;
-                    context.topic = editText;
+                    context.topic = text;
                 }
                 function refresh() {
                     let topics = Ros2.queryTopics("sensor_msgs/msg/Image");
@@ -72,7 +71,7 @@ Rectangle {
                 id: saveButton
                 tooltipText: qsTr("Save Image")
                 text: IconFont.iconSave
-                onClicked: fileDialog.saveImage();
+                onClicked: fileDialog.saveImage()
             }
         }
 
