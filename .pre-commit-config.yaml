@@ -68,13 +68,6 @@ repos:
         name: Validate and Format package.xml
         exclude: ^third_party/
 
-  # QML Formatting
-  - repo: https://github.com/tomas-krupa/qmlformat-hook.git
-    rev: 1.2.0
-    hooks:
-      - id: qmlformat
-        exclude: ^third_party/
-
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.35.0
     hooks:
