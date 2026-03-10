@@ -69,6 +69,7 @@ The `rqml_default_plugins` package includes these awesome tools:
 * **ImageView**: View camera streams and images.
 * **JointTrajectoryController**: Interface for sending joint trajectory commands.
 * **MessagePublisher**: Publish custom ROS 2 messages.
+* **ParameterEditor**: Discover, view, and dynamically reconfigure ROS 2 node parameters.
 * **RobotSteering**: Teleoperation tool for mobile robots.
 * **ServiceCaller**: Interface for calling ROS 2 Services.
 
