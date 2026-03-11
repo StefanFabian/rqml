@@ -67,32 +67,47 @@ Rectangle {
             Layout.fillWidth: true
             columns: 2
 
-            Label {
-                text: "Topic:"
-                font.bold: true
-            }
-            ComboBox {
+            FuzzySelector {
                 id: topicSelect
                 Layout.fillWidth: true
-                model: Ros2.queryTopics()
-                editable: true
-                selectTextByMouse: true
+                placeholderText: qsTr("Topic")
+                onTextChanged: typeSelect.refresh()
+                function refresh() {
+                    model = Ros2.queryTopics();
+                    if (!text) text = model.length > 0 ? model[0] : "";
+                }
+                Component.onCompleted: refresh()
             }
-            Label {
-                text: "Message Type:"
-                font.bold: true
+            RefreshButton {
+                onClicked: {
+                    animate = true;
+                    topicSelect.refresh();
+                    animate = false;
+                }
             }
-            ComboBox {
+
+            FuzzySelector {
                 id: typeSelect
                 Layout.fillWidth: true
-                model: Ros2.getTopicTypes(topicSelect.currentText)
-                editable: true
-                selectTextByMouse: true
+                placeholderText: qsTr("Message Type")
+                function refresh() {
+                    model = Ros2.getTopicTypes(topicSelect.text);
+                    if (model.length > 0) text = model[0];
+                }
+                Component.onCompleted: refresh()
             }
+            RefreshButton {
+                onClicked: {
+                    animate = true;
+                    typeSelect.refresh();
+                    animate = false;
+                }
+            }
+
             Button {
                 text: "Add Message"
-                onClicked: root.addMessageEntry(topicSelect.editText, typeSelect.editText, 1)
-                enabled: Ros2.isValidTopic(topicSelect.editText)
+                onClicked: root.addMessageEntry(topicSelect.text, typeSelect.text, 1)
+                enabled: Ros2.isValidTopic(topicSelect.text)
             }
         }
         ListView {

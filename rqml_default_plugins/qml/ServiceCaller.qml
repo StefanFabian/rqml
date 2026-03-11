@@ -16,22 +16,17 @@ Rectangle {
 
         GridLayout {
             Layout.fillWidth: true
-            columns: 3
+            columns: 2
 
-            Label {
-                text: "Service:"
-                font.bold: true
-            }
-            ComboBox {
+            FuzzySelector {
                 id: serviceSelect
                 Layout.fillWidth: true
-                editable: true
-                selectTextByMouse: true
-                editText: context.service
-                onEditTextChanged: {
-                    if (editText == null || editText == context.service)
+                placeholderText: qsTr("Service Topic")
+                text: context.service ?? ""
+                onTextChanged: {
+                    if (text === context.service)
                         return;
-                    context.service = editText;
+                    context.service = text;
                     typeSelect.refresh();
                 }
                 function refresh() {
@@ -54,33 +49,31 @@ Rectangle {
                     animate = false;
                 }
             }
-            Label {
-                text: "Type:"
-                font.bold: true
-            }
-            ComboBox {
+            FuzzySelector {
                 id: typeSelect
                 Layout.fillWidth: true
-                editable: true
-                selectTextByMouse: true
-                editText: context.type
-                onEditTextChanged: {
-                    if (editText == null || editText == context.type)
+                placeholderText: qsTr("Service Type")
+                text: context.type ?? ""
+                onTextChanged: {
+                    if (text === context.type)
                         return;
-                    context.type = editText;
+                    context.type = text;
                     if (!context.type)
                         return;
-                    if (requestModel.message && requestModel.message["#messageType"] == context.type + "_Request")
+                    if (requestModel.message && requestModel.message["#messageType"] === context.type + "_Request")
                         return;
-                    context.request = Ros2.createEmptyServiceRequest(context.type);
-                    requestModel.message = context.request;
                     tabBar.currentIndex = 0;
                 }
                 function refresh() {
                     let types = Ros2.getServiceTypes(context.service);
                     if (types.length == 0)
-                        return context.type && [context.type] || [];
+                        types = context.type ? [context.type] : [];
                     typeSelect.model = types;
+                    if (context.type && types.includes(context.type)) {
+                        typeSelect.text = context.type
+                    } else {
+                        typeSelect.text = types.length > 0 ? types[0] : "";
+                    }
                 }
                 Component.onCompleted: refresh()
             }
@@ -133,7 +126,7 @@ Rectangle {
                     Button {
                         enabled: !!context.type
                         implicitWidth: 120
-                        text: "Reset"
+                        text: qsTr("Reset")
                         onClicked: {
                             context.request = Ros2.createEmptyServiceRequest(context.type);
                             requestModel.message = context.request;
@@ -147,7 +140,7 @@ Rectangle {
                     Button {
                         enabled: (d.client?.ready && !d.isActive) ?? false
                         implicitWidth: 120
-                        text: "Send"
+                        text: qsTr("Send")
                         onClicked: {
                             d.resetState();
                             d.isActive = true;
@@ -163,26 +156,44 @@ Rectangle {
             }
 
             // Response Tab
-            Item {
+            ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Rectangle {
-                    visible: !responseEditor.visible
-                    anchors.fill: parent
-                    color: root.palette.base
-                    Label {
-                        anchors.centerIn: parent
-                        text: d.response === null ? "Waiting for response..." : "Service call failed."
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Rectangle {
+                        visible: !responseEditor.visible
+                        anchors.fill: parent
+                        color: root.palette.base
+                        Label {
+                            anchors.centerIn: parent
+                            text: d.response === null ? "Waiting for response..." : "Service call failed."
+                        }
+                    }
+                    MessageContentEditor {
+                        id: responseEditor
+                        anchors.fill: parent
+                        visible: !!d.client && !!d.response
+                        readonly: true
+                        model: MessageItemModel {
+                            message: d.response || null
+                            onMessageChanged: responseEditor.expandRecursively()
+                        }
                     }
                 }
-                MessageContentEditor {
-                    id: responseEditor
-                    anchors.fill: parent
-                    visible: d.client && !!d.response || false
-                    readonly: true
-                    model: MessageItemModel {
-                        message: d.response || null
-                        onMessageChanged: responseEditor.expandRecursively()
+
+                RowLayout {
+                    Layout.fillWidth: true
+
+                    Item {
+                        Layout.fillWidth: true
+                    } // Spacer
+
+                    Button {
+                        implicitWidth: 120
+                        text: qsTr("Back")
+                        onClicked: tabBar.currentIndex = 0
                     }
                 }
             }
@@ -198,7 +209,7 @@ Rectangle {
                 Layout.fillWidth: true
                 text: {
                     if (!d.client)
-                        return "None";
+                        return "Not connected";
                     if (d.isActive)
                         return "Waiting for response...";
                     if (d.client.ready)
@@ -211,11 +222,23 @@ Rectangle {
 
     QtObject {
         id: d
+        // Incremented by the timer to re-evaluate the client binding without changing service/type.
+        property int _tick: 0
         property var client: {
-            d.resetState();
+            _tick;
             if (!context.service || !context.type || !Ros2.isValidTopic(context.service))
                 return null;
+            const types = Ros2.getServiceTypes(context.service);
+            if (types.length > 0 && !types.includes(context.type))
+                return null;
             return Ros2.createServiceClient(context.service, context.type);
+        }
+        onClientChanged: {
+            resetState();
+            if (client && (!requestModel.message || requestModel.message["#messageType"] !== context.type + "_Request")) {
+                context.request = Ros2.createEmptyServiceRequest(context.type);
+                requestModel.message = context.request;
+            }
         }
         property bool isActive: false
         property var response: null
@@ -224,5 +247,13 @@ Rectangle {
             isActive = false;
             response = null;
         }
+    }
+
+    // Poll until the service advertises the expected type, allowing late-starting services.
+    Timer {
+        interval: 500
+        repeat: true
+        running: !!context.service && !!context.type && !d.client
+        onTriggered: d._tick++
     }
 }

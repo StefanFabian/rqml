@@ -16,25 +16,18 @@ Rectangle {
 
         GridLayout {
             Layout.fillWidth: true
-            columns: 3
-
-            Label {
-                text: "Topic:"
-                font.bold: true
-            }
-            ComboBox {
+            columns: 2
+            FuzzySelector {
                 id: topicSelect
                 Layout.fillWidth: true
-                editable: true
-                selectTextByMouse: true
-                editText: context.topic
-                onEditTextChanged: {
-                    if (editText == null || editText == context.topic)
+                placeholderText: qsTr("Action Topic")
+                text: context.topic ?? ""
+                onTextChanged: {
+                    if (text === context.topic)
                         return;
-                    context.topic = editText;
+                    context.topic = text;
                     typeSelect.refresh();
                 }
-
                 function refresh() {
                     let result = Ros2.queryActions();
                     if (!!context.topic) {
@@ -54,20 +47,16 @@ Rectangle {
                     animate = false;
                 }
             }
-            Label {
-                text: "Type:"
-                font.bold: true
-            }
-            ComboBox {
+
+            FuzzySelector {
                 id: typeSelect
                 Layout.fillWidth: true
-                editable: true
-                selectTextByMouse: true
-                editText: context.type
-                onEditTextChanged: {
-                    if (editText == null || editText == context.type)
+                placeholderText: qsTr("Action Type")
+                text: context.type ?? ""
+                onTextChanged: {
+                    if (text === context.type)
                         return;
-                    context.type = editText;
+                    context.type = text;
                     if (!context.type)
                         return;
                     if (requestModel.message && requestModel.message["#messageType"] == context.type + "_Goal")
@@ -77,8 +66,8 @@ Rectangle {
                 function refresh() {
                     let types = Ros2.getActionTypes(context.topic);
                     if (types.length == 0)
-                        return context.type && [context.type] || [];
-                    typeSelect.model = types;
+                        types = context.type ? [context.type] : [];
+                    model = types;
                 }
                 Component.onCompleted: refresh()
             }
