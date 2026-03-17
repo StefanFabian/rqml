@@ -17,6 +17,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import RQml.Fonts
 
 // A TextField with a fuzzy-filtered dropdown.
 //
@@ -40,6 +41,18 @@ Item {
 
     // Full item list to search through.
     property var model: []
+
+    // Index of the selected item in the original (unfiltered) model. -1 if none.
+    property int currentIndex: -1
+
+    // Text of the currently selected item (read-only).
+    readonly property string currentText: currentIndex >= 0 && currentIndex < (model ? model.length : 0) ? model[currentIndex] : ""
+
+    // Whether the user can type freely. When false, only selection from the dropdown is allowed.
+    property bool editable: true
+
+    // Alias for text — the string shown in the edit field.
+    property alias editText: control.text
 
     // Returns a score >= 0 when str matches pattern as a fuzzy subsequence, -1 otherwise.
     // Consecutive matched characters and word-boundary hits (after /, _, -, space) score higher.
@@ -86,10 +99,24 @@ Item {
         return scored.map(x => x.item);
     }
 
+    // When currentIndex is set programmatically, update text to match.
+    onCurrentIndexChanged: {
+        if (currentIndex >= 0 && currentIndex < (model ? model.length : 0)) {
+            const item = model[currentIndex];
+            if (text !== item)
+                text = item;
+        }
+    }
+
     // Sync field text when control.text is changed programmatically.
     onTextChanged: {
         if (field.text !== text)
             field.text = text;
+        // Keep currentIndex in sync: find exact match in the original model.
+        const items = model || [];
+        const idx = items.indexOf(text);
+        if (idx !== currentIndex)
+            currentIndex = idx;
     }
 
     onFilteredItemsChanged: {
@@ -102,8 +129,44 @@ Item {
         anchors.fill: parent
         placeholderText: control.placeholderText
         selectByMouse: true
+        readOnly: !control.editable
+        rightPadding: chevron.width + 12
+
+        onActiveFocusChanged: {
+            if (!control.editable) return
+            if (activeFocus && !popup.visible && control.filteredItems.length > 0)
+                popup.open();
+        }
+
+        Text {
+            id: chevron
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            font.family: IconFont.name
+            text: IconFont.iconChevronDown
+            color: field.palette.text
+            opacity: chevronMouseArea.pressed ? 0.7 : (chevronMouseArea.containsMouse ? 1.0 : 0.5)
+
+            MouseArea {
+                id: chevronMouseArea
+                anchors.fill: parent
+                hoverEnabled: true
+                onClicked: {
+                    if (!control.editable) return
+                    if (popup.visible) {
+                        popup.close();
+                    } else {
+                        field.forceActiveFocus();
+                        popup.open();
+                    }
+                }
+            }
+        }
 
         onTextEdited: {
+            if (!control.editable)
+                return;
             control.text = text;
             if (!popup.visible && control.filteredItems.length > 0)
                 popup.open();
@@ -111,6 +174,7 @@ Item {
         }
 
         Keys.onDownPressed: function (event) {
+            if (!control.editable) return
             if (!popup.visible) {
                 if (control.filteredItems.length > 0)
                     popup.open();

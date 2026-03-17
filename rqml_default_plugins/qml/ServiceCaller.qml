@@ -7,7 +7,7 @@ import RQml.Elements
 Rectangle {
     id: root
     anchors.fill: parent
-    property var kddockwidgets_min_size: Qt.size(350, 500)
+    property var kddockwidgets_min_size: Qt.size(350, 350)
     color: palette.base
 
     ColumnLayout {
@@ -31,6 +31,20 @@ Rectangle {
                 }
                 function refresh() {
                     let services = Ros2.queryServices();
+                    if (!(context.showDefaultServices ?? false)) {
+                        const defaultSuffixes = [
+                            "/describe_parameters",
+                            "/get_logger_levels",
+                            "/get_parameter_types",
+                            "/get_parameters",
+                            "/get_type_description",
+                            "/list_parameters",
+                            "/set_logger_levels",
+                            "/set_parameters",
+                            "/set_parameters_atomically"
+                        ];
+                        services = services.filter(s => !defaultSuffixes.some(suffix => s.endsWith(suffix)));
+                    }
                     if (!!context.service) {
                         const index = services.indexOf(context.service);
                         if (index != -1)
@@ -215,6 +229,18 @@ Rectangle {
                     if (d.client.ready)
                         return "Ready";
                     return "Connecting...";
+                }
+            }
+
+            CheckBox {
+                id: showDefaultServicesCheck
+                text: qsTr("Show default services")
+                checked: context.showDefaultServices ?? false
+                onCheckedChanged: {
+                    if (context.showDefaultServices !== checked) {
+                        context.showDefaultServices = checked;
+                        serviceSelect.refresh();
+                    }
                 }
             }
         }
