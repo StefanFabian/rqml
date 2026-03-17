@@ -1,3 +1,0 @@
-module Ros2
-singleton Ros2 1.0 Ros2.qml
-Subscription 1.0 Subscription.qml
