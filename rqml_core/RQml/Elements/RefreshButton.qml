@@ -19,13 +19,14 @@ import QtQuick
 import QtQuick.Controls
 import RQml.Fonts
 
-Button {
+RoundButton {
   id: control
   implicitHeight: 48
   implicitWidth: 48
   font.family: IconFont.name
   font.pixelSize: 20
   text: IconFont.iconRefresh
+  radius: 4
   property bool animate
   onAnimateChanged: {
     if (!animate) return

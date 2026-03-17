@@ -1,7 +1,7 @@
 import QtQuick.Controls
 import RQml.Fonts
 
-Button {
+RoundButton {
     property string iconOn
     property string iconOff
     property string tooltipTextOn
@@ -13,6 +13,7 @@ Button {
     font.pixelSize: 20
     text: checked ? iconOn : iconOff
     checkable: true
+    radius: 4
 
     ToolTip.visible: hovered && (checked && !!tooltipTextOn) || (!checked && !!tooltipTextOff)
     ToolTip.text: checked ? tooltipTextOn : tooltipTextOff
