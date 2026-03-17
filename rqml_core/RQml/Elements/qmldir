@@ -13,4 +13,5 @@ MessageContentEditor 1.0 MessageContentEditor.qml
 RefreshButton 1.0 RefreshButton.qml
 SpeedSlider 1.0 SpeedSlider.qml
 StateIndicator 1.0 StateIndicator.qml
+ToastManager 1.0 ToastManager.qml
 TruncatedLabel 1.0 TruncatedLabel.qml

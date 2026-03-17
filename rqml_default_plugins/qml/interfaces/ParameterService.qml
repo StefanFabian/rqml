@@ -24,10 +24,13 @@ QtObject {
 
     // --- Signals ---
     signal parametersChanged(string nodeName)
-    signal parameterSetResult(string nodeName, string paramName, bool success, string reason)
 
     // --- Public Properties ---
     property var nodes: [] // Emits nodesChanged implicitly on assignment
+    readonly property string listParamsSuffix: "/list_parameters"
+    readonly property string getParamsSuffix: "/get_parameters"
+    readonly property string setParamsSuffix: "/set_parameters"
+    readonly property string describeParamsSuffix: "/describe_parameters"
 
     // --- Parameter Types (rcl_interfaces/msg/ParameterType) ---
     readonly property int typeNotSet: 0
@@ -56,9 +59,9 @@ QtObject {
             function processParams(paramList) {
                 if (!paramList) return;
                 for (let i = 0; i < paramList.length; i++) {
-                    let p = (paramList.at !== undefined) ? paramList.at(i) : paramList[i];
-                    if (p && p.name && p.value && nodeInfo.parameters[p.name]) {
-                        nodeInfo.parameters[p.name].value = root._extractValue(p.value);
+                    let paramInfo = (paramList.at !== undefined) ? paramList.at(i) : paramList[i];
+                    if (paramInfo && paramInfo.name && paramInfo.value && nodeInfo.parameters[paramInfo.name]) {
+                        nodeInfo.parameters[paramInfo.name].value = root._extractValue(paramInfo.value);
                         changed = true;
                     }
                 }
@@ -84,15 +87,24 @@ QtObject {
     // --- Public API ---
 
     function discoverNodes() {
-        const services = Ros2.queryServices("rcl_interfaces/srv/ListParameters");
+        const listServices = Ros2.queryServices("rcl_interfaces/srv/ListParameters");
+        const getServices = Ros2.queryServices("rcl_interfaces/srv/GetParameters");
+        const setServices = Ros2.queryServices("rcl_interfaces/srv/SetParameters");
+        const describeServices = Ros2.queryServices("rcl_interfaces/srv/DescribeParameters");
+
         let discovered = [];
-        for (let i = 0; i < services.length; i++) {
-            const svc = services[i];
-            if (!svc.endsWith("/list_parameters"))
+        for (let i = 0; i < listServices.length; i++) {
+            const serviceName = listServices[i];
+            if (!serviceName.endsWith(root.listParamsSuffix))
                 continue;
-            const nodeName = svc.substring(0, svc.length - "/list_parameters".length);
-            if (nodeName && discovered.indexOf(nodeName) === -1)
-                discovered.push(nodeName);
+            const nodeName = serviceName.substring(0, serviceName.length - root.listParamsSuffix.length);
+
+            if (getServices.indexOf(nodeName + root.getParamsSuffix) !== -1 &&
+                setServices.indexOf(nodeName + root.setParamsSuffix) !== -1 &&
+                describeServices.indexOf(nodeName + root.describeParamsSuffix) !== -1) {
+                if (nodeName && discovered.indexOf(nodeName) === -1)
+                    discovered.push(nodeName);
+            }
         }
         discovered.sort();
         root.nodes = discovered;
@@ -116,6 +128,7 @@ QtObject {
             describeClient: Ros2.createServiceClient(nodeName + "/describe_parameters", "rcl_interfaces/srv/DescribeParameters"),
             parameters: {}
         };
+        node.setClient.connectionTimeout = 2000; // Don't wait too long for set_parameter responses
         _nodes[nodeName] = node;
         _loadParameters(nodeName);
         return node;
@@ -155,34 +168,49 @@ QtObject {
         return node ? node.loading : false;
     }
 
-    function setParameter(nodeName, paramName, value, paramType) {
+    function isSetting(nodeName, paramName) {
+        return _pendingSets[nodeName + ":" + paramName] === true;
+    }
+
+    function setParameter(nodeName, paramName, value, paramType, callback) {
         const node = _nodes[nodeName];
-        if (!node || !node.setClient)
+        if (!node || !node.setClient) {
+            if (callback)
+                callback(false, "Node not available");
             return;
+        }
         const param = {
             name: paramName,
             value: _buildParameterValue(value, paramType)
         };
+        const key = nodeName + ":" + paramName;
+        _pendingSets[key] = true;
+        root.parametersChanged(nodeName);
+
         node.setClient.sendRequestAsync({
             parameters: [param]
         }, function (response) {
+            delete _pendingSets[key];
             if (!response || !response.results || response.results.length === 0) {
-                Ros2.warn("ParameterService: Failed to set parameter " + paramName + " on " + nodeName);
-                root.parameterSetResult(nodeName, paramName, false, "Service call failed");
+                root.parametersChanged(nodeName);
+                if (callback)
+                    callback(false, "Service call failed");
                 return;
             }
             const result = response.results.at(0);
             if (result.successful) {
-                if (node.parameters[paramName])
+                if (node.loaded && node.parameters[paramName])
                     node.parameters[paramName].value = value;
-                root.parametersChanged(nodeName);
             }
-            root.parameterSetResult(nodeName, paramName, result.successful, result.reason || "");
+            root.parametersChanged(nodeName);
+            if (callback)
+                callback(result.successful, result.reason || "");
         });
     }
 
     // --- Private ---
     property var _nodes: ({})
+    property var _pendingSets: ({})
 
     function _loadParameters(nodeName) {
         const node = _nodes[nodeName];
@@ -224,11 +252,11 @@ QtObject {
                 }
                 const params = {};
                 for (let i = 0; i < names.length; i++) {
-                    const pv = getResponse.values.at(i);
+                    const paramValue = getResponse.values.at(i);
                     params[names[i]] = {
                         name: names[i],
-                        type: pv.type,
-                        value: _extractValue(pv),
+                        type: paramValue.type,
+                        value: _extractValue(paramValue),
                         descriptor: {
                             description: "",
                             readOnly: false,
@@ -244,14 +272,14 @@ QtObject {
                     if (descResponse && descResponse.descriptors) {
                         for (let i = 0; i < descResponse.descriptors.length; i++) {
                             const desc = descResponse.descriptors.at(i);
-                            const p = params[desc.name];
-                            if (!p)
+                            const paramInfo = params[desc.name];
+                            if (!paramInfo)
                                 continue;
-                            p.descriptor.description = desc.description || "";
-                            p.descriptor.readOnly = !!desc.read_only;
+                            paramInfo.descriptor.description = desc.description || "";
+                            paramInfo.descriptor.readOnly = !!desc.read_only;
                             if (desc.floating_point_range && desc.floating_point_range.length > 0) {
                                 const r = desc.floating_point_range.at(0);
-                                p.descriptor.floatingPointRange = {
+                                paramInfo.descriptor.floatingPointRange = {
                                     from: Number(r.from_value),
                                     to: Number(r.to_value),
                                     step: Number(r.step)
@@ -259,7 +287,7 @@ QtObject {
                             }
                             if (desc.integer_range && desc.integer_range.length > 0) {
                                 const r = desc.integer_range.at(0);
-                                p.descriptor.integerRange = {
+                                paramInfo.descriptor.integerRange = {
                                     from: Number(r.from_value),
                                     to: Number(r.to_value),
                                     step: Number(r.step)
@@ -276,33 +304,33 @@ QtObject {
         });
     }
 
-    function _extractValue(pv) {
-        switch (pv.type) {
+    function _extractValue(paramValue) {
+        switch (paramValue.type) {
         case root.typeBool:
-            return pv.bool_value;
+            return paramValue.bool_value;
         case root.typeInteger:
-            return pv.integer_value;
+            return paramValue.integer_value;
         case root.typeDouble:
-            return pv.double_value;
+            return paramValue.double_value;
         case root.typeString:
-            return pv.string_value;
+            return paramValue.string_value;
         case root.typeByteArray:
-            return pv.byte_array_value;
+            return paramValue.byte_array_value;
         case root.typeBoolArray:
-            return pv.bool_array_value;
+            return paramValue.bool_array_value;
         case root.typeIntegerArray:
-            return pv.integer_array_value;
+            return paramValue.integer_array_value;
         case root.typeDoubleArray:
-            return pv.double_array_value;
+            return paramValue.double_array_value;
         case root.typeStringArray:
-            return pv.string_array_value;
+            return paramValue.string_array_value;
         default:
             return null;
         }
     }
 
     function _buildParameterValue(value, paramType) {
-        const pv = {
+        const paramValue = {
             type: paramType,
             bool_value: false,
             integer_value: 0,
@@ -316,33 +344,33 @@ QtObject {
         };
         switch (paramType) {
         case root.typeBool:
-            pv.bool_value = !!value;
+            paramValue.bool_value = !!value;
             break;
         case root.typeInteger:
-            pv.integer_value = parseInt(value) || 0;
+            paramValue.integer_value = parseInt(value) || 0;
             break;
         case root.typeDouble:
-            pv.double_value = parseFloat(value) || 0.0;
+            paramValue.double_value = parseFloat(value) || 0.0;
             break;
         case root.typeString:
-            pv.string_value = String(value);
+            paramValue.string_value = String(value);
             break;
         case root.typeByteArray:
             // TODO: properly reconstruct array from typed string array
             break;
         case root.typeBoolArray:
-            for (let i = 0; i < value.length; i++) pv.bool_array_value.push(value[i]);
+            for (let i = 0; i < value.length; i++) paramValue.bool_array_value.push(value[i]);
             break;
         case root.typeIntegerArray:
-            for (let i = 0; i < value.length; i++) pv.integer_array_value.push(parseInt(value[i]) || 0);
+            for (let i = 0; i < value.length; i++) paramValue.integer_array_value.push(parseInt(value[i]) || 0);
             break;
         case root.typeDoubleArray:
-            for (let i = 0; i < value.length; i++) pv.double_array_value.push(parseFloat(value[i]) || 0.0);
+            for (let i = 0; i < value.length; i++) paramValue.double_array_value.push(parseFloat(value[i]) || 0.0);
             break;
         case root.typeStringArray:
-            for (let i = 0; i < value.length; i++) pv.string_array_value.push(String(value[i]));
+            for (let i = 0; i < value.length; i++) paramValue.string_array_value.push(String(value[i]));
             break;
         }
-        return pv;
+        return paramValue;
     }
 }
