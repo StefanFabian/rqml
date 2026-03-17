@@ -23,29 +23,44 @@ TextField {
     property var from: null
     property var to: null
     property real value: 0.0
-    property var decimals: undefined
-    text: value.toPrecision(decimals)
+    property int decimals: 3
+
+    function formatValue(v) {
+        return Number(v).toPrecision(decimals);
+    }
+
+    text: formatValue(value)
+
+    onValueChanged: {
+        let formatted = formatValue(value);
+        if (text !== formatted)
+            text = formatted;
+    }
+
     onEditingFinished: {
         if (text.length == 0) {
-            text = Qt.binding(() => value.toPrecision(decimals));
+            text = formatValue(value);
             return;
         }
         let newValue = parseFloat(text);
         if (isNaN(newValue)) {
-            text = Qt.binding(() => value.toPrecision(decimals));
+            text = formatValue(value);
             return;
         }
-        if (from != null && newValue < from) {
+        if (from !== null && from !== undefined && newValue < from)
             newValue = from;
-            text = newValue.toPrecision(decimals);
-        } else if (to != null && newValue > to) {
+        if (to !== null && to !== undefined && newValue > to)
             newValue = to;
-            text = newValue.toPrecision(decimals);
-        }
-        if (newValue == value)
+
+        if (newValue === value) {
+            let formatted = formatValue(value);
+            if (text !== formatted)
+                text = formatted;
             return;
+        }
         value = newValue;
     }
+
     validator: RegularExpressionValidator {
         regularExpression: /^-?[0-9]*$|^-?([0-9]+\.[0-9]*)$/
     }

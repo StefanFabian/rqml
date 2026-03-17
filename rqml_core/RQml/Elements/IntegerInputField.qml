@@ -24,27 +24,40 @@ TextField {
     property var to: null
     property var value: 0
     text: Number(value).toFixed(0)
+
+    onValueChanged: {
+        let formatted = Number(value).toFixed(0);
+        if (text !== formatted)
+            text = formatted;
+    }
+
     onEditingFinished: {
         if (text.length == 0) {
-            text = Qt.binding(() => Number(value).toFixed(0));
+            text = Number(value).toFixed(0);
             return;
         }
         let newValue = parseInt(text);
         if (isNaN(newValue)) {
-            text = Qt.binding(() => Number(value).toFixed(0));
+            text = Number(value).toFixed(0);
             return;
         }
-        if (from != null && newValue < from) {
+        if (from !== null && from !== undefined && newValue < from) {
             newValue = from;
-            text = Qt.binding(() => Number(value).toFixed(0));
-        } else if (to != null && newValue > to) {
+            text = Number(value).toFixed(0);
+        } else if (to !== null && to !== undefined && newValue > to) {
             newValue = to;
-            text = Qt.binding(() => Number(value).toFixed(0));
+            text = Number(value).toFixed(0);
         }
-        if (newValue == value)
+
+        if (newValue === value) {
+            // Re-sync text even if value didn't change (e.g., input was "007" for value 7)
+            let formatted = Number(value).toFixed(0);
+            if (text !== formatted) text = formatted;
             return;
+        }
         value = newValue;
     }
+
     validator: RegularExpressionValidator {
         regularExpression: /^-?[0-9]*$/
     }

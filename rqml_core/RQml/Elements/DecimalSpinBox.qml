@@ -37,19 +37,22 @@ ColumnLayout {
     }
 
     function decimalToInt(decimal) {
-        return decimal * decimalFactor;
+        return Math.round(decimal * decimalFactor);
     }
 
     SpinBox {
         id: spinBox
         from: decimalToInt(root.from)
-        value: decimalToInt(root.value)
-        onValueChanged: root.value = value / decimalFactor
         to: decimalToInt(root.to)
+        value: decimalToInt(root.value)
         stepSize: decimalToInt(root.stepSize)
         editable: true
         width: parent.width
         height: parent.height
+
+        onValueModified: {
+            root.value = value / decimalFactor;
+        }
 
         validator: DoubleValidator {
             bottom: Math.min(spinBox.from, spinBox.to)
