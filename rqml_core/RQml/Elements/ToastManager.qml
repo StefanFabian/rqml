@@ -31,6 +31,7 @@ Item {
 
     property int maxToasts: 5
     property int dismissDuration: 5000
+    readonly property int count: toastModel.count
 
     function show(message, level) {
         if (toastModel.count >= root.maxToasts) {

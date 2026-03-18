@@ -21,7 +21,7 @@ import QtQuick.Layouts
 
 Slider {
     id: control
-    property real currentValue: goal
+    property real currentValue: 0
     property real currentValueVisualPosition: {
         const percent = Math.min(1, Math.max(0, (currentValue - from) / (to - from)));
         return LayoutMirroring.enabled ? 1 - percent : percent;

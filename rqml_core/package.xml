@@ -28,6 +28,8 @@
   <exec_depend>qml6-module-qtquick-layouts</exec_depend>
   <exec_depend>qml6-module-qtquick-templates</exec_depend>
   <exec_depend>qml6-module-qtquick-window</exec_depend>
+  <test_depend>ament_lint_auto</test_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

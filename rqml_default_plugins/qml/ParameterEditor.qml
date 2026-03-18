@@ -115,6 +115,7 @@ Rectangle {
 
             TextField {
                 id: filterTextField
+                objectName: "filterTextField"
                 Layout.fillWidth: true
                 placeholderText: qsTr("Filter parameters...")
                 selectByMouse: true
@@ -135,6 +136,7 @@ Rectangle {
             }
 
             IconToggleButton {
+                objectName: "starToggleButton"
                 iconOn: IconFont.iconStar
                 iconOff: IconFont.iconStar
                 tooltipTextOn: qsTr("Show only starred parameters")

@@ -64,10 +64,15 @@ Rectangle {
                     requestModel.message = Ros2.createEmptyActionGoal(context.type);
                 }
                 function refresh() {
-                    let types = Ros2.getActionTypes(context.topic);
+                    let types = !!context.topic ? Ros2.getActionTypes(context.topic) : [];
                     if (types.length == 0)
                         types = context.type ? [context.type] : [];
-                    model = types;
+                    typeSelect.model = types;
+                    if (context.type && types.includes(context.type)) {
+                        typeSelect.text = context.type;
+                    } else {
+                        typeSelect.text = types.length > 0 ? types[0] : "";
+                    }
                 }
                 Component.onCompleted: refresh()
             }

@@ -98,13 +98,13 @@ Rectangle {
                     implicitWidth: 132
                     from: 0.0
                     to: 999
-                    value: context.depth ?? 3.0
                     suffix: "m"
                     onValueChanged: {
                         if (context.depth === value)
                             return;
                         context.depth = value;
                     }
+                    Component.onCompleted: value = context.depth ?? 3.0
                 }
             }
 

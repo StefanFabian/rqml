@@ -85,4 +85,32 @@ install(
 
 ament_environment_hooks(register_qml_module.dsv.in)
 
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+
+  find_package(Qt6 REQUIRED COMPONENTS QuickTest)
+
+  add_executable(test_rqml_core test/test_rqml_core.cpp)
+  target_compile_definitions(test_rqml_core
+    PRIVATE
+    QUICK_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test"
+  )
+  target_link_libraries(test_rqml_core
+    PRIVATE
+    Qt6::QuickTest
+    Qt6::Qml
+    Qt6::Quick
+  )
+  set(TEST_RESULT_DIR "${CMAKE_BINARY_DIR}/test_results/${PROJECT_NAME}")
+  ament_add_test(
+    test_rqml_core
+    COMMAND $<TARGET_FILE:test_rqml_core>
+        -import "${CMAKE_CURRENT_SOURCE_DIR}"
+        -junitxml
+        -o "${TEST_RESULT_DIR}/test_rqml_core.xml"
+    RESULT_FILE "${TEST_RESULT_DIR}/test_rqml_core.xml"
+  )
+endif()
+
 ament_package()

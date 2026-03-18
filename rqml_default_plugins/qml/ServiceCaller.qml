@@ -32,17 +32,7 @@ Rectangle {
                 function refresh() {
                     let services = Ros2.queryServices();
                     if (!(context.showDefaultServices ?? false)) {
-                        const defaultSuffixes = [
-                            "/describe_parameters",
-                            "/get_logger_levels",
-                            "/get_parameter_types",
-                            "/get_parameters",
-                            "/get_type_description",
-                            "/list_parameters",
-                            "/set_logger_levels",
-                            "/set_parameters",
-                            "/set_parameters_atomically"
-                        ];
+                        const defaultSuffixes = ["/describe_parameters", "/get_logger_levels", "/get_parameter_types", "/get_parameters", "/get_type_description", "/list_parameters", "/set_logger_levels", "/set_parameters", "/set_parameters_atomically"];
                         services = services.filter(s => !defaultSuffixes.some(suffix => s.endsWith(suffix)));
                     }
                     if (!!context.service) {
@@ -79,12 +69,12 @@ Rectangle {
                     tabBar.currentIndex = 0;
                 }
                 function refresh() {
-                    let types = Ros2.getServiceTypes(context.service);
+                    let types = !!context.service ? Ros2.getServiceTypes(context.service) : [];
                     if (types.length == 0)
                         types = context.type ? [context.type] : [];
                     typeSelect.model = types;
                     if (context.type && types.includes(context.type)) {
-                        typeSelect.text = context.type
+                        typeSelect.text = context.type;
                     } else {
                         typeSelect.text = types.length > 0 ? types[0] : "";
                     }
