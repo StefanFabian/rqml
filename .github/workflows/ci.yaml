@@ -44,10 +44,10 @@ jobs:
     container:
       image: ros:${{ matrix.setup.rosdistro }}-ros-base
     steps:
-      - name: install build tools
+      - name: install build tools and latest testing repo
         run: |
           sudo apt-get update
-          sudo apt-get install -y ros-dev-tools
+          sudo apt-get install -y ros-dev-tools ros2-testing-apt-source
       - uses: actions/checkout@v4
         with:
           path: src/repo
