@@ -11,6 +11,7 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nlohmann-json-dev</build_depend>
+  <build_depend>opengl</build_depend>
   <build_depend>qt6-base-dev</build_depend>
   <build_depend>qt6-base-private-dev</build_depend>
   <build_depend>qt6-declarative-dev</build_depend>
