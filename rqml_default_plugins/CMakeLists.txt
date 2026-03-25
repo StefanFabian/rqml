@@ -53,6 +53,7 @@ if(BUILD_TESTING)
         -import "${CMAKE_CURRENT_SOURCE_DIR}/qml"
         -junitxml
         -o "${TEST_RESULT_DIR}/test_plugins.xml"
+    ENV QT_QPA_PLATFORM=offscreen
     RESULT_FILE "${TEST_RESULT_DIR}/test_plugins.xml"
   )
 endif()
