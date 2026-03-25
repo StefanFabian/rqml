@@ -225,7 +225,7 @@ void ConfigManager::load( const std::string &path )
 
   plugin_manager_->clearInstances();
   for ( auto &widget : json["allDockWidgets"] ) {
-    auto instance = std::make_unique<RQmlPluginInstance>( widget["uniqueName"] );
+    auto instance = std::make_unique<RQmlPluginInstance>( widget["uniqueName"].get<std::string>() );
     QVariantMap map = widget["context"].get<QVariantMap>();
     for ( auto it = map.begin(); it != map.end(); ++it ) {
       instance->context_.insert( it.key(), it.value() );
