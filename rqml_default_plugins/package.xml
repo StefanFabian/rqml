@@ -4,13 +4,17 @@
   <name>rqml_default_plugins</name>
   <version>0.0.0</version>
   <description>Default plugins for the QML-based robotics visualization and control tool RQml for ROS 2.</description>
-
   <maintainer email="fabian@sim.tu-darmstadt.de">Stefan Fabian</maintainer>
   <license>GPL-3.0-only</license>
   <author email="fabian@sim.tu-darmstadt.de">Stefan Fabian</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
   <depend>rqml_core</depend>
+
+  <exec_depend>control_msgs</exec_depend>
+  <exec_depend>controller_manager_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>qml6-module-qt-labs-qmlmodels</exec_depend>
   <exec_depend>qml6-module-qtmultimedia</exec_depend>
   <exec_depend>qml6-module-qtquick-controls</exec_depend>
@@ -19,9 +23,9 @@
   <exec_depend>qml6_ros2_plugin</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
-  <test_depend>control_msgs</test_depend>
   <test_depend>qml6_ros2_plugin</test_depend>
   <test_depend>rcl_interfaces</test_depend>
+  <test_depend>ros_babel_fish_test_msgs</test_depend>
   <test_depend>tf2_msgs</test_depend>
 
   <export>
