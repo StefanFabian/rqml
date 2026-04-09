@@ -73,6 +73,17 @@ Item {
             compare(field.value, 3, "Empty string should preserve previous value");
         }
 
+        function test_validatorRegex() {
+            var re = field.validator.regularExpression;
+            verify(re.test("123"));
+            verify(re.test("-123"));
+            verify(re.test("-"), "lone minus allowed during typing");
+            verify(!re.test("1.5"), "decimal point not allowed");
+            verify(!re.test("abc"));
+            verify(!re.test("1e3"));
+            verify(!re.test("1-2"));
+        }
+
         function test_whitespaceOnlyResets() {
             field.value = 3;
             field.text = "   ";

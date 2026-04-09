@@ -11,6 +11,9 @@ Rectangle {
     anchors.fill: parent
     property var kddockwidgets_min_size: Qt.size(350, 500)
     color: palette.base
+    // Test hook: exposes the ControllerManagerInterface so tests can drive
+    // transitions without having to synthesize right-clicks on delegates.
+    property alias controllerManagerInterface: d.controllerManager
 
     Component.onCompleted: {
         if (context.enabled === undefined)
@@ -37,6 +40,7 @@ Rectangle {
 
         ComboBox {
             id: controllerManagerComboBox
+            objectName: "cmComboBox"
             Layout.fillWidth: true
             model: d.controllerManagers
 
@@ -48,6 +52,7 @@ Rectangle {
         }
 
         RefreshButton {
+            objectName: "cmRefreshButton"
             onClicked: {
                 animate = true;
                 d.refresh();
@@ -57,6 +62,7 @@ Rectangle {
 
         LoadingListView {
             id: controllerListView
+            objectName: "cmControllerList"
             Layout.columnSpan: 3
             Layout.fillWidth: true
             Layout.preferredHeight: 240
@@ -151,6 +157,7 @@ Rectangle {
 
         LoadingListView {
             id: hardwareComponentsListView
+            objectName: "cmHardwareList"
             Layout.columnSpan: 3
             Layout.preferredHeight: 120
             Layout.fillWidth: true
@@ -247,11 +254,13 @@ Rectangle {
 
     ControllerInfoDialog {
         id: controllerInfoDialog
+        objectName: "cmControllerInfoDialog"
     }
 
 
     HardwareComponentInfoDialog {
         id: hardwareComponentInfoDialog
+        objectName: "cmHardwareComponentInfoDialog"
     }
 
     QtObject {

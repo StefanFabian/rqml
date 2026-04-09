@@ -117,10 +117,8 @@ void DepthImageProcessor::processFrame()
     return;
 
   QVideoFrame frame = input_sink_->videoFrame();
-  if ( !frame.isValid() )
-    return;
-
-  if ( frame.pixelFormat() != QVideoFrameFormat::Format_Y16 || max_depth_ <= 0.001 ) {
+  if ( !frame.isValid() || frame.pixelFormat() != QVideoFrameFormat::Format_Y16 ||
+       max_depth_ <= 0.001 ) {
     output_sink_->setVideoFrame( frame );
     return;
   }

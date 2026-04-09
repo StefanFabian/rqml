@@ -1,3 +1,2 @@
 module Ros2
-Subscription 1.0 Subscription.qml
 ImageTransportSubscription 1.0 ImageTransportSubscription.qml

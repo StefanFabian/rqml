@@ -15,163 +15,284 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import QtQuick 2.15
-import QtTest 1.15
-import "../qml" as PluginQml
+import QtQuick
+import QtTest
 import Ros2
 
 Item {
-    id: windowRoot
-    width: 800
-    height: 600
+    id: root
+    width: 800; height: 600
 
-    property var context: ({
-        enabled: true,
-        topic: "/rosout",
-        autoScroll: true
-    })
+    property var context: contextObj
+    QtObject {
+        id: contextObj
+        property bool enabled: true
+        property string topic: "/rosout"
+        property bool autoScroll: true
+    }
 
-    PluginQml.Console {
-        id: console_
+    Utils { id: helpers }
+
+    Loader {
+        id: pluginLoader
         anchors.fill: parent
+        function reload() { source = ""; source = "../qml/Console.qml"; }
+    }
+
+    property var plugin: pluginLoader.item
+
+    function find(name) { return helpers.findChild(root, name); }
+
+    Publisher {
+        id: testLogPublisher
+        topic: "/rosout"
+        type: "rcl_interfaces/msg/Log"
     }
 
     TestCase {
         name: "ConsoleTest"
         when: windowShown
 
-        // Find the internal QtObject 'd' by searching `data` for its unique properties
-        function findInternalD() {
-            for (var i = 0; i < console_.data.length; i++) {
-                var obj = console_.data[i];
-                if (obj && obj.logCount !== undefined && obj.allLogs !== undefined)
-                    return obj;
-            }
-            return null;
+        function createLogMessage(level, name, msg) {
+            var logMsg = Ros2.createEmptyMessage("rcl_interfaces/msg/Log");
+            logMsg.level = level;
+            logMsg.name = name;
+            logMsg.msg = msg;
+            logMsg.file = "test.cpp";
+            logMsg.function = "testFn";
+            logMsg.line = 42;
+            logMsg.stamp = Ros2.now();
+            return logMsg;
         }
 
-        // Find the ListView by walking the visual child tree
-        function findListView(parentItem) {
-            if (!parentItem) return null;
-            if (parentItem.count !== undefined && parentItem.contentItem !== undefined
-                    && parentItem.model !== undefined && parentItem.reuseItems !== undefined)
-                return parentItem;
-            var children = parentItem.children || [];
-            for (var i = 0; i < children.length; i++) {
-                var found = findListView(children[i]);
-                if (found) return found;
-            }
-            return null;
-        }
-
-        function makeMockLogMessage(level, name, msg, file, line, func) {
-            return {
-                level: level,
-                name: name,
-                msg: msg,
-                file: file || "test.cpp",
-                line: line || 42,
-                "function": func || "testFunc",
-                stamp: {
-                    toJSDate: function() { return new Date(2025, 0, 1, 12, 0, 0, 0); }
-                }
-            };
+        function publishLog(level, nodeName, message) {
+            return testLogPublisher.publish(createLogMessage(level, nodeName, message));
         }
 
         function init() {
-            windowRoot.context.enabled = true;
-            windowRoot.context.autoScroll = true;
-            windowRoot.context.topic = "/rosout";
-            var d = findInternalD();
-            if (d) d.clear();
+            Ros2.reset();
+            RQml.resetClipboard();
+            // Re-register the topic explicitly since reset() clears the mock state
+            Ros2.registerTopic("/rosout", "rcl_interfaces/msg/Log");
+
+            contextObj.enabled = true;
+            contextObj.autoScroll = true;
+            contextObj.topic = "/rosout";
+            pluginLoader.reload();
+            tryVerify(function() { return pluginLoader.status === Loader.Ready; }, 2000, "Loader should be ready");
+            // Wait for initial model population
+            wait(50);
         }
 
-        function test_01_plugin_loads() {
-            verify(console_ !== null, "Console plugin should load");
+        function test_plugin_loads() {
+            verify(plugin !== null, "Console plugin should load");
         }
 
-        function test_02_log_display() {
-            var sub = Ros2.findSubscription("/rosout");
-            verify(sub !== null, "Subscription for /rosout should exist");
+        function test_log_display() {
+            var listView = find("consoleListView");
+            verify(listView !== null, "Console ListView should exist");
 
-            var listView = findListView(console_);
-            verify(listView !== null, "ListView should exist");
-            var model = listView.model;
-            compare(model.count, 0, "Model should start empty after init");
-
-            sub.injectMessage(makeMockLogMessage(20, "/test_node", "Hello from test"));
-            wait(50);
-            compare(model.count, 1, "ListModel should contain one log entry after injection");
-
-            sub.injectMessage(makeMockLogMessage(30, "/test_node", "Warning message"));
-            wait(50);
-            compare(model.count, 2, "ListModel should contain two log entries");
+            publishLog(20, "/test_node", "Hello from test");
+            publishLog(30, "/test_node", "Warning message");
+            tryCompare(listView.model, "count", 2, 1000, "ListModel should contain two log entries");
         }
 
-        function test_03_log_level_filtering() {
-            var sub = Ros2.findSubscription("/rosout");
-            verify(sub !== null, "Subscription should exist");
+        function test_log_level_filtering() {
+            var listView = find("consoleListView");
+            verify(listView !== null, "Console ListView should exist");
 
-            var d = findInternalD();
-            verify(d !== null, "Internal state object should exist");
+            publishLog(10, "/node1", "Debug msg");
+            publishLog(20, "/node1", "Info msg");
+            publishLog(30, "/node1", "Warning msg");
+            publishLog(40, "/node1", "Error msg");
+            publishLog(50, "/node1", "Fatal msg");
+            tryCompare(listView.model, "count", 5, 1000, "All 5 log levels should be shown");
 
-            var listView = findListView(console_);
-            var model = listView.model;
+            // Open filter popup
+            var filterButton = find("consoleFilterButton");
+            verify(filterButton !== null, "Filter button found");
+            mouseClick(filterButton);
 
-            // All 5 levels are active by default
-            sub.injectMessage(makeMockLogMessage(10, "/node1", "Debug msg"));
-            sub.injectMessage(makeMockLogMessage(20, "/node1", "Info msg"));
-            sub.injectMessage(makeMockLogMessage(30, "/node1", "Warning msg"));
-            sub.injectMessage(makeMockLogMessage(40, "/node1", "Error msg"));
-            sub.injectMessage(makeMockLogMessage(50, "/node1", "Fatal msg"));
-            wait(50);
-            compare(model.count, 5, "All 5 log levels should be shown when no filter is active");
-            compare(d.logCount, 5, "Total log count should be 5");
+            var filterPopup = find("consoleFilterPopup");
+            tryVerify(function() { return filterPopup.visible; }, 2000, "Filter popup should be visible");
 
-            // Remove debug level (10) from filter and re-apply
-            var idx = d.filter.levels.indexOf(10);
-            if (idx !== -1) d.filter.levels.splice(idx, 1);
-            d.applyFilter();
+            var debugToggle = find("filterLevelToggle_10");
+            verify(debugToggle !== null, "Debug filter toggle found");
 
-            compare(model.count, 4, "Debug message should be filtered out");
-            compare(d.logCount, 5, "Total log count should remain 5");
+            // Toggle off Debug
+            mouseClick(debugToggle);
+            tryCompare(listView.model, "count", 4, 1000, "Debug message should be filtered out");
+
+            // Toggle back on
+            mouseClick(debugToggle);
+            tryCompare(listView.model, "count", 5, 1000, "All messages should be visible again");
         }
 
-        function test_04_enable_disable() {
-            var sub = Ros2.findSubscription("/rosout");
-            verify(sub !== null, "Subscription should exist");
+        function test_enable_disable() {
+            var listView = find("consoleListView");
+            verify(listView !== null, "Console ListView should exist");
 
-            var listView = findListView(console_);
-            var model = listView.model;
+            publishLog(20, "/node1", "Enabled msg");
+            tryCompare(listView.model, "count", 1, 1000);
 
-            // Inject while enabled — should appear
-            sub.injectMessage(makeMockLogMessage(20, "/node1", "Enabled msg"));
-            wait(50);
-            compare(model.count, 1, "Message should be added when enabled");
+            var enableToggle = find("consoleEnableToggle");
+            verify(enableToggle !== null, "Enable toggle found");
+            verify(enableToggle.checked, "Should be enabled initially");
 
-            // Disable capture
-            windowRoot.context.enabled = false;
-            wait(50);
+            // Disable
+            mouseClick(enableToggle);
+            tryCompare(enableToggle, "checked", false, 1000, "Toggle should be unchecked");
+            compare(contextObj.enabled, false, "Context enabled property should update");
 
-            sub.injectMessage(makeMockLogMessage(20, "/node1", "Should be ignored"));
-            wait(50);
-            compare(model.count, 1, "Message should NOT be added when disabled");
+            publishLog(20, "/node1", "Should be ignored");
+            wait(200);
+            compare(listView.model.count, 1, "No message added when disabled");
 
-            // Re-enable and verify new messages work
-            windowRoot.context.enabled = true;
-            sub.injectMessage(makeMockLogMessage(20, "/node1", "Re-enabled msg"));
-            wait(50);
-            compare(model.count, 2, "Message should be added after re-enabling");
+            // Enable
+            mouseClick(enableToggle);
+            tryCompare(enableToggle, "checked", true, 2000, "Toggle should be checked");
+            compare(contextObj.enabled, true, "Context enabled property should update");
+
+            publishLog(20, "/node1", "Re-enabled msg");
+            tryCompare(listView.model, "count", 2, 2000, "Message added after re-enabling");
         }
 
-        function test_05_auto_scroll_toggle() {
-            compare(windowRoot.context.autoScroll, true, "Auto-scroll should default to true");
+        function test_auto_scroll() {
+            var autoScrollCheckbox = find("consoleAutoScrollCheckbox");
+            verify(autoScrollCheckbox !== null, "Auto-scroll checkbox found");
+            verify(autoScrollCheckbox.checked, "Should be checked initially");
 
-            windowRoot.context.autoScroll = false;
-            compare(windowRoot.context.autoScroll, false, "Auto-scroll should be togglable to false");
+            // Toggle off
+            mouseClick(autoScrollCheckbox);
+            tryCompare(autoScrollCheckbox, "checked", false, 2000, "Checkbox should be unchecked");
+            compare(contextObj.autoScroll, false, "Context autoScroll should be false");
 
-            windowRoot.context.autoScroll = true;
-            compare(windowRoot.context.autoScroll, true, "Auto-scroll should be togglable back to true");
+            // Toggle on
+            mouseClick(autoScrollCheckbox);
+            tryCompare(autoScrollCheckbox, "checked", true, 2000, "Checkbox should be checked");
+            compare(contextObj.autoScroll, true, "Context autoScroll should be true");
+        }
+
+        function test_clear_button() {
+            var listView = find("consoleListView");
+            publishLog(20, "/node1", "Msg 1");
+            publishLog(30, "/node1", "Msg 2");
+            tryCompare(listView.model, "count", 2, 2000);
+
+            var clearButton = find("consoleClearButton");
+            verify(clearButton !== null, "Clear button found");
+
+            mouseClick(clearButton);
+            tryCompare(listView.model, "count", 0, 2000, "Model should be empty after clear");
+        }
+
+        function test_text_filter() {
+            var listView = find("consoleListView");
+            publishLog(20, "/node1", "Hello world");
+            publishLog(20, "/node2", "Goodbye world");
+            publishLog(20, "/node3", "Hello again");
+            tryCompare(listView.model, "count", 3, 2000);
+
+            var filterField = find("consoleFilterTextField");
+            verify(filterField !== null, "Filter field found");
+
+            // Focus and type "Hello"
+            mouseClick(filterField);
+            keyClick("H"); keyClick("e"); keyClick("l"); keyClick("l"); keyClick("o");
+            // Debounce is 300ms, it should still be 3 messages
+            wait(150)
+            compare(listView.model.count, 3, "Should still show 3 messages after 150ms");
+            // But after some more time, it should filter to 2 messages
+            tryCompare(listView.model, "count", 2, 500, "Filter should apply matching 'Hello'");
+
+            // Backspace to clear
+            for (var i = 0; i < 5; i++) {
+                keyClick(Qt.Key_Backspace);
+            }
+            tryCompare(listView.model, "count", 3, 1000, "Should show all messages after clearing filter");
+        }
+
+        function test_context_menu() {
+            var listView = find("consoleListView");
+            publishLog(20, "/my_node", "The quick brown fox");
+            tryCompare(listView.model, "count", 1, 2000);
+
+            // Force a delegate to be realized
+            listView.positionViewAtIndex(0, ListView.Beginning);
+            var delegate = null;
+            tryVerify(function() {
+                delegate = listView.itemAtIndex(0);
+                return delegate !== null;
+            }, 2000, "Delegate at index 0 should be realized");
+
+            // Copy Message
+            RQml.resetClipboard();
+            var copyMessage = helpers.findChild(delegate, "consoleCopyMessageAction");
+            verify(copyMessage, "Copy Message action found");
+            copyMessage.triggered();
+            tryCompare(RQml, "clipboard", "The quick brown fox", 1000);
+
+            // Copy Node Name
+            RQml.resetClipboard();
+            var copyNode = helpers.findChild(delegate, "consoleCopyNodeNameAction");
+            verify(copyNode, "Copy Node Name action found");
+            copyNode.triggered();
+            tryCompare(RQml, "clipboard", "/my_node", 1000);
+
+            // Copy Location
+            RQml.resetClipboard();
+            var copyLocation = helpers.findChild(delegate, "consoleCopyLocationAction");
+            verify(copyLocation, "Copy Location action found");
+            copyLocation.triggered();
+            tryCompare(RQml, "clipboard", "test.cpp:42 (testFn)", 1000);
+        }
+
+        function test_settings_dialog() {
+            // Register an alternative log topic the mock can discover.
+            Ros2.registerTopic("/other_logs", "rcl_interfaces/msg/Log");
+
+            var settingsButton = find("consoleSettingsButton");
+            verify(settingsButton, "Settings button found");
+            mouseClick(settingsButton);
+
+            var dialog = find("consoleSettingsDialog");
+            verify(dialog, "Settings dialog found");
+            tryVerify(function() { return dialog.visible; }, 2000, "Settings dialog should open");
+
+            var topicSelect = find("consoleSettingsTopicSelect");
+            verify(topicSelect, "Topic ComboBox found");
+            // The discovered topic should be listed immediately (discovery runs in Component.onCompleted).
+            tryVerify(function() {
+                var m = topicSelect.model || [];
+                return m.indexOf && m.indexOf("/rosout") !== -1;
+            }, 2000, "Rosout topic should be in initial model");
+
+            // Changing the edit text updates the plugin context.
+            topicSelect.editText = "/other_logs";
+            tryCompare(contextObj, "topic", "/other_logs", 2000,
+                "Context topic should reflect the new selection");
+
+            // Invalid topic should NOT overwrite a valid context.topic.
+            topicSelect.editText = "not_a_topic";
+            wait(50);
+            compare(contextObj.topic, "/other_logs",
+                "Invalid topic should be ignored");
+
+            // Register a new log topic AFTER the dialog opened and verify the
+            // refresh button picks it up - only the refresh should update the
+            // model, not automatic discovery.
+            Ros2.registerTopic("/late_logs", "rcl_interfaces/msg/Log");
+            var beforeRefresh = (topicSelect.model || []);
+            verify(Array.prototype.indexOf.call(beforeRefresh, "/late_logs") === -1,
+                "Model should be stale before refresh");
+
+            var refreshButton = find("consoleSettingsRefreshButton");
+            verify(refreshButton, "Refresh button found");
+            mouseClick(refreshButton);
+            tryVerify(function() {
+                var m = topicSelect.model || [];
+                return Array.prototype.indexOf.call(m, "/late_logs") !== -1;
+            }, 2000, "Refresh should include the newly-registered topic");
         }
     }
 }

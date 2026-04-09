@@ -20,6 +20,7 @@ Rectangle {
 
             FuzzySelector {
                 id: serviceSelect
+                objectName: "serviceTopicSelector"
                 Layout.fillWidth: true
                 placeholderText: qsTr("Service Topic")
                 text: context.service ?? ""
@@ -55,6 +56,7 @@ Rectangle {
             }
             FuzzySelector {
                 id: typeSelect
+                objectName: "serviceTypeSelector"
                 Layout.fillWidth: true
                 placeholderText: qsTr("Service Type")
                 text: context.type ?? ""
@@ -91,6 +93,7 @@ Rectangle {
         }
         TabBar {
             id: tabBar
+            objectName: "serviceTabBar"
             Layout.fillWidth: true
             TabButton {
                 text: qsTr("Request")
@@ -128,6 +131,7 @@ Rectangle {
                 RowLayout {
                     Layout.fillWidth: true
                     Button {
+                        objectName: "serviceResetButton"
                         enabled: !!context.type
                         implicitWidth: 120
                         text: qsTr("Reset")
@@ -142,6 +146,7 @@ Rectangle {
                     } // Spacer
 
                     Button {
+                        objectName: "serviceSendButton"
                         enabled: (d.client?.ready && !d.isActive) ?? false
                         implicitWidth: 120
                         text: qsTr("Send")
@@ -210,6 +215,7 @@ Rectangle {
             }
             Label {
                 id: statusText
+                objectName: "serviceStatusLabel"
                 Layout.fillWidth: true
                 text: {
                     if (!d.client)
@@ -224,6 +230,7 @@ Rectangle {
 
             CheckBox {
                 id: showDefaultServicesCheck
+                objectName: "showDefaultServicesCheckbox"
                 text: qsTr("Show default services")
                 checked: context.showDefaultServices ?? false
                 onCheckedChanged: {

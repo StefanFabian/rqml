@@ -26,7 +26,8 @@ TextField {
     property int decimals: 3
 
     function formatValue(v) {
-        return Number(v).toPrecision(decimals);
+        // Small trick to get fixed number of decimals without trailing zeros
+        return Number(Number(v).toFixed(decimals));
     }
 
     text: formatValue(value)

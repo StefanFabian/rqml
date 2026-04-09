@@ -77,6 +77,7 @@ Rectangle {
 
         ComboBox {
             id: namespaceCombobox
+            objectName: "jtcNamespaceComboBox"
             Layout.fillWidth: true
             model: d.controllerManagers
 
@@ -89,6 +90,7 @@ Rectangle {
 
         ComboBox {
             id: controllerComboBox
+            objectName: "jtcControllerComboBox"
             Layout.fillWidth: true
             model: d.trajectoryController.controllers
             textRole: "name"
@@ -110,6 +112,7 @@ Rectangle {
         }
 
         RefreshButton {
+            objectName: "jtcRefreshButton"
             onClicked: {
                 animate = true;
                 d.trajectoryController.refresh();
@@ -118,6 +121,8 @@ Rectangle {
         }
 
         Switch {
+            id: shortestPathSwitch
+            objectName: "jtcShortestPathSwitch"
             Layout.columnSpan: 3
             text: "Use shortest path duration for continuous joints"
             checked: context.take_shortest_path || false
@@ -126,6 +131,7 @@ Rectangle {
 
         ListView {
             id: jointListView
+            objectName: "jtcJointListView"
             Layout.columnSpan: 3
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -191,6 +197,7 @@ Rectangle {
                 Layout.fillWidth: true
                 Slider {
                     id: speedSlider
+                    objectName: "jtcSpeedSlider"
                     Layout.fillWidth: true
                     property real speed: value
                     from: 0.01
@@ -207,6 +214,7 @@ Rectangle {
                 Layout.fillWidth: true
                 Button {
                     id: resetButton
+                    objectName: "jtcResetButton"
                     Layout.fillWidth: true
                     Layout.margins: 8
                     text: "Reset"
@@ -214,6 +222,8 @@ Rectangle {
                 }
 
                 Button {
+                    id: sendButton
+                    objectName: "jtcSendButton"
                     Layout.fillWidth: true
                     Layout.margins: 8
                     text: d.trajectoryController.isGoalActive ? "Cancel" : "Send"

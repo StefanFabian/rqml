@@ -51,7 +51,7 @@ Item {
     // Whether the user can type freely. When false, only selection from the dropdown is allowed.
     property bool editable: true
 
-    // Alias for text — the string shown in the edit field.
+    // Alias for text - the string shown in the edit field.
     property alias editText: control.text
 
     // Returns a score >= 0 when str matches pattern as a fuzzy subsequence, -1 otherwise.
@@ -80,23 +80,35 @@ Item {
         return pi === p.length ? score : -1;
     }
 
+    // Internal state to show all items (browse mode) instead of just filtered ones.
+    property bool _showAll: false
+
     // Filtered and sorted subset of model based on the current text.
     readonly property var filteredItems: {
         const pattern = control.text;
         const items = control.model || [];
         if (!pattern)
             return items.slice().sort();
-        const scored = [];
+        const matches = [];
+        const others = [];
         for (const item of items) {
             const s = control.fuzzyScore(item, pattern);
-            if (s >= 0)
-                scored.push({
+            if (s >= 0) {
+                matches.push({
                     item,
                     s
                 });
+            } else if (control._showAll) {
+                others.push(item);
+            }
         }
-        scored.sort((a, b) => b.s - a.s);
-        return scored.map(x => x.item);
+        matches.sort((a, b) => b.s - a.s);
+        const result = matches.map(x => x.item);
+        if (control._showAll) {
+            others.sort();
+            return result.concat(others);
+        }
+        return result;
     }
 
     // When currentIndex is set programmatically, update text to match.
@@ -157,6 +169,7 @@ Item {
                     if (popup.visible) {
                         popup.close();
                     } else {
+                        control._showAll = true;
                         field.forceActiveFocus();
                         popup.open();
                     }
@@ -167,6 +180,7 @@ Item {
         onTextEdited: {
             if (!control.editable)
                 return;
+            control._showAll = false;
             control.text = text;
             if (!popup.visible && control.filteredItems.length > 0)
                 popup.open();
@@ -176,6 +190,7 @@ Item {
         Keys.onDownPressed: function (event) {
             if (!control.editable) return
             if (!popup.visible) {
+                control._showAll = true;
                 if (control.filteredItems.length > 0)
                     popup.open();
             } else {
@@ -223,6 +238,7 @@ Item {
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
         onOpened: listView.currentIndex = -1
+        onClosed: control._showAll = false
 
         contentItem: ListView {
             id: listView

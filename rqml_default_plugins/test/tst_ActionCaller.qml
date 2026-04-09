@@ -15,158 +15,281 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import QtQuick 2.15
-import QtTest 1.15
-import "../qml" as PluginQml
+import QtQuick
+import QtQuick.Controls
+import QtTest
 import Ros2
 
 Item {
-    id: windowRoot
-    width: 800
-    height: 600
+    id: root
+    width: 1024; height: 768
 
-    property var context: ({
-        topic: "",
-        type: "",
-        request: null
-    })
-
-    PluginQml.ActionCaller {
-        id: actionCaller
-        anchors.fill: parent
+    property var context: contextObj
+    QtObject {
+        id: contextObj
+        property string topic: ""
+        property string type: ""
+        property var request: null
     }
 
+    Utils { id: helpers }
+
+    Loader {
+        id: pluginLoader
+        anchors.fill: parent
+        function reload() { source = ""; source = "../qml/ActionCaller.qml"; }
+    }
+
+    property var plugin: pluginLoader.item
+
+    function find(name) { return helpers.findChild(root, name); }
+
     TestCase {
+        id: testCase
         name: "ActionCallerTest"
         when: windowShown
 
+        property var lastCallbacks: null
+
         function init() {
             Ros2.reset();
-            Ros2._mockActions = ["/test_action", "/another_action"];
-            Ros2._mockTypeMap["/test_action"] = ["example_interfaces/action/Fibonacci"];
-            Ros2._mockTypeMap["/another_action"] = ["nav2_msgs/action/NavigateToPose"];
-        }
+            contextObj.topic = "";
+            contextObj.type = "";
+            contextObj.request = null;
+            lastCallbacks = null;
 
-        function findChildByProperty(parentItem, propName, propValue) {
-            if (!parentItem) return null;
-            if (parentItem[propName] === propValue) return parentItem;
-            var children = parentItem.children || [];
-            if (parentItem.contentItem) children = parentItem.contentItem.children;
-            for (var i = 0; i < children.length; i++) {
-                var found = findChildByProperty(children[i], propName, propValue);
-                if (found) return found;
-            }
-            return null;
-        }
-
-        function test_01_plugin_loads() {
-            verify(actionCaller !== null, "ActionCaller plugin should load");
-        }
-
-        function test_02_action_discovery() {
-            var actions = Ros2.queryActions();
-            compare(actions.length, 2, "Should discover 2 mock actions");
-            verify(actions.indexOf("/test_action") !== -1, "Should contain /test_action");
-        }
-
-        function test_03_type_resolution() {
-            var topicSelector = findChildByProperty(actionCaller, "placeholderText", "Action Topic");
-            verify(topicSelector !== null, "Action FuzzySelector should be found");
-            topicSelector.text = "/test_action";
-
-            var typeSelector = findChildByProperty(actionCaller, "placeholderText", "Action Type");
-            verify(typeSelector !== null, "Type FuzzySelector should be found");
-            tryCompare(typeSelector, "text", "example_interfaces/action/Fibonacci", 1000,
-                "Type should be automatically updated to Fibonacci");
-            compare(windowRoot.context.type, "example_interfaces/action/Fibonacci", "context.type should be updated");
-
-            // Change to another action
-            topicSelector.text = "/another_action";
-            tryCompare(typeSelector, "text", "nav2_msgs/action/NavigateToPose", 1000,
-                "Type should be automatically updated to NavigateToPose");
-            compare(windowRoot.context.type, "nav2_msgs/action/NavigateToPose", "context.type should be updated");
-
-            // Clear topic
-            topicSelector.text = "";
-            tryCompare(typeSelector, "text", "nav2_msgs/action/NavigateToPose", 1000,
-                "Type should NOT be cleared when topic is cleared");
-            compare(windowRoot.context.type, "nav2_msgs/action/NavigateToPose", "context.type should remain");
-        }
-
-        function test_04_empty_goal_creation() {
-            var goal = Ros2.createEmptyActionGoal("example_interfaces/action/Fibonacci");
-            verify(goal !== null, "Goal should be created");
-            compare(goal["#messageType"], "example_interfaces/action/Fibonacci_Goal");
-            compare(goal.order, 0, "Default order should be 0");
-        }
-
-        function test_05_action_client_goal_flow() {
-            Ros2._mockActionFlow = {
-                goalHandle: { goalId: "test-goal-1", status: ActionGoalStatus.Accepted, isActive: true },
-                feedbacks: [
-                    { partial_sequence: [0, 1, 1] },
-                    { partial_sequence: [0, 1, 1, 2] }
-                ],
-                result: {
-                    code: ActionResultCode.SUCCEEDED,
-                    result: { sequence: [0, 1, 1, 2, 3, 5] }
-                }
-            };
-
-            var client = Ros2.createActionClient("/test_action", "example_interfaces/action/Fibonacci");
-            verify(client !== null, "Action client should be created");
-            verify(client.ready, "Action client should be ready");
-
-            var goalReceived = false;
-            var feedbackCount = 0;
-            var resultReceived = false;
-            var finalResult = null;
-
-            client.sendGoalAsync({ order: 5 }, {
-                onGoalResponse: function(goalHandle) {
-                    goalReceived = true;
-                    verify(goalHandle !== null, "Goal should be accepted");
-                    compare(goalHandle.goalId, "test-goal-1");
-                },
-                onFeedback: function(goalHandle, feedback) {
-                    feedbackCount++;
-                    verify(feedback.partial_sequence !== undefined, "Feedback should have partial_sequence");
-                },
-                onResult: function(result) {
-                    resultReceived = true;
-                    finalResult = result;
-                }
+            // Register a mock action
+            Ros2.registerAction("/test_action", "tf2_msgs/action/LookupTransform", function(goal, callbacks) {
+                lastCallbacks = callbacks;
+                // Test drive the flow from the test case
             });
 
-            tryVerify(function() { return resultReceived; }, 1000,
-                "Result should be received");
-            verify(goalReceived, "Goal response should be received");
-            compare(feedbackCount, 2, "Should receive 2 feedback messages");
-            compare(finalResult.code, ActionResultCode.SUCCEEDED, "Result code should be SUCCEEDED");
+            pluginLoader.reload();
+            tryVerify(function() { return pluginLoader.status === Loader.Ready; });
+
+            // Wait for discovery
+            tryVerify(function() {
+                var selector = find("actionTopicSelector");
+                return selector && (selector.model || []).indexOf("/test_action") !== -1;
+            }, 5000);
         }
 
-        function test_06_cancel_goals() {
-            Ros2._lastActionCancelled = false;
-            var client = Ros2.createActionClient("/test_action", "example_interfaces/action/Fibonacci");
-            client.cancelAllGoals();
-            verify(Ros2._lastActionCancelled, "cancelAllGoals should have been called");
+        function test_discovery() {
+            var topicSelector = find("actionTopicSelector");
+            mouseClick(topicSelector);
+            var fullName = "/test_action";
+            for (var i = 0; i < fullName.length; ++i) keyClick(fullName[i]);
+            keyClick(Qt.Key_Enter);
+
+            tryVerify(function() { return contextObj.topic === "/test_action"; }, 5000);
+
+            var typeSelector = find("actionTypeSelector");
+            tryVerify(function() {
+                return typeSelector.text === "tf2_msgs/action/LookupTransform";
+            }, 5000);
         }
 
-        function test_07_action_goal_status_enum() {
-            compare(ActionGoalStatus.Unknown, 0);
-            compare(ActionGoalStatus.Accepted, 1);
-            compare(ActionGoalStatus.Executing, 2);
-            compare(ActionGoalStatus.Canceling, 3);
-            compare(ActionGoalStatus.Succeeded, 4);
-            compare(ActionGoalStatus.Canceled, 5);
-            compare(ActionGoalStatus.Aborted, 6);
+        function test_goal_execution() {
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
+
+            var sendButton = find("actionSendCancelButton");
+            tryVerify(function() { return sendButton.enabled; }, 5000);
+
+            mouseClick(sendButton);
+
+            // Wait for mock to receive goal
+            tryVerify(function() { return lastCallbacks !== null; }, 2000);
+
+            // 1. Accept goal
+            var handle = Ros2.createGoalHandle("goal_123");
+            handle.setStatus(1); // Executing
+            lastCallbacks.onGoalResponse(handle);
+
+            var statusLabel = find("actionStatusLabel");
+            tryCompare(statusLabel, "text", "Processing goal.", 2000);
+            compare(sendButton.text, "Cancel");
+
+            // 2. Send feedback
+            var feedback = Ros2.createEmptyActionFeedback("tf2_msgs/action/LookupTransform");
+            lastCallbacks.onFeedback(handle, feedback);
+
+            var feedbackList = find("actionFeedbackList");
+            tryVerify(function() { return feedbackList.count === 1; }, 2000);
+
+            // 3. Send result
+            handle.setStatus(4); // Succeeded
+            var result = Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform");
+            lastCallbacks.onResult({ status: 4, result: result });
+
+            var tabBar = find("actionTabBar");
+            tryCompare(tabBar, "currentIndex", 2, 2000); // Result tab
+            tryCompare(statusLabel, "text", "Ready", 2000);
         }
 
-        function test_08_action_result_code_enum() {
-            compare(ActionResultCode.UNKNOWN, 0);
-            compare(ActionResultCode.SUCCEEDED, 1);
-            compare(ActionResultCode.CANCELED, 2);
-            compare(ActionResultCode.ABORTED, 3);
+        function test_topic_refresh() {
+            var selector = find("actionTopicSelector");
+            verify(selector);
+            verify((selector.model || []).indexOf("/test_action") !== -1);
+            // Register an additional action after the plugin was loaded; the
+            // model should be stale until the refresh button is pressed.
+            Ros2.registerAction("/second_action", "tf2_msgs/action/LookupTransform",
+                function(goal, callbacks) {});
+            verify((selector.model || []).indexOf("/second_action") === -1);
+
+            var btn = find("actionTopicRefreshButton");
+            verify(btn);
+            mouseClick(btn);
+            tryVerify(function() {
+                return (selector.model || []).indexOf("/second_action") !== -1;
+            }, 2000);
+        }
+
+        function test_type_refresh() {
+            // Set topic via context + reload so typeSelect.refresh runs on
+            // Component.onCompleted. (Setting context.topic post-load doesn't
+            // propagate: the topicSelect.onTextChanged handler early-returns
+            // when the new text already matches context.topic.)
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            pluginLoader.reload();
+            tryVerify(function() { return pluginLoader.status === Loader.Ready; });
+
+            var typeSelector = find("actionTypeSelector");
+            verify(typeSelector);
+            tryVerify(function() {
+                return (typeSelector.model || []).indexOf("tf2_msgs/action/LookupTransform") !== -1;
+            }, 2000);
+            // Register a second type under the same action name; refresh
+            // should pull it into the selector's model.
+            Ros2.registerAction("/test_action", "action_tutorials_interfaces/action/Fibonacci",
+                function(goal, callbacks) {});
+            verify((typeSelector.model || []).indexOf(
+                "action_tutorials_interfaces/action/Fibonacci") === -1);
+
+            var btn = find("actionTypeRefreshButton");
+            verify(btn);
+            mouseClick(btn);
+            tryVerify(function() {
+                return (typeSelector.model || []).indexOf(
+                    "action_tutorials_interfaces/action/Fibonacci") !== -1;
+            }, 2000);
+        }
+
+        function test_request_editing() {
+            // Pre-populate context.request with a marker value; the editor
+            // must adopt it on load (this is how persisted state survives a
+            // reload).
+            var preset = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            contextObj.request = preset;
+            pluginLoader.reload();
+            tryVerify(function() { return pluginLoader.status === Loader.Ready; });
+
+            var editor = find("actionRequestEditor");
+            verify(editor);
+            tryVerify(function() {
+                return editor.model && editor.model.message
+                    && editor.model.message["#messageType"]
+                        === "tf2_msgs/action/LookupTransform_Goal";
+            }, 2000);
+            // Editor is not readonly, so it can be used for composing the goal.
+            verify(editor.readonly === false);
+
+            // Changing the type must swap the editor's model to an empty goal
+            // of the new type (i.e. composing starts fresh for the new type).
+            contextObj.type = "";
+            contextObj.request = null;
+            var typeSelector = find("actionTypeSelector");
+            verify(typeSelector);
+            typeSelector.text = "tf2_msgs/action/LookupTransform";
+            tryVerify(function() {
+                return editor.model && editor.model.message
+                    && editor.model.message["#messageType"]
+                        === "tf2_msgs/action/LookupTransform_Goal";
+            }, 2000);
+        }
+
+        function test_feedback_selection() {
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            contextObj.request = Ros2.createEmptyActionGoal(
+                "tf2_msgs/action/LookupTransform");
+
+            var sendButton = find("actionSendCancelButton");
+            tryVerify(function() { return sendButton.enabled; }, 5000);
+            mouseClick(sendButton);
+            tryVerify(function() { return lastCallbacks !== null; }, 2000);
+
+            var handle = Ros2.createGoalHandle("goal_fb");
+            handle.setStatus(1);
+            lastCallbacks.onGoalResponse(handle);
+
+            var fb0 = Ros2.createEmptyActionFeedback("tf2_msgs/action/LookupTransform");
+            var fb1 = Ros2.createEmptyActionFeedback("tf2_msgs/action/LookupTransform");
+            var fb2 = Ros2.createEmptyActionFeedback("tf2_msgs/action/LookupTransform");
+            lastCallbacks.onFeedback(handle, fb0);
+            lastCallbacks.onFeedback(handle, fb1);
+            lastCallbacks.onFeedback(handle, fb2);
+
+            var feedbackList = find("actionFeedbackList");
+            tryVerify(function() { return feedbackList.count === 3; }, 2000);
+            // Auto-follow puts the selection at the latest message.
+            tryCompare(feedbackList, "currentIndex", 2, 2000);
+
+            var feedbackEditor = find("actionFeedbackEditor");
+            verify(feedbackEditor);
+            verify(feedbackEditor.readonly);
+
+            // Clicking an older delegate must select it - exercising the
+            // delegate's onClicked handler, not just the ListView API.
+            feedbackList.positionViewAtIndex(0, ListView.Beginning);
+            var delegate0 = feedbackList.itemAtIndex(0);
+            verify(delegate0);
+            mouseClick(delegate0);
+            tryCompare(feedbackList, "currentIndex", 0, 2000);
+
+            // The detail editor must be tracking the list's current item.
+            tryVerify(function() {
+                return feedbackEditor.model
+                    && feedbackEditor.model.message != null;
+            }, 2000);
+
+            // Switching selection updates the currentItem reference - the
+            // binding in the editor's model re-evaluates accordingly.
+            var item0 = feedbackList.currentItem;
+            feedbackList.currentIndex = 2;
+            tryVerify(function() {
+                return feedbackList.currentItem
+                    && feedbackList.currentItem !== item0
+                    && feedbackEditor.model
+                    && feedbackEditor.model.message != null;
+            }, 2000);
+        }
+
+        function test_goal_cancellation() {
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            contextObj.request = Ros2.createEmptyActionGoal(
+                "tf2_msgs/action/LookupTransform");
+
+            var sendButton = find("actionSendCancelButton");
+            tryVerify(function() { return sendButton.enabled; }, 5000);
+            mouseClick(sendButton);
+            tryVerify(function() { return lastCallbacks !== null; }, 2000);
+
+            var handle = Ros2.createGoalHandle("goal_cancel");
+            handle.setStatus(1); // Accepted/Executing → active
+            lastCallbacks.onGoalResponse(handle);
+
+            // Button flips to Cancel once a goal is active.
+            tryCompare(sendButton, "text", "Cancel", 2000);
+            compare(Ros2._lastActionCancelled, false);
+
+            mouseClick(sendButton);
+            tryVerify(function() { return Ros2._lastActionCancelled === true; }, 2000);
         }
     }
 }

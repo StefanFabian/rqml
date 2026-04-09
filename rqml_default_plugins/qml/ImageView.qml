@@ -21,13 +21,12 @@ Rectangle {
         RowLayout {
             FuzzySelector {
                 id: topicSelect
+                objectName: "imageTopicSelector"
                 Layout.fillWidth: true
                 placeholderText: qsTr("Image Topic")
                 text: context.topic ?? ""
                 onTextChanged: {
                     if (text === context.topic)
-                        return;
-                    if (!Ros2.isValidTopic(text))
                         return;
                     context.topic = text;
                 }
@@ -56,6 +55,7 @@ Rectangle {
             }
             IconToggleButton {
                 id: playButton
+                objectName: "imagePlayButton"
                 checked: context.enabled ?? true
                 onToggled: {
                     if (context.enabled === checked)
@@ -69,6 +69,7 @@ Rectangle {
             }
             IconButton {
                 id: saveButton
+                objectName: "imageSaveButton"
                 tooltipText: qsTr("Save Image")
                 text: IconFont.iconSave
                 onClicked: fileDialog.saveImage()
@@ -80,6 +81,7 @@ Rectangle {
             RowLayout {
                 visible: !imageSubscriber.isColor
                 CheckBox {
+                    objectName: "imageInvertCheckbox"
                     text: qsTr("Invert")
                     checked: context.invert ?? false
                     onToggled: {
@@ -87,6 +89,7 @@ Rectangle {
                     }
                 }
                 CheckBox {
+                    objectName: "imageColorizeCheckbox"
                     text: qsTr("Colorize")
                     checked: context.colorize ?? false
                     onToggled: {
@@ -94,6 +97,7 @@ Rectangle {
                     }
                 }
                 DecimalSpinBox {
+                    objectName: "imageDepthSpinBox"
                     visible: d.isDepthCamera(imageSubscriber.encoding)
                     implicitWidth: 132
                     from: 0.0
@@ -113,17 +117,20 @@ Rectangle {
             }
 
             IconButton {
+                objectName: "imageRotateLeftButton"
                 text: IconFont.iconRotateLeft
                 tooltipText: qsTr("Rotate Left")
                 onClicked: context.rotation = ((context.rotation ?? 0) - 90 + 360) % 360
             }
             Label {
+                objectName: "imageRotationLabel"
                 Layout.preferredWidth: 48
                 text: (context.rotation ?? 0) + "°"
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
             IconButton {
+                objectName: "imageRotateRightButton"
                 text: IconFont.iconRotateRight
                 tooltipText: qsTr("Rotate Right")
                 onClicked: context.rotation = ((context.rotation ?? 0) + 90) % 360
@@ -186,11 +193,11 @@ Rectangle {
 
             ImageTransportSubscription {
                 id: imageSubscriber
-                topic: d.extractTopic(context.topic ?? "")
-                defaultTransport: d.extractTransport(context.topic ?? "")
+                topic: d.topicInformation?.topic ?? ""
+                defaultTransport: d.topicInformation?.transport ?? "raw"
                 enabled: context.enabled ?? true
                 videoSink: depthProcessor.videoSink
-                timeout: 0
+                timeout: 3000
             }
         }
 
@@ -216,32 +223,30 @@ Rectangle {
 
     QtObject {
         id: d
-        property bool isRawTopic: {
+        property int _recheckTrigger: 0
+        property var topicInformation: {
+            _recheckTrigger;
             if (!context.topic || !Ros2.isValidTopic(context.topic))
-                return true;
-            let types = Ros2.queryTopicTypes(context.topic);
-            if (types.indexOf("sensor_msgs/msg/Image") != -1)
-                return true;
-            return context.topic.endsWith("/image_raw");
-        }
-        function extractTopic(fullTopic) {
-            if (!Ros2.isValidTopic(fullTopic))
-                return "";
-            if (d.isRawTopic)
-                return fullTopic;
-            const parts = fullTopic.split("/");
+                return {};
+            const types = Ros2.queryTopicTypes(context.topic);
+            if (types.length == 0)
+                return {};
+            const isRaw = types.indexOf("sensor_msgs/msg/Image") != -1 || context.topic.endsWith("/image_raw");
+            if (isRaw) {
+                return {
+                    topic: context.topic,
+                    transport: "raw"
+                }
+            }
+            const parts = context.topic.split("/");
             if (parts.length < 2)
-                return fullTopic;
-            return parts.slice(0, parts.length - 1).join("/");
-        }
-
-        function extractTransport(fullTopic) {
-            if (d.isRawTopic)
-                return "raw";
-            const parts = fullTopic.split("/");
-            if (parts.length < 2)
-                return "raw";
-            return parts[parts.length - 1];
+                return {topic: context.topic, transport: "raw"};
+            const topic = parts.slice(0, parts.length - 1).join("/");
+            const transport = parts[parts.length - 1];
+            return {
+                topic: topic,
+                transport: transport
+            };
         }
 
         function isDepthCamera(encoding) {
@@ -249,8 +254,18 @@ Rectangle {
         }
     }
 
+    Timer {
+        interval: 500
+        repeat: true
+        running: imageSubscriber.enabled && !imageSubscriber.subscribed
+        onTriggered: {
+            d._recheckTrigger++;
+        }
+    }
+
     FileDialog {
         id: fileDialog
+        objectName: "imageSaveFileDialog"
         title: qsTr("Save Image")
         fileMode: FileDialog.SaveFile
         defaultSuffix: "png"

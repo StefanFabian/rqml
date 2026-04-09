@@ -3,7 +3,6 @@
  *
  * This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
  *  This program is distributed in the hope that it will be useful,
@@ -15,104 +14,161 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import QtQuick 2.15
-import QtTest 1.15
-import "../qml" as PluginQml
+import QtQuick
+import QtTest
 import Ros2
 
 Item {
-    id: windowRoot
-    width: 800
-    height: 600
+    id: root
+    width: 1024; height: 768
 
-    property var context: ({
-        messages: undefined
-    })
+    property var context: contextObj
+    QtObject {
+        id: contextObj
+        property var messages: []
+    }
 
-    PluginQml.MessagePublisher {
-        id: messagePublisher
+    Utils { id: helpers }
+
+    Loader {
+        id: pluginLoader
         anchors.fill: parent
+        function reload() { source = ""; source = "../qml/MessagePublisher.qml"; }
+    }
+
+    property var plugin: pluginLoader.item
+
+    function find(name) { return helpers.findChild(root, name); }
+
+    property var lastMessage: null
+    property int messageCount: 0
+    Subscription {
+        id: testSub
+        topic: "/test_topic"
+        messageType: "std_msgs/msg/String"
+        onNewMessage: (msg) => {
+            lastMessage = msg;
+            messageCount++;
+        }
     }
 
     TestCase {
+        id: testCase
         name: "MessagePublisherTest"
         when: windowShown
 
         function init() {
             Ros2.reset();
-            Ros2._mockTopics[""] = ["/chatter", "/cmd_vel"];
-            Ros2._mockTypeMap["/chatter"] = ["std_msgs/msg/String"];
-            Ros2._mockTypeMap["/cmd_vel"] = ["geometry_msgs/msg/Twist"];
+            Ros2._registerSubscription(testSub);
+            Ros2.registerTopic("/test_topic", "std_msgs/msg/String");
 
+            contextObj.messages = [];
+            messageCount = 0;
+            lastMessage = null;
+
+            pluginLoader.reload();
+            tryVerify(function() { return pluginLoader.status === Loader.Ready; }, 2000, "Loader should be ready");
+            wait(200);
         }
 
-        function test_01_plugin_loads() {
-            verify(messagePublisher !== null, "MessagePublisher plugin should load");
+        function test_plugin_loads() {
+            verify(plugin !== null, "MessagePublisher plugin should load");
         }
 
-        function test_02_topic_query() {
-            var topics = Ros2.queryTopics();
-            compare(topics.length, 2, "Should find 2 topics");
-            verify(topics.indexOf("/chatter") !== -1, "Should contain /chatter");
-            verify(topics.indexOf("/cmd_vel") !== -1, "Should contain /cmd_vel");
+        function test_add_and_publish_flow() {
+            var topicSelector = find("publisherTopicSelector");
+            var typeSelector = find("publisherTypeSelector");
+            var addButton = find("addMessageButton");
+            var listView = find("messagesListView");
+
+            verify(topicSelector !== null);
+            verify(typeSelector !== null);
+            verify(addButton !== null);
+            verify(listView !== null);
+
+            // 1. Add a message entry
+            topicSelector.text = "/test_topic";
+            typeSelector.text = "std_msgs/msg/String";
+
+            mouseClick(addButton);
+            tryCompare(listView, "count", 1, 2000, "Should have 1 message in list");
+
+            // 2. Wait for delegate to be instantiated and find it
+            var enabledCheckBox = null;
+            tryVerify(function() {
+                enabledCheckBox = find("enabledCheckBox_0");
+                return enabledCheckBox !== null;
+            }, 3000, "Enabled checkbox for row 0 should exist");
+
+            compare(enabledCheckBox.checked, false, "Should be disabled initially");
+
+            mouseClick(enabledCheckBox);
+            tryCompare(enabledCheckBox, "checked", true, 2000, "Checkbox should be checked after click");
+
+            // 3. Verify publication
+            tryVerify(function() { return messageCount > 0; }, 5000, "Should receive published messages");
+            verify(lastMessage !== null, "Received message should not be null");
+
+            // 4. Disable and verify it stops
+            mouseClick(enabledCheckBox);
+            tryCompare(enabledCheckBox, "checked", false, 2000, "Checkbox should be unchecked after second click");
+
+            var countAtDisable = messageCount;
+            wait(500);
+            compare(messageCount, countAtDisable, "Publication should have stopped");
         }
 
-        function test_03_type_query() {
-            var types = Ros2.getTopicTypes("/chatter");
-            compare(types.length, 1, "Should find 1 type for /chatter");
-            compare(types[0], "std_msgs/msg/String", "Type should be String");
+        function test_update_rate() {
+            var addButton = find("addMessageButton");
+            var listView = find("messagesListView");
+
+            find("publisherTopicSelector").text = "/test_topic";
+            find("publisherTypeSelector").text = "std_msgs/msg/String";
+            mouseClick(addButton);
+
+            tryCompare(listView, "count", 1, 2000);
+
+            var enabledCheckBox = null;
+            var rateSpinBox = null;
+            tryVerify(function() {
+                enabledCheckBox = find("enabledCheckBox_0");
+                rateSpinBox = find("rateSpinBox_0");
+                return enabledCheckBox !== null && rateSpinBox !== null;
+            }, 3000, "Controls for row 0 should exist");
+
+            mouseClick(enabledCheckBox);
+            tryVerify(function() { return messageCount > 0; }, 3000);
+
+            // Change rate and verify timing.
+            // 20 Hz target, sampled over 2s after a 500ms settle, ±25% tolerance
+            // (offscreen QPA + loaded CI can wobble timer cadence).
+            rateSpinBox.value = 20;
+            wait(500);
+            var startCount = messageCount;
+            wait(2000);
+            var observed = messageCount - startCount;
+            verify(observed >= 30 && observed <= 50,
+                   "Expected ~40 messages over 2s at 20Hz (±25%), got " + observed);
         }
 
-        function test_04_empty_message_creation() {
-            var msg = Ros2.createEmptyMessage("std_msgs/msg/String");
-            verify(msg !== null, "Empty message should be created");
-            compare(msg["#messageType"], "std_msgs/msg/String");
-            compare(msg.data, "", "Default string data should be empty");
-        }
+        function test_delete_message() {
+            var addButton = find("addMessageButton");
+            var listView = find("messagesListView");
 
-        function test_05_add_message_entry() {
-            wait(50);
-            // Ensure messages is initialized
-            if (context.messages === undefined) context.messages = [];
-            var initialLength = context.messages.length;
+            find("publisherTopicSelector").text = "/test_topic";
+            find("publisherTypeSelector").text = "std_msgs/msg/String";
+            mouseClick(addButton);
+            tryCompare(listView, "count", 1, 2000);
 
-            messagePublisher.addMessageEntry("/chatter", "std_msgs/msg/String", 1);
-            wait(50);
+            var deleteButton = null;
+            tryVerify(function() {
+                deleteButton = find("deleteButton_0");
+                return deleteButton !== null;
+            }, 3000, "Delete button for row 0 should exist");
 
-            compare(context.messages.length, initialLength + 1, "Should have one more message entry");
-            var entry = context.messages[context.messages.length - 1];
-            compare(entry.topic, "/chatter", "Entry topic should match");
-            compare(entry.type, "std_msgs/msg/String", "Entry type should match");
-            compare(entry.enabled, false, "Entry should start disabled");
-            compare(entry.rate, 1, "Entry rate should be 1 Hz");
-        }
-
-        function test_06_remove_message_entry() {
-            wait(50);
-            if (context.messages === undefined) context.messages = [];
-            messagePublisher.addMessageEntry("/chatter", "std_msgs/msg/String", 1);
-            wait(50);
-            var countBefore = context.messages.length;
-
-            messagePublisher.removeEntry(countBefore - 1);
-            wait(50);
-
-            compare(context.messages.length, countBefore - 1, "Should have one less entry after removal");
-        }
-
-        function test_07_publisher_records_messages() {
-            var publisher = Ros2.createPublisher("/chatter", "std_msgs/msg/String", 10);
-            publisher.publish({ data: "hello" });
-            publisher.publish({ data: "world" });
-
-            compare(Ros2.publishedMessages.length, 2, "Should have recorded 2 published messages");
-            compare(Ros2.publishedMessages[0].message.data, "hello");
-            compare(Ros2.publishedMessages[1].message.data, "world");
-        }
-
-        function test_08_topic_validation() {
-            verify(Ros2.isValidTopic("/chatter"), "/chatter should be valid");
-            verify(!Ros2.isValidTopic("chatter"), "No leading slash should be invalid");
+            mouseClick(deleteButton);
+            tryCompare(listView, "count", 0, 2000, "Message should be removed from list");
+            compare(contextObj.messages.length, 0, "Context messages array should be empty");
         }
     }
 }

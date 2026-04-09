@@ -69,6 +69,7 @@ Rectangle {
 
             FuzzySelector {
                 id: topicSelect
+                objectName: "publisherTopicSelector"
                 Layout.fillWidth: true
                 placeholderText: qsTr("Topic")
                 onTextChanged: typeSelect.refresh()
@@ -88,6 +89,7 @@ Rectangle {
 
             FuzzySelector {
                 id: typeSelect
+                objectName: "publisherTypeSelector"
                 Layout.fillWidth: true
                 placeholderText: qsTr("Message Type")
                 function refresh() {
@@ -105,6 +107,7 @@ Rectangle {
             }
 
             Button {
+                objectName: "addMessageButton"
                 text: "Add Message"
                 onClicked: root.addMessageEntry(topicSelect.text, typeSelect.text, 1)
                 enabled: Ros2.isValidTopic(topicSelect.text)
@@ -112,6 +115,7 @@ Rectangle {
         }
         ListView {
             id: messagesListView
+            objectName: "messagesListView"
             Layout.fillWidth: true
             Layout.fillHeight: true
             model: messagesListModel
@@ -134,6 +138,7 @@ Rectangle {
 
                     CheckBox {
                         id: enabledCheckBox
+                        objectName: "enabledCheckBox_" + model.index
                         Layout.rowSpan: 2
                         checked: model.enabled
                         onCheckedChanged: {
@@ -171,6 +176,7 @@ Rectangle {
                     }
                     DecimalSpinBox {
                         id: rateSpinBox
+                        objectName: "rateSpinBox_" + model.index
                         implicitWidth: 128
                         to: 999
                         editable: true
@@ -199,6 +205,7 @@ Rectangle {
                     }
 
                     Button {
+                        objectName: "deleteButton_" + model.index
                         Layout.alignment: Qt.AlignHCenter
                         implicitWidth: 48
                         implicitHeight: 48

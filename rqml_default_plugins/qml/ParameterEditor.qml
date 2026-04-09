@@ -290,6 +290,7 @@ Rectangle {
                     spacing: 8
 
                     IconButton {
+                        objectName: "rowExpandButton_" + modelData.fullPath
                         Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
                         flat: true
                         text: modelData.expanded ? IconFont.iconChevronDown : IconFont.iconChevronRight
@@ -368,6 +369,7 @@ Rectangle {
                     }
 
                     IconButton {
+                        objectName: "saveParamsButton_" + (modelData.fullPath || modelData.nodeName || "")
                         Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
                         flat: true
                         text: IconFont.iconSave
@@ -381,6 +383,7 @@ Rectangle {
                     }
 
                     IconButton {
+                        objectName: "loadParamsButton_" + (modelData.fullPath || modelData.nodeName || "")
                         Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
                         flat: true
                         text: IconFont.iconLoad
@@ -397,6 +400,7 @@ Rectangle {
                         Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
                         flat: true
                         text: IconFont.iconStar
+                        objectName: "rowStarButton_" + modelData.fullPath
                         visible: modelData.rowType !== "loading"
                         opacity: modelData.starred ? 1.0 : (hovered ? 0.7 : 0.2)
                         onClicked: {
@@ -431,6 +435,7 @@ Rectangle {
             Layout.fillWidth: true
 
             Button {
+                objectName: "loadAllButton"
                 text: qsTr("Load All")
                 onClicked: {
                     for (let i = 0; i < ParameterService.nodes.length; ++i) {

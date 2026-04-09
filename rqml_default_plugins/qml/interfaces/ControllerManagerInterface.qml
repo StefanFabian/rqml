@@ -11,10 +11,29 @@ Object {
     readonly property bool loading: d.loadingControllers || d.loadingHardwareComponents
 
     onControllerManagerChanged: {
+        var cmText = root.controllerManager;
+        var valid = (cmText.length > 0);
+
+        if (valid) {
+            d.controllerServiceClient = Ros2.createServiceClient(cmText + "/list_controllers", "controller_manager_msgs/srv/ListControllers");
+            d.parametersServiceClient = Ros2.createServiceClient(cmText + "/list_parameters", "rcl_interfaces/srv/ListParameters");
+            d.componentsServiceClient = Ros2.createServiceClient(cmText + "/list_hardware_components", "controller_manager_msgs/srv/ListHardwareComponents");
+            d.setComponentStateServiceClient = Ros2.createServiceClient(cmText + "/set_hardware_component_state", "controller_manager_msgs/srv/SetHardwareComponentState");
+            activitySub.topic = cmText + "/activity";
+            d.controllerTransitionServiceClients = {}; // Clear old clients
+        } else {
+            d.controllerServiceClient = null;
+            d.parametersServiceClient = null;
+            d.componentsServiceClient = null;
+            d.setComponentStateServiceClient = null;
+            activitySub.topic = "";
+        }
+
         root.refresh();
     }
 
     function refresh() {
+        if (!root.controllerManager || !d.controllerServiceClient) return;
         root.loadControllers();
         root.loadHardwareComponents();
     }
@@ -220,14 +239,15 @@ Object {
 
         property bool loadingControllers: false
         property bool loadingHardwareComponents: false
-        property var controllerServiceClient: Ros2.createServiceClient(controllerManager + "/list_controllers", "controller_manager_msgs/srv/ListControllers")
-        property var parametersServiceClient: Ros2.createServiceClient(root.controllerManager + "/list_parameters", "rcl_interfaces/srv/ListParameters")
+        property var controllerServiceClient: null
+        property var parametersServiceClient: null
         property var controllerTransitionServiceClients: ({})
-        property var componentsServiceClient: Ros2.createServiceClient(root.controllerManager + "/list_hardware_components", "controller_manager_msgs/srv/ListHardwareComponents")
-        property var setComponentStateServiceClient: Ros2.createServiceClient(root.controllerManager + "/set_hardware_component_state", "controller_manager_msgs/srv/SetHardwareComponentState")
+        property var componentsServiceClient: null
+        property var setComponentStateServiceClient: null
     }
 
     Subscription {
+        id: activitySub
         topic: (root.controllerManager && root.controllerManager + "/activity") || ""
         messageType: "controller_manager_msgs/msg/ControllerManagerActivity"
         onNewMessage: msg => {

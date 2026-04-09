@@ -43,10 +43,8 @@ TextField {
         }
         if (from !== null && from !== undefined && newValue < from) {
             newValue = from;
-            text = Number(value).toFixed(0);
         } else if (to !== null && to !== undefined && newValue > to) {
             newValue = to;
-            text = Number(value).toFixed(0);
         }
 
         if (newValue === value) {

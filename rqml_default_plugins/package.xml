@@ -20,8 +20,9 @@
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>control_msgs</test_depend>
-  <test_depend>nav2_msgs</test_depend>
   <test_depend>qml6_ros2_plugin</test_depend>
+  <test_depend>rcl_interfaces</test_depend>
+  <test_depend>tf2_msgs</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

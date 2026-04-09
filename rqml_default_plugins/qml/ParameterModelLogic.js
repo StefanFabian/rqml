@@ -117,8 +117,16 @@ function flattenTree(groupName, node, parentFullPath, depth, nodeName, parentIsS
                 paramType: param.type,
                 readOnly: param.descriptor.readOnly,
                 description: param.descriptor.description,
-                integerRange: param.descriptor.integerRange || {},
-                floatingPointRange: param.descriptor.floatingPointRange || {},
+                integerRange: (function (r) {
+                    if (Array.isArray(r) && r.length > 0) return { from: r[0].from_value, to: r[0].to_value, step: r[0].step };
+                    if (r && r.from_value !== undefined) return { from: r.from_value, to: r.to_value, step: r.step };
+                    return r || {};
+                })(param.descriptor.integerRange),
+                floatingPointRange: (function (r) {
+                    if (Array.isArray(r) && r.length > 0) return { from: r[0].from_value, to: r[0].to_value, step: r[0].step };
+                    if (r && r.from_value !== undefined) return { from: r.from_value, to: r.to_value, step: r.step };
+                    return r || {};
+                })(param.descriptor.floatingPointRange),
                 nodeName: nodeName,
                 paramName: param.name
             });

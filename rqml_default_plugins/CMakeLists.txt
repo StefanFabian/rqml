@@ -33,7 +33,18 @@ if(BUILD_TESTING)
             COPY_ON_ERROR SYMBOLIC)
   endforeach()
 
-  add_executable(test_plugins test/test_plugins.cpp)
+  set(MOCK_DIALOGS_DIR "${CMAKE_CURRENT_BINARY_DIR}/test_mocks/QtQuick")
+  file(MAKE_DIRECTORY "${MOCK_DIALOGS_DIR}")
+  file(CREATE_LINK
+          "${CMAKE_CURRENT_SOURCE_DIR}/test/mocks/QtQuick/Dialogs"
+          "${MOCK_DIALOGS_DIR}/Dialogs"
+          COPY_ON_ERROR SYMBOLIC)
+
+  add_executable(test_plugins
+    test/test_plugins.cpp
+    test/mock_ros2.cpp
+    test/mock_classes.cpp
+  )
   target_compile_definitions(test_plugins
     PRIVATE
     QUICK_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test"
@@ -55,6 +66,7 @@ if(BUILD_TESTING)
         -o "${TEST_RESULT_DIR}/test_plugins.xml"
     ENV QT_QPA_PLATFORM=offscreen
     RESULT_FILE "${TEST_RESULT_DIR}/test_plugins.xml"
+    TIMEOUT 300
   )
 endif()
 

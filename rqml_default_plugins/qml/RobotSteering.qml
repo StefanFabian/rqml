@@ -78,6 +78,7 @@ Rectangle {
         RowLayout {
             FuzzySelector {
                 id: topicSelect
+                objectName: "steeringTopicSelector"
                 Layout.fillWidth: true
                 placeholderText: qsTr("Velocity Topic")
                 onTextChanged: {
@@ -128,6 +129,7 @@ Rectangle {
             spacing: 10
             CheckBox {
                 id: stampedCheckBox
+                objectName: "steeringStampedCheckbox"
                 display: AbstractButton.TextUnderIcon
                 text: "Stamped"
                 checked: !!context.stamped
@@ -139,6 +141,7 @@ Rectangle {
             }
             SpinBox {
                 id: rate
+                objectName: "steeringRateSpinBox"
                 editable: true
                 from: 0
                 to: 100
@@ -152,6 +155,7 @@ Rectangle {
             }
             Button {
                 id: playButton
+                objectName: "steeringPlayButton"
                 implicitHeight: 48
                 implicitWidth: 48
                 checkable: true
@@ -168,6 +172,7 @@ Rectangle {
 
         SpeedSlider {
             id: linearSlider
+            objectName: "steeringLinearSlider"
             Layout.alignment: Qt.AlignHCenter
             Layout.fillHeight: true
             enabled: !!context.enabled
@@ -183,6 +188,7 @@ Rectangle {
 
         SpeedSlider {
             id: angularSlider
+            objectName: "steeringAngularSlider"
             Layout.fillWidth: true
             enabled: !!context.enabled
             direction: Qt.Horizontal
@@ -197,6 +203,7 @@ Rectangle {
         }
 
         Button {
+            objectName: "steeringStopButton"
             Layout.fillWidth: true
             text: "Stop"
             onClicked: {

@@ -103,6 +103,19 @@ Item {
             compare(stripped.data, "hello");
         }
 
+        function test_stripEmptyFields_deeplyNestedArraysBecomeEmpty() {
+            // a.b is an array that drops to zero length after stripping → a becomes {}
+            // → a is removed from the parent object.
+            var msg = {
+                a: { b: [0, "", false] },
+                keep: 1
+            };
+            var stripped = MessageUtils.stripEmptyFields(msg);
+            verify(stripped.a === undefined,
+                "container of a deeply nested empty array should be stripped");
+            compare(stripped.keep, 1);
+        }
+
         function test_stripEmptyFields_skipsClockType() {
             var msg = {
                 clockType: 1,

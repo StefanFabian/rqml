@@ -39,5 +39,32 @@ Item {
             slider.currentValue = -50;
             compare(slider.currentValueVisualPosition, 0.0, "visual position should clamp to 0.0");
         }
+
+        function test_stepSize() {
+            // stepSize is auto-computed as (to - from) / 1000
+            compare(slider.stepSize, (slider.to - slider.from) / 1000);
+
+            slider.to = 200;
+            slider.from = 0;
+            compare(slider.stepSize, 0.2, "stepSize should update with range");
+        }
+
+        function test_layoutMirroring() {
+            slider.currentValue = 25; // 0.25 unmirrored
+            compare(slider.currentValueVisualPosition, 0.25);
+            mirroredSlider.currentValue = 25;
+            // Mirrored should be 1 - 0.25 = 0.75
+            compare(mirroredSlider.currentValueVisualPosition, 0.75,
+                "mirrored position should be inverted");
+        }
+    }
+
+    ChangeSlider {
+        id: mirroredSlider
+        from: 0
+        to: 100
+        value: 10
+        currentValue: 25
+        LayoutMirroring.enabled: true
     }
 }

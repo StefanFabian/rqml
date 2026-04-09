@@ -39,6 +39,7 @@ Object {
             controllers.clear();
             for (let i = 0; i < response.controller.length; i++) {
                 let controller = response.controller.at(i);
+                if (!controller) continue;
                 if (controller.type !== "joint_trajectory_controller/JointTrajectoryController" || controller.state !== "active")
                     continue;
                 controllers.append({

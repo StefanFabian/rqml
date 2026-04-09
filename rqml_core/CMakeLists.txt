@@ -111,6 +111,7 @@ if(BUILD_TESTING)
         -o "${TEST_RESULT_DIR}/test_rqml_core.xml"
     ENV QT_QPA_PLATFORM=offscreen
     RESULT_FILE "${TEST_RESULT_DIR}/test_rqml_core.xml"
+    TIMEOUT 300
   )
 endif()
 

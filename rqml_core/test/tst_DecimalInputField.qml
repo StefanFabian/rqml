@@ -19,6 +19,9 @@ Item {
         when: windowShown
 
         function init() {
+            field.from = 0.0;
+            field.to = 10.0;
+            field.decimals = 3;
             field.value = 5.5;
             field.text = "5.5";
         }
@@ -40,7 +43,7 @@ Item {
             field.text = "15.0";
             field.editingFinished();
             compare(field.value, 10.0);
-            compare(field.text, "10.0");
+            compare(field.text, "10");
         }
 
         function test_clampToMin() {
@@ -54,7 +57,7 @@ Item {
             field.text = "abc";
             field.editingFinished();
             compare(field.value, 4.2);
-            compare(field.text, "4.20");
+            compare(field.text, "4.2");
         }
 
         function test_exactBoundaryValues() {
@@ -72,6 +75,34 @@ Item {
             field.text = "";
             field.editingFinished();
             compare(field.value, 3.0, "Empty string should preserve previous value");
+        }
+
+        function test_validatorRegex() {
+            var re = field.validator.regularExpression;
+            verify(re.test("123"));
+            verify(re.test("-123"));
+            verify(re.test("1.5"));
+            verify(re.test("-1.5"));
+            verify(re.test("-"), "lone minus allowed during typing");
+            verify(re.test("1."), "trailing dot allowed during typing");
+            verify(!re.test("abc"));
+            verify(!re.test("1.2.3"));
+            verify(!re.test("1e5"), "scientific notation not allowed");
+        }
+
+        function test_decimalsPrecision() {
+            // The declarative `text: formatValue(value)` binding is broken once init()
+            // assigns text directly, so test the formatter function directly.
+            field.decimals = 3;
+            compare(field.formatValue(1.23456), 1.235);
+            compare(field.formatValue(1.1), 1.1);
+            compare(field.formatValue(3), 3);
+
+            field.decimals = 5;
+            compare(field.formatValue(1.23456), 1.23456);
+
+            field.decimals = 1;
+            compare(field.formatValue(1.23456), 1.2);
         }
 
         function test_whitespaceOnlyResets() {

@@ -19,6 +19,7 @@ Rectangle {
             columns: 2
             FuzzySelector {
                 id: topicSelect
+                objectName: "actionTopicSelector"
                 Layout.fillWidth: true
                 placeholderText: qsTr("Action Topic")
                 text: context.topic ?? ""
@@ -41,6 +42,7 @@ Rectangle {
                 Component.onCompleted: refresh()
             }
             RefreshButton {
+                objectName: "actionTopicRefreshButton"
                 onClicked: {
                     animate = true;
                     topicSelect.refresh();
@@ -50,6 +52,7 @@ Rectangle {
 
             FuzzySelector {
                 id: typeSelect
+                objectName: "actionTypeSelector"
                 Layout.fillWidth: true
                 placeholderText: qsTr("Action Type")
                 text: context.type ?? ""
@@ -77,6 +80,7 @@ Rectangle {
                 Component.onCompleted: refresh()
             }
             RefreshButton {
+                objectName: "actionTypeRefreshButton"
                 onClicked: {
                     animate = true;
                     typeSelect.refresh();
@@ -86,6 +90,7 @@ Rectangle {
         }
         TabBar {
             id: tabBar
+            objectName: "actionTabBar"
             Layout.fillWidth: true
             TabButton {
                 text: qsTr("Request")
@@ -108,6 +113,7 @@ Rectangle {
             // Request Tab
             MessageContentEditor {
                 id: requestEditor
+                objectName: "actionRequestEditor"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 model: MessageItemModel {
@@ -147,6 +153,7 @@ Rectangle {
 
                     ListView {
                         id: feedbackList
+                        objectName: "actionFeedbackList"
                         Layout.fillHeight: true
                         Layout.preferredWidth: 120
                         clip: true
@@ -164,6 +171,7 @@ Rectangle {
                     }
                     MessageContentEditor {
                         id: feedbackEditor
+                        objectName: "actionFeedbackEditor"
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         readonly: true
@@ -208,6 +216,7 @@ Rectangle {
             }
             Label {
                 id: statusText
+                objectName: "actionStatusLabel"
                 Layout.fillWidth: true
                 text: {
                     if (!d.client)
@@ -220,6 +229,7 @@ Rectangle {
                 }
             }
             Button {
+                objectName: "actionSendCancelButton"
                 enabled: (d.client?.ready && d.goalHandle?.status != ActionGoalStatus.Canceling) ?? false
                 text: d.goalHandle && !d.result ? "Cancel" : "Send Goal"
                 onClicked: {

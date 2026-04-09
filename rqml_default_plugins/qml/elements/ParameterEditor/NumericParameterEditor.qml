@@ -86,11 +86,11 @@ RowLayout {
         Layout.preferredWidth: root.hasRange ? 80 : -1
         Layout.fillWidth: !root.hasRange
         onEditingFinished: {
-            if (value === localParamValue) return;
+            if (parseInt(value) === parseInt(localParamValue)) return;
             if (root.hasRange)
                 numSlider.value = value;
             let prev = localParamValue;
-            ParameterService.setParameter(modelData.nodeName, modelData.paramName, value, modelData.paramType, function(success, reason) {
+            ParameterService.setParameter(modelData.nodeName, modelData.paramName, parseInt(value), modelData.paramType, function(success, reason) {
                 if (!success) {
                     intField.value = prev;
                     if (root.hasRange) numSlider.value = prev;
@@ -111,11 +111,11 @@ RowLayout {
         Layout.preferredWidth: root.hasRange ? 80 : -1
         Layout.fillWidth: !root.hasRange
         onEditingFinished: {
-            if (value === localParamValue) return;
+            if (Number(value) === Number(localParamValue)) return;
             if (root.hasRange)
                 numSlider.value = value;
             let prev = localParamValue;
-            ParameterService.setParameter(modelData.nodeName, modelData.paramName, value, modelData.paramType, function(success, reason) {
+            ParameterService.setParameter(modelData.nodeName, modelData.paramName, Number(value), modelData.paramType, function(success, reason) {
                 if (!success) {
                     doubleField.value = prev;
                     if (root.hasRange) numSlider.value = prev;

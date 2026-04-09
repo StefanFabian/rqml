@@ -21,6 +21,7 @@ Rectangle {
         RowLayout {
             IconButton {
                 id: filterButton
+                objectName: "consoleFilterButton"
                 text: IconFont.iconFilter
                 tooltipText: "Set filters"
 
@@ -31,11 +32,13 @@ Rectangle {
             }
             TextField {
                 id: filterTextField
+                objectName: "consoleFilterTextField"
                 Layout.fillWidth: true
                 placeholderText: "Filter logs..."
                 onTextChanged: searchDebounceTimer.start()
             }
             IconButton {
+                objectName: "consoleSettingsButton"
                 text: IconFont.iconSettings
                 tooltipText: "Settings"
                 onClicked: {
@@ -43,6 +46,7 @@ Rectangle {
                 }
             }
             IconToggleButton {
+                objectName: "consoleEnableToggle"
                 iconOn: IconFont.iconPause
                 iconOff: IconFont.iconPlay
                 tooltipTextOn: "Click to pause"
@@ -55,6 +59,7 @@ Rectangle {
                 }
             }
             IconButton {
+                objectName: "consoleClearButton"
                 text: IconFont.iconTrash
                 tooltipText: "Clear logs"
                 onClicked: d.clear()
@@ -63,6 +68,7 @@ Rectangle {
         Subscription {
             id: logSubscription
             qos: Ros2.QoS().reliable().keep_last(1000).transient_local()
+            messageType: "rcl_interfaces/msg/Log"
             throttleRate: 0
             topic: context.topic ?? "/rosout"
             onNewMessage: function (message) {
@@ -80,6 +86,7 @@ Rectangle {
 
         ListView {
             id: listView
+            objectName: "consoleListView"
             Layout.fillWidth: true
             Layout.fillHeight: true
             ScrollBar.vertical: ScrollBar {
@@ -159,15 +166,19 @@ Rectangle {
 
                     Menu {
                         id: contextMenu
-                        Action {
+                        objectName: "consoleContextMenu"
+                        MenuItem {
+                            objectName: "consoleCopyMessageAction"
                             text: qsTr("Copy Message")
                             onTriggered: RQml.copyTextToClipboard(model.message)
                         }
-                        Action {
+                        MenuItem {
+                            objectName: "consoleCopyNodeNameAction"
                             text: qsTr("Copy Node Name")
                             onTriggered: RQml.copyTextToClipboard(model.name)
                         }
-                        Action {
+                        MenuItem {
+                            objectName: "consoleCopyLocationAction"
                             text: qsTr("Copy Location")
                             onTriggered: RQml.copyTextToClipboard(model.location)
                         }
@@ -188,6 +199,7 @@ Rectangle {
             }
 
             CheckBox {
+                objectName: "consoleAutoScrollCheckbox"
                 text: "Scroll to end"
                 checked: context.autoScroll ?? true
                 onToggled: {
@@ -199,6 +211,7 @@ Rectangle {
 
     Dialog {
         id: settingsDialog
+        objectName: "consoleSettingsDialog"
         anchors.centerIn: parent
         width: Math.min(parent.width * 0.8, 400)
         title: "Console Settings"
@@ -215,6 +228,7 @@ Rectangle {
                 Layout.fillWidth: true
                 ComboBox {
                     id: topicSelect
+                    objectName: "consoleSettingsTopicSelect"
                     Layout.fillWidth: true
                     editable: true
                     selectTextByMouse: true
@@ -239,6 +253,7 @@ Rectangle {
                     Component.onCompleted: refresh()
                 }
                 RefreshButton {
+                    objectName: "consoleSettingsRefreshButton"
                     onClicked: {
                         animate = true;
                         topicSelect.refresh();
@@ -251,6 +266,7 @@ Rectangle {
 
     Popup {
         id: filterPopup
+        objectName: "consoleFilterPopup"
         focus: true
         padding: 8
         x: filterButton.mapToItem(root, 0, filterButton.height).x + 8
@@ -295,6 +311,7 @@ Rectangle {
                     ]
                     IconButton {
                         id: debugCheckBox
+                        objectName: "filterLevelToggle_" + modelData.level
                         text: modelData.icon
                         tooltipText: modelData.text
                         checkable: true
