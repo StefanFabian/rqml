@@ -18,6 +18,12 @@
 #include "plugin_manager.hpp"
 #include "helpers/file_system_watcher.hpp"
 
+#if __has_include( <ament_index_cpp/version.h> )
+  #include <ament_index_cpp/version.h>
+#else
+  #define AMENT_INDEX_CPP_VERSION_GTE( major, minor, patch ) false
+#endif
+
 #include <QQmlAbstractUrlInterceptor>
 #include <QQmlComponent>
 #include <QQmlContext>
@@ -57,7 +63,11 @@ private:
 
 PluginManager::PluginManager( QQmlEngine *engine ) : engine_( engine )
 {
+#if AMENT_INDEX_CPP_VERSION_GTE( 1, 13, 0 )
+  auto resources = ament_index_cpp::get_resources_by_name( "rqml_plugin" );
+#else
   auto resources = ament_index_cpp::get_resources( "rqml_plugin" );
+#endif
   for ( const auto &[name, path] : resources ) {
     qDebug() << "Loading plugins from" << name.c_str() << "at" << path.c_str();
     loadPluginsFromResource( name, path );
@@ -225,7 +235,17 @@ void PluginManager::checkForChanges()
 void PluginManager::loadPluginsFromResource( const std::string &name, const std::string &path )
 {
   std::string plugin_description;
-  ament_index_cpp::get_resource( "rqml_plugin", name, plugin_description );
+  try {
+#if AMENT_INDEX_CPP_VERSION_GTE( 1, 13, 0 )
+    auto path_with_resource = ament_index_cpp::get_resource( "rqml_plugin", name );
+    plugin_description = path_with_resource.contents;
+#else
+    ament_index_cpp::get_resource( "rqml_plugin", name, plugin_description );
+#endif
+  } catch ( const std::runtime_error &e ) {
+    qWarning() << "Failed to load plugin description for" << name.c_str() << ":" << e.what();
+    return;
+  }
   YAML::Node plugins;
   try {
     YAML::Node node = YAML::Load( plugin_description );
