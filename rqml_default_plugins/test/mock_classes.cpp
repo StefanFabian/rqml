@@ -1,6 +1,8 @@
 #include "mock_classes.hpp"
 #include "mock_ros2.hpp"
+#include <QDateTime>
 #include <QJSValue>
+#include <QJsonDocument>
 #include <QQmlEngine>
 #include <QRandomGenerator>
 #include <QTimer>
@@ -88,6 +90,16 @@ void MockSubscription::injectMessage( const QVariant &msg )
   // Wrap via babel_fish to ensure the message has proper structure and #messageType
   QJSValue wrapped = s_mockRos2->wrap( type_, msg );
   lastMessage_ = wrapped.toVariant();
+  const double nowSeconds = QDateTime::currentMSecsSinceEpoch() / 1000.0;
+  static QHash<const MockSubscription *, double> lastReceiveTime;
+  const double previousTime = lastReceiveTime.value( this, 0.0 );
+  if ( previousTime > 0.0 && nowSeconds > previousTime )
+    setFrequency( 1.0 / ( nowSeconds - previousTime ) );
+  lastReceiveTime.insert( this, nowSeconds );
+
+  const QByteArray jsonBytes =
+      QJsonDocument::fromVariant( lastMessage_ ).toJson( QJsonDocument::Compact );
+  setBandwidth( frequency_ * static_cast<double>( jsonBytes.size() ) );
   emit newMessage( lastMessage_ );
   emit messageChanged();
 }

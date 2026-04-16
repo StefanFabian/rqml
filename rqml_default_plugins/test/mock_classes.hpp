@@ -88,6 +88,8 @@ class MockSubscription : public QObject
   Q_PROPERTY( int queueSize READ queueSize WRITE setQueueSize NOTIFY queueSizeChanged )
   Q_PROPERTY( qml6_ros2_plugin::QoSWrapper qos READ qos WRITE setQos NOTIFY qosChanged )
   Q_PROPERTY( QVariant message READ message NOTIFY messageChanged )
+  Q_PROPERTY( double frequency READ frequency WRITE setFrequency NOTIFY frequencyChanged )
+  Q_PROPERTY( double bandwidth READ bandwidth WRITE setBandwidth NOTIFY bandwidthChanged )
   Q_PROPERTY( bool enabled READ enabled WRITE setEnabled NOTIFY enabledChanged )
   Q_PROPERTY( bool subscribed READ subscribed NOTIFY subscribedChanged )
 public:
@@ -131,6 +133,24 @@ public:
 
   QVariant message() const { return lastMessage_; }
 
+  double frequency() const { return frequency_; }
+  void setFrequency( double value )
+  {
+    if ( qFuzzyCompare( frequency_, value ) )
+      return;
+    frequency_ = value;
+    emit frequencyChanged();
+  }
+
+  double bandwidth() const { return bandwidth_; }
+  void setBandwidth( double value )
+  {
+    if ( qFuzzyCompare( bandwidth_, value ) )
+      return;
+    bandwidth_ = value;
+    emit bandwidthChanged();
+  }
+
   bool enabled() const { return enabled_; }
   void setEnabled( bool e )
   {
@@ -152,6 +172,8 @@ public:
 signals:
   void newMessage( QVariant msg );
   void messageChanged();
+  void frequencyChanged();
+  void bandwidthChanged();
   void qosChanged();
   void topicChanged();
   void messageTypeChanged();
@@ -165,6 +187,8 @@ private:
   int throttleRate_ = 0, queueSize_ = 10;
   qml6_ros2_plugin::QoSWrapper qos_;
   QVariant lastMessage_;
+  double frequency_ = 0.0;
+  double bandwidth_ = 0.0;
   bool enabled_ = true, subscribed_ = true;
 };
 

@@ -32,6 +32,8 @@ import RQml.Utils
 Item {
     id: control
 
+    signal accepted(string text)
+
     implicitHeight: field.implicitHeight
     implicitWidth: field.implicitWidth
 
@@ -193,6 +195,7 @@ Item {
                 control.text = control.filteredItems[listView.currentIndex];
                 popup.close();
             }
+            control.accepted(control.text);
             event.accepted = true;
         }
 

@@ -9,6 +9,19 @@ Item {
     height: 600
     width: 800
 
+    QtObject {
+        id: mockRqml
+
+        property string clipboard: ""
+
+        function resetClipboard() {
+            clipboard = "";
+        }
+        function copyTextToClipboard(text) {
+            clipboard = text;
+        }
+    }
+
     EditMessageDialog {
         id: dialog
         anchors.centerIn: parent
@@ -19,6 +32,12 @@ Item {
         width: 700
     }
     TestCase {
+        function initTestCase() {
+            TestContextBridge.setContextProperty("RQml", mockRqml);
+        }
+        function cleanupTestCase() {
+            TestContextBridge.setContextProperty("RQml", null);
+        }
 
         // ---- Helpers --------------------------------------------------------
         function findItemBy(item, predicate) {
@@ -69,6 +88,21 @@ Item {
             if (textArea !== null)
                 textArea.text = JSON.stringify(MessageUtils.toJavaScriptObject(dialog.message) || {}, null, 2);
         }
+        function test_copyJsonButtonCopiesViaUi() {
+            var tabBar = findTabBar();
+            var textArea = findTextArea();
+            var button = null;
+            tabBar.currentIndex = 1;
+            tryVerify(function () {
+                    button = findItemBy(dialog, function (c) {
+                            return c && c.objectName === "editMessageDialogCopyJsonButton" && c.visible;
+                        });
+                    return button !== null;
+                }, 1000, "Copy JSON button should be visible on the JSON tab");
+            RQml.resetClipboard();
+            mouseClick(button);
+            compare(RQml.clipboard, textArea.text, "Copy JSON button should copy the JSON text");
+        }
 
         // ---- Tests ----------------------------------------------------------
         function test_dualTabInterface() {
@@ -91,7 +125,9 @@ Item {
             compare(dialog.message.i32, prevI32, "invalid JSON must not corrupt the bound message");
         }
         function test_jsonEditUpdatesMessage() {
+            var tabBar = findTabBar();
             var textArea = findTextArea();
+            tabBar.currentIndex = 1;
             // Build a fresh JSON snapshot, mutate one field, write it back, and
             // simulate editingFinished — the dialog should update its message.
             var snapshot = JSON.parse(textArea.text);
@@ -101,7 +137,9 @@ Item {
             compare(dialog.message.i32, 314, "valid JSON edit should update the bound message");
         }
         function test_jsonSerializationFromMessage() {
+            var tabBar = findTabBar();
             var textArea = findTextArea();
+            tabBar.currentIndex = 1;
             verify(textArea !== null);
             // Empty TestMessage should serialise to a JSON object with the
             // expected fields.
@@ -114,6 +152,19 @@ Item {
             verify(parsed.hasOwnProperty("i32"), "JSON should contain i32 field");
             verify(parsed.hasOwnProperty("b"), "JSON should contain bool field");
         }
+        function test_readonly_mode() {
+            var tabBar = findTabBar();
+            var textArea = findTextArea();
+            dialog.readonly = true;
+            tabBar.currentIndex = 1;
+            compare(dialog.standardButtons, Dialog.Close, "Readonly dialog should use a close button");
+            compare(textArea.readOnly, true, "JSON text area should be readonly in readonly mode");
+            verify(dialog.standardButton(Dialog.Close) !== null, "Close button should be present in readonly mode");
+            verify(findItemBy(dialog, function (c) {
+                        return c && c.objectName === "editMessageDialogCopyJsonButton" && c.visible;
+                    }) !== null, "Copy JSON button should be visible in readonly mode");
+            dialog.readonly = false;
+        }
         function test_standardOkCancelButtons() {
             // Dialog.Ok | Dialog.Cancel — verify the standardButton accessor
             // returns valid buttons for both.
@@ -121,8 +172,10 @@ Item {
             verify(dialog.standardButton(Dialog.Cancel) !== null, "Cancel button should be present");
         }
         function test_visualEditPropagatesToText() {
+            var tabBar = findTabBar();
             var editor = findMessageContentEditor();
             var textArea = findTextArea();
+            tabBar.currentIndex = 0;
             verify(editor !== null);
             verify(editor.model !== null);
 

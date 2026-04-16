@@ -14,9 +14,12 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Ros2
+import RQml.Elements
+import RQml.Fonts
 import RQml.Utils
 
 Dialog {
@@ -24,8 +27,9 @@ Dialog {
 
     property alias message: messageModel.message
     property alias messageType: messageModel.messageType
+    property bool readonly: false
 
-    standardButtons: Dialog.Ok | Dialog.Cancel
+    standardButtons: readonly ? Dialog.Close : Dialog.Ok | Dialog.Cancel
     title: "Edit Message Content"
 
     ColumnLayout {
@@ -38,10 +42,12 @@ Dialog {
             Layout.fillWidth: true
 
             TabButton {
+                objectName: "editMessageDialogVisualTabButton"
                 text: qsTr("Visual")
             }
             TabButton {
-                text: qsTr("Text")
+                objectName: "editMessageDialogJsonTabButton"
+                text: qsTr("JSON")
             }
         }
         StackLayout {
@@ -53,6 +59,7 @@ Dialog {
                 id: messageContentEditor
                 Layout.fillHeight: true
                 Layout.fillWidth: true
+                readonly: control.readonly
 
                 model: MessageItemModel {
                     id: messageModel
@@ -64,22 +71,48 @@ Dialog {
                     }
                 }
             }
-            ScrollView {
+            ColumnLayout {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
+                spacing: 8
 
-                TextArea {
-                    id: textArea
-                    anchors.fill: parent
-                    text: JSON.stringify(MessageUtils.toJavaScriptObject(control.message) ?? {}, null, 2)
+                ScrollView {
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
 
-                    onEditingFinished: {
-                        try {
-                            control.message = JSON.parse(text);
-                        } catch (e)
-                        // ignore parse errors
-                        {
+                    TextArea {
+                        id: textArea
+                        anchors.fill: parent
+                        objectName: "editMessageDialogJsonTextArea"
+                        readOnly: control.readonly
+                        text: JSON.stringify(MessageUtils.toJavaScriptObject(control.message) ?? {}, null, 2)
+                        wrapMode: TextEdit.NoWrap
+
+                        onEditingFinished: {
+                            if (control.readonly)
+                                return;
+                            try {
+                                control.message = JSON.parse(text);
+                            } catch (e)
+                            // ignore parse errors
+                            {
+                            }
                         }
+                    }
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+
+                    Item {
+                        Layout.fillWidth: true
+                    }
+                    IconTextButton {
+                        id: copyJsonButton
+                        iconText: IconFont.iconCopy
+                        objectName: "editMessageDialogCopyJsonButton"
+                        text: qsTr("Copy JSON")
+
+                        onClicked: RQml.copyTextToClipboard(textArea.text)
                     }
                 }
             }

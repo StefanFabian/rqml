@@ -59,3 +59,8 @@ plugins:
     group: "Introspection"
     path: "share/@PROJECT_NAME@/qml/TfTreeViewer.qml"
     single_instance: false
+  - id: default_plugins.topic_monitor
+    name: "Topic Monitor"
+    group: "Introspection"
+    path: "share/@PROJECT_NAME@/qml/TopicMonitor.qml"
+    single_instance: false

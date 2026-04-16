@@ -40,6 +40,7 @@ FontLoader {
     readonly property string iconLoad: "\uf56f"
     readonly property string iconMagnifyingGlassMinus: "\uf010"
     readonly property string iconMagnifyingGlassPlus: "\uf00e"
+    readonly property string iconMessage: "\uf075"
     readonly property string iconPause: "\uf04c"
     readonly property string iconPlay: "\uf04b"
     readonly property string iconRefresh: "\uf021"
