@@ -1,7 +1,8 @@
 import QtQuick
 import QtQuick.Controls
+import "."
 
-Label {
+TruncatedLabel {
     font.pixelSize: 12
     opacity: 0.85
 }

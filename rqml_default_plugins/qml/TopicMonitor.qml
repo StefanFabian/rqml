@@ -8,7 +8,7 @@ import RQml.Fonts
 Rectangle {
     id: root
 
-    property var kddockwidgets_min_size: Qt.size(720, 360)
+    property var kddockwidgets_min_size: Qt.size(360, 360)
     property string latestDialogTopic: ""
 
     function addTopicEntry(topic) {
@@ -28,9 +28,9 @@ Rectangle {
         context.monitoredTopics = values;
         monitorListModel.append(entry);
     }
-    function openLatestMessageDialog(topic, type, message) {
+    function openLatestMessageDialog(topic, message) {
         latestDialogTopic = topic;
-        latestMessageDialog.messageType = type;
+        latestMessageDialog.messageType = message["#messageType"];
         latestMessageDialog.message = message ? message : Ros2.createEmptyMessage(type);
         latestMessageDialog.open();
     }
@@ -39,6 +39,17 @@ Rectangle {
         values.splice(index, 1);
         context.monitoredTopics = values;
         monitorListModel.remove(index);
+    }
+    function syncResolvedType(index, resolvedType) {
+        if (!resolvedType)
+            return;
+        const currentType = monitorListModel.get(index).type;
+        if (currentType === resolvedType)
+            return;
+        monitorListModel.setProperty(index, "type", resolvedType);
+        updateEntry(index, {
+                "type": resolvedType
+            });
     }
     function updateEntry(index, update) {
         const values = Array.from(context.monitoredTopics ?? []);
@@ -162,38 +173,38 @@ Rectangle {
         }
         Rectangle {
             Layout.fillWidth: true
-            color: palette.alternateBase
+            border.color: palette.mid
+            border.width: 1
+            color: "transparent"
             implicitHeight: headerLayout.implicitHeight + 12
-            radius: 6
+            opacity: 0.6
+            radius: 4
 
             RowLayout {
                 id: headerLayout
                 anchors.fill: parent
-                anchors.margins: 6
+                anchors.margins: 8
                 spacing: 8
 
-                Item {
-                    Layout.preferredWidth: 40
-                }
                 Label {
                     Layout.fillWidth: true
                     font.bold: true
                     text: qsTr("Topic")
                 }
                 Label {
-                    Layout.preferredWidth: 120
+                    Layout.preferredWidth: 80
                     font.bold: true
-                    horizontalAlignment: Text.AlignRight
+                    horizontalAlignment: Text.AlignHCenter
                     text: qsTr("Frequency")
                 }
                 Label {
-                    Layout.preferredWidth: 140
+                    Layout.preferredWidth: 80
                     font.bold: true
-                    horizontalAlignment: Text.AlignRight
+                    horizontalAlignment: Text.AlignHCenter
                     text: qsTr("Bandwidth")
                 }
                 Item {
-                    Layout.preferredWidth: 144
+                    Layout.preferredWidth: 120
                 }
             }
         }
@@ -225,6 +236,7 @@ Rectangle {
                     property real displayedFrequency: 0
                     required property int index
                     required property var model
+                    property string resolvedType: d.resolveType(model.topic)
 
                     color: index % 2 === 0 ? root.palette.base : root.palette.alternateBase
                     implicitHeight: contentColumn.implicitHeight + 12
@@ -234,6 +246,7 @@ Rectangle {
                     Component.onCompleted: {
                         displayedFrequency = topicSubscription.frequency;
                         displayedBandwidth = topicSubscription.bandwidth;
+                        root.syncResolvedType(model.index, resolvedType || topicSubscription.messageType);
                     }
 
                     ColumnLayout {
@@ -250,7 +263,7 @@ Rectangle {
                                 Layout.fillWidth: true
                                 spacing: 2
 
-                                Label {
+                                TruncatedLabel {
                                     Layout.fillWidth: true
                                     elide: Text.ElideMiddle
                                     font.bold: true
@@ -265,56 +278,73 @@ Rectangle {
                                 }
                             }
                             Label {
-                                Layout.preferredWidth: 120
-                                horizontalAlignment: Text.AlignRight
+                                Layout.fillWidth: false
+                                Layout.preferredWidth: 80
+                                horizontalAlignment: Text.AlignHCenter
                                 objectName: "topicMonitorFrequencyLabel_" + model.index
                                 text: d.formatFrequency(delegateRoot.displayedFrequency)
                             }
                             Label {
-                                Layout.preferredWidth: 140
-                                horizontalAlignment: Text.AlignRight
+                                Layout.fillWidth: false
+                                Layout.preferredWidth: 80
+                                horizontalAlignment: Text.AlignHCenter
                                 objectName: "topicMonitorBandwidthLabel_" + model.index
                                 text: d.formatBandwidth(delegateRoot.displayedBandwidth)
                             }
-                            IconButton {
-                                Layout.alignment: Qt.AlignVCenter
-                                objectName: "topicMonitorViewButton_" + model.index
-                                text: IconFont.iconMessage
-                                tooltipText: qsTr("View latest message")
+                            RowLayout {
+                                Layout.fillWidth: false
+                                Layout.preferredWidth: 120
+                                spacing: 0
 
-                                onClicked: root.openLatestMessageDialog(model.topic, model.type, topicSubscription.message)
-                            }
-                            IconButton {
-                                Layout.alignment: Qt.AlignVCenter
-                                objectName: "topicMonitorPauseButton_" + model.index
-                                text: model.paused ? IconFont.iconPlay : IconFont.iconPause
-                                tooltipText: model.paused ? qsTr("Resume topic") : qsTr("Pause topic")
-
-                                onClicked: {
-                                    const paused = !model.paused;
-                                    root.updateEntry(model.index, {
-                                            "paused": paused
-                                        });
-                                    model.paused = paused;
+                                // Spacer
+                                Item {
+                                    Layout.fillWidth: true
                                 }
-                            }
-                            IconButton {
-                                Layout.alignment: Qt.AlignVCenter
-                                objectName: "topicMonitorDeleteButton_" + model.index
-                                text: IconFont.iconTrash
-                                tooltipText: qsTr("Remove topic")
+                                IconButton {
+                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                    enabled: !!topicSubscription.message
+                                    objectName: "topicMonitorViewButton_" + model.index
+                                    text: IconFont.iconMessage
+                                    tooltipText: qsTr("View latest message")
 
-                                onClicked: root.removeEntry(model.index)
+                                    onClicked: root.openLatestMessageDialog(model.topic, topicSubscription.message)
+                                }
+                                IconButton {
+                                    Layout.alignment: Qt.AlignVCenter
+                                    objectName: "topicMonitorPauseButton_" + model.index
+                                    text: model.paused ? IconFont.iconPlay : IconFont.iconPause
+                                    tooltipText: model.paused ? qsTr("Resume topic") : qsTr("Pause topic")
+
+                                    onClicked: {
+                                        const paused = !model.paused;
+                                        root.updateEntry(model.index, {
+                                                "paused": paused
+                                            });
+                                        model.paused = paused;
+                                    }
+                                }
+                                IconButton {
+                                    Layout.alignment: Qt.AlignVCenter
+                                    objectName: "topicMonitorDeleteButton_" + model.index
+                                    text: IconFont.iconTrash
+                                    tooltipText: qsTr("Remove topic")
+
+                                    onClicked: root.removeEntry(model.index)
+                                }
                             }
                         }
                     }
                     Subscription {
                         id: topicSubscription
                         enabled: !model.paused
-                        messageType: model.type
+                        messageType: resolvedType || model.type
                         objectName: "topicMonitorSubscription_" + model.index
                         throttleRate: 1
                         topic: model.topic
+
+                        onMessageTypeChanged: {
+                            root.syncResolvedType(model.index, messageType);
+                        }
                     }
                     Timer {
                         interval: 500

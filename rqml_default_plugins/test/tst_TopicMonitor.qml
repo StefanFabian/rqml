@@ -145,6 +145,48 @@ Item {
         function test_plugin_loads() {
             verify(plugin !== null, "TopicMonitor plugin should load");
         }
+        function test_restored_topic_syncs_live_type() {
+            contextObj.monitoredTopics = [{
+                    "topic": "/test_topic",
+                    "type": "std_msgs/msg/Bool",
+                    "paused": false
+                }];
+            pluginLoader.reload();
+            tryVerify(function () {
+                    return pluginLoader.status === Loader.Ready;
+                }, 2000, "Loader should be ready after restoring a topic");
+            var listView = find("topicMonitorListView");
+            verify(listView !== null);
+            tryCompare(listView, "count", 1, 2000, "Restored topic should be shown");
+            var sub = null;
+            tryVerify(function () {
+                    sub = Ros2.findSubscription("/test_topic");
+                    return sub !== null;
+                }, 2000, "Subscription should be created for restored topic");
+            tryCompare(sub, "messageType", "std_msgs/msg/String", 2000, "Subscription should resolve the live topic type");
+            tryCompare(contextObj.monitoredTopics[0], "type", "std_msgs/msg/String", 2000, "Persisted entry should self-heal to the live topic type");
+            var typeLabel = null;
+            tryVerify(function () {
+                    typeLabel = find("topicMonitorTypeLabel_0");
+                    return typeLabel !== null;
+                }, 2000, "Type label should exist");
+            tryCompare(typeLabel, "text", "std_msgs/msg/String", 2000, "Visible row type should update to the live topic type");
+            var msg = Ros2.createEmptyMessage("std_msgs/msg/String");
+            msg.data = "restored message";
+            sub.injectMessage(msg);
+            var viewButton = find("topicMonitorViewButton_0");
+            verify(viewButton !== null, "View button should exist for restored topic");
+            mouseClick(viewButton);
+            var dialog = null;
+            tryVerify(function () {
+                    dialog = find("topicMonitorMessageDialog");
+                    return dialog !== null && dialog.visible;
+                }, 3000, "Latest-message dialog should be visible for restored topic");
+            compare(dialog.messageType, "std_msgs/msg/String", "Dialog should use the live resolved topic type");
+            tryVerify(function () {
+                    return dialog.message && dialog.message.data === "restored message";
+                }, 2000, "Dialog should show the restored topic's latest message");
+        }
 
         name: "TopicMonitorTest"
         when: windowShown
