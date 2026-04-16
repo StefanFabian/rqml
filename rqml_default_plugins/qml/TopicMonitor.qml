@@ -171,41 +171,32 @@ Rectangle {
                 onClicked: root.addTopicEntry(topicSelector.text)
             }
         }
-        Rectangle {
+        RowLayout {
+            id: headerLayout
             Layout.fillWidth: true
-            border.color: palette.mid
-            border.width: 1
-            color: "transparent"
-            implicitHeight: headerLayout.implicitHeight + 12
+            Layout.margins: 6
             opacity: 0.6
-            radius: 4
+            spacing: 8
 
-            RowLayout {
-                id: headerLayout
-                anchors.fill: parent
-                anchors.margins: 8
-                spacing: 8
-
-                Label {
-                    Layout.fillWidth: true
-                    font.bold: true
-                    text: qsTr("Topic")
-                }
-                Label {
-                    Layout.preferredWidth: 80
-                    font.bold: true
-                    horizontalAlignment: Text.AlignHCenter
-                    text: qsTr("Frequency")
-                }
-                Label {
-                    Layout.preferredWidth: 80
-                    font.bold: true
-                    horizontalAlignment: Text.AlignHCenter
-                    text: qsTr("Bandwidth")
-                }
-                Item {
-                    Layout.preferredWidth: 120
-                }
+            Label {
+                Layout.fillWidth: true
+                font.bold: true
+                text: qsTr("Topic")
+            }
+            Label {
+                Layout.preferredWidth: 80
+                font.bold: true
+                horizontalAlignment: Text.AlignHCenter
+                text: qsTr("Frequency")
+            }
+            Label {
+                Layout.preferredWidth: 80
+                font.bold: true
+                horizontalAlignment: Text.AlignHCenter
+                text: qsTr("Bandwidth")
+            }
+            Item {
+                Layout.preferredWidth: 120
             }
         }
         StackLayout {
