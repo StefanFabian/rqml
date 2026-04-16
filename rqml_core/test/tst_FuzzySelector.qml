@@ -112,10 +112,6 @@ Item {
                     return !popup.visible;
                 }, 1000);
         }
-        function test_caseInsensitive() {
-            verify(selector.fuzzyScore("APPLE", "app") > 0);
-            verify(selector.fuzzyScore("Apple", "APP") > 0);
-        }
         function test_caseInsensitiveFiltering() {
             selector.text = "APPLE";
             verify(selector.filteredItems.indexOf("apple") !== -1);
@@ -135,12 +131,6 @@ Item {
             tryVerify(function () {
                     return !popup.visible;
                 }, 1000, "second chevron click should close popup");
-        }
-        function test_consecutiveRunBonus() {
-            // Consecutive characters should get a quadratic bonus over spaced-out matches.
-            var consec = selector.fuzzyScore("abcdef", "abc");
-            var spaced = selector.fuzzyScore("axbxcx", "abc");
-            verify(consec > spaced, "consecutive run should outscore spaced matches");
         }
         function test_currentText() {
             compare(selector.currentText, "", "currentText should be empty when currentIndex is -1");
@@ -189,17 +179,6 @@ Item {
             items = selector.filteredItems;
             verify(items.indexOf("blackberry") !== -1);
             verify(items.indexOf("banana") === -1);
-        }
-        function test_fuzzyScore() {
-            // apple matches apple
-            verify(selector.fuzzyScore("apple", "app") > 0);
-            verify(selector.fuzzyScore("banana", "app") === -1);
-
-            // better match vs worse match
-            let score1 = selector.fuzzyScore("apricot", "ap");
-            let score2 = selector.fuzzyScore("apple", "ap");
-            verify(score1 > 0);
-            verify(score2 > 0);
         }
         function test_keyboardNavBoundaries() {
             var field = findField();
@@ -301,17 +280,6 @@ Item {
             // Setting to non-existent text should yield -1.
             selector.text = "xxx";
             compare(selector.currentIndex, -1);
-        }
-        function test_wordBoundaryBonus() {
-            // Word-boundary bonus: match at start-of-string or after separator scores higher.
-            var atStart = selector.fuzzyScore("apple", "a");
-            var notAtStart = selector.fuzzyScore("banana", "a");
-            verify(atStart > notAtStart, "start-of-string match should score higher than mid-word");
-
-            // After separator
-            var afterSep = selector.fuzzyScore("foo/bar", "b");
-            var midWord = selector.fuzzyScore("foobar", "b");
-            verify(afterSep > midWord, "post-separator match should score higher than mid-word");
         }
 
         name: "FuzzySelectorTest"

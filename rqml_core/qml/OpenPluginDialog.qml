@@ -19,6 +19,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import com.kdab.dockwidgets 2.0 as KDDW
+import RQml.Utils
 
 Dialog {
     id: root
@@ -54,20 +55,37 @@ Dialog {
         }
         function updateFilteredModel() {
             filteredModel.clear();
-            const query = filterInput.text.trim().toLowerCase();
+            const query = filterInput.text;
             const plugins = RQml.plugins || [];
+            const matches = [];
             plugins.forEach(plugin => {
                     const groupName = plugin.group || "";
-                    const searchableText = (plugin.name + " " + plugin.id + " " + groupName).toLowerCase();
-                    if (!query || searchableText.indexOf(query) !== -1) {
-                        filteredModel.append({
-                                "id": plugin.id,
-                                "name": plugin.name,
-                                "group": groupName,
-                                "enabled": RQml.canCreatePlugin(plugin.id)
-                            });
-                    }
+                    const score = FuzzySearch.scoreFields([plugin.name, plugin.id, groupName], query);
+                    if (score < 0)
+                        return;
+                    matches.push({
+                            "id": plugin.id,
+                            "name": plugin.name,
+                            "group": groupName,
+                            "enabled": RQml.canCreatePlugin(plugin.id),
+                            "score": score
+                        });
                 });
+            if (FuzzySearch.splitTerms(query).length > 0) {
+                matches.sort((a, b) => {
+                        if (b.score !== a.score)
+                            return b.score - a.score;
+                        if (a.name !== b.name)
+                            return a.name.localeCompare(b.name);
+                        return a.id.localeCompare(b.id);
+                    });
+            }
+            matches.forEach(item => filteredModel.append({
+                            "id": item.id,
+                            "name": item.name,
+                            "group": item.group,
+                            "enabled": item.enabled
+                        }));
             pluginsList.currentIndex = filteredModel.count > 0 ? 0 : -1;
         }
     }
@@ -82,6 +100,7 @@ Dialog {
             id: filterInput
             Layout.fillWidth: true
             focus: true
+            objectName: "openPluginDialogFilterInput"
             placeholderText: qsTr("Type to filter plugins…")
 
             Keys.onPressed: event => {
@@ -126,6 +145,7 @@ Dialog {
             Layout.fillWidth: true
             clip: true
             model: filteredModel
+            objectName: "openPluginDialogList"
 
             delegate: ItemDelegate {
                 ToolTip.text: qsTr("Already open (single-instance plugin)")

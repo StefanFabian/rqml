@@ -18,6 +18,7 @@
 import QtQuick
 import QtQuick.Controls
 import RQml.Fonts
+import RQml.Utils
 
 // A TextField with a fuzzy-filtered dropdown.
 //
@@ -54,31 +55,6 @@ Item {
     // Alias for text - the string shown in the edit field.
     property alias editText: control.text
 
-    // Returns a score >= 0 when str matches pattern as a fuzzy subsequence, -1 otherwise.
-    // Consecutive matched characters and word-boundary hits (after /, _, -, space) score higher.
-    function fuzzyScore(str, pattern) {
-        if (!pattern)
-            return 0;
-        const s = str.toLowerCase();
-        const p = pattern.toLowerCase();
-        let score = 0;
-        let si = 0;
-        let pi = 0;
-        let consecutive = 0;
-        while (si < s.length && pi < p.length) {
-            if (s[si] === p[pi]) {
-                consecutive++;
-                score += consecutive * consecutive; // quadratic bonus for consecutive runs
-                if (si === 0 || "/_- ".includes(s[si - 1]))
-                    score += 5; // word-boundary bonus
-                pi++;
-            } else {
-                consecutive = 0;
-            }
-            si++;
-        }
-        return pi === p.length ? score : -1;
-    }
 
     // Internal state to show all items (browse mode) instead of just filtered ones.
     property bool _showAll: false
@@ -92,7 +68,7 @@ Item {
         const matches = [];
         const others = [];
         for (const item of items) {
-            const s = control.fuzzyScore(item, pattern);
+            const s = FuzzySearch.score(item, pattern);
             if (s >= 0) {
                 matches.push({
                     item,

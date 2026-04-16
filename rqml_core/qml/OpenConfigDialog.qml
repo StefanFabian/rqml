@@ -18,6 +18,7 @@ import QtQml.Models
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import RQml.Utils
 
 Dialog {
     id: root
@@ -55,19 +56,35 @@ Dialog {
         }
         function updateFilteredModel() {
             filteredModel.clear();
-            const q = filterInput.text.trim().toLowerCase();
+            const query = filterInput.text;
             let input = recent ? RQml.recentConfigs : RQml.configs;
             input = input || [];
+            const matches = [];
             input.forEach(cfg => {
                     const name = cfg.path.split("/").pop().split(".").slice(0, -1).join(".");
                     const path = cfg.path;
-                    if (!q || name.toLowerCase().indexOf(q) !== -1 || path.toLowerCase().indexOf(q) !== -1) {
-                        filteredModel.append({
-                                "name": name,
-                                "path": path
-                            });
-                    }
+                    const score = FuzzySearch.scoreFields([name, path], query);
+                    if (score < 0)
+                        return;
+                    matches.push({
+                            "name": name,
+                            "path": path,
+                            "score": score
+                        });
                 });
+            if (FuzzySearch.splitTerms(query).length > 0) {
+                matches.sort((a, b) => {
+                        if (b.score !== a.score)
+                            return b.score - a.score;
+                        if (a.name !== b.name)
+                            return a.name.localeCompare(b.name);
+                        return a.path.localeCompare(b.path);
+                    });
+            }
+            matches.forEach(item => filteredModel.append({
+                            "name": item.name,
+                            "path": item.path
+                        }));
             // clamp selection within bounds
             configsList.currentIndex = Math.min(Math.max(0, filteredModel.count > 0 ? 0 : -1), filteredModel.count - 1);
         }
@@ -83,6 +100,7 @@ Dialog {
             id: filterInput
             Layout.fillWidth: true
             focus: true
+            objectName: "openConfigDialogFilterInput"
             placeholderText: qsTr("Type to filter configs…")
 
             Keys.onPressed: event => {
@@ -121,6 +139,7 @@ Dialog {
             Layout.fillWidth: true
             clip: true
             model: filteredModel
+            objectName: "openConfigDialogList"
 
             delegate: ItemDelegate {
                 highlighted: index === configsList.currentIndex

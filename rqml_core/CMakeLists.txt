@@ -107,6 +107,7 @@ if(BUILD_TESTING)
     test_rqml_core
     COMMAND $<TARGET_FILE:test_rqml_core>
         -import "${CMAKE_CURRENT_SOURCE_DIR}"
+        -import "${CMAKE_CURRENT_SOURCE_DIR}/test/mocks"
         -junitxml
         -o "${TEST_RESULT_DIR}/test_rqml_core.xml"
     ENV QT_QPA_PLATFORM=offscreen
