@@ -14,14 +14,13 @@ Item {
 
         property string clipboard: ""
 
-        function resetClipboard() {
-            clipboard = "";
-        }
         function copyTextToClipboard(text) {
             clipboard = text;
         }
+        function resetClipboard() {
+            clipboard = "";
+        }
     }
-
     EditMessageDialog {
         id: dialog
         anchors.centerIn: parent
@@ -32,9 +31,6 @@ Item {
         width: 700
     }
     TestCase {
-        function initTestCase() {
-            TestContextBridge.setContextProperty("RQml", mockRqml);
-        }
         function cleanupTestCase() {
             TestContextBridge.setContextProperty("RQml", null);
         }
@@ -87,6 +83,9 @@ Item {
             var textArea = findTextArea();
             if (textArea !== null)
                 textArea.text = JSON.stringify(MessageUtils.toJavaScriptObject(dialog.message) || {}, null, 2);
+        }
+        function initTestCase() {
+            TestContextBridge.setContextProperty("RQml", mockRqml);
         }
         function test_copyJsonButtonCopiesViaUi() {
             var tabBar = findTabBar();
