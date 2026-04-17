@@ -174,9 +174,12 @@ KDDockWidgets::QtQuick::DockWidget *PluginManager::createPlugin( const QString &
 
   auto *dw = new KDDockWidgets::QtQuick::DockWidget( instance->unique_name_ );
   dw->setTitle( it_plugin->name_ );
+  dw->enableAttribute( Qt::WA_DeleteOnClose );
   auto *context = new QQmlContext( engine_->rootContext() );
   context->setContextObject( instance );
   dw->setGuestItem( "file://" + it_plugin->path_, context );
+  connect( dw, &KDDockWidgets::QtQuick::DockWidget::isOpenChanged, this,
+           &PluginManager::onOpenChanged );
   dw->open();
   return dw;
 }
