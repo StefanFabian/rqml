@@ -15,12 +15,15 @@
   <exec_depend>control_msgs</exec_depend>
   <exec_depend>controller_manager_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>moveit_msgs</exec_depend>
+  <exec_depend>pal_statistics_msgs</exec_depend>
   <exec_depend>qml6-module-qt-labs-qmlmodels</exec_depend>
   <exec_depend>qml6-module-qtmultimedia</exec_depend>
   <exec_depend>qml6-module-qtquick-controls</exec_depend>
   <exec_depend>qml6-module-qtquick-dialogs</exec_depend>
   <exec_depend>qml6-module-qtquick-layouts</exec_depend>
   <exec_depend>qml6_ros2_plugin</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>tf2_msgs</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
