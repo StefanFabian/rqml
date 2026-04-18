@@ -293,7 +293,7 @@ Rectangle {
                                 }
                                 IconButton {
                                     Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                                    enabled: !!topicSubscription.message
+                                    enabled: !!topicSubscription.message && !model.paused
                                     objectName: "topicMonitorViewButton_" + model.index
                                     text: IconFont.iconMessage
                                     tooltipText: qsTr("View latest message")
