@@ -105,11 +105,11 @@ Rectangle {
                 text: qsTr("Request")
             }
             TabButton {
-                enabled: !!d.goalHandle
+                enabled: !!d.goalHandle || d.result
                 text: qsTr("Feedback")
             }
             TabButton {
-                enabled: !!d.goalHandle
+                enabled: !!d.goalHandle || d.result
                 text: qsTr("Result")
             }
         }
@@ -209,14 +209,20 @@ Rectangle {
 
                     Label {
                         anchors.centerIn: parent
-                        text: "No result available yet."
+                        text: {
+                            if (!d.result)
+                                return "No result available yet.";
+                            if (!d.result.result)
+                                return d.result.message;
+                            return "";
+                        }
                     }
                 }
                 MessageContentEditor {
                     id: resultEditor
                     anchors.fill: parent
                     readonly: true
-                    visible: d.client && d.goalHandle && d.result
+                    visible: d.client && d.goalHandle && d.result?.result
 
                     model: MessageItemModel {
                         message: d.result && d.result.result || null
@@ -249,11 +255,21 @@ Rectangle {
             Button {
                 enabled: (d.client?.ready && d.goalHandle?.status != ActionGoalStatus.Canceling) ?? false
                 objectName: "actionSendCancelButton"
-                text: d.goalHandle && !d.result ? "Cancel" : "Send Goal"
+                text: {
+                    if (d.goalHandle && !d.result)
+                        return "Cancel";
+                    if (tabBar.currentIndex != 0)
+                        return "Back";
+                    return "Send Goal";
+                }
 
                 onClicked: {
                     if (d.goalHandle && d.goalHandle.isActive) {
                         d.goalHandle.cancel();
+                        return;
+                    }
+                    if (tabBar.currentIndex > 0) {
+                        tabBar.currentIndex = 0;
                         return;
                     }
                     d.resetState();
@@ -262,6 +278,10 @@ Rectangle {
                             "onGoalResponse": function (goalHandle) {
                                 if (!goalHandle) {
                                     Ros2.warn("Goal rejected by server");
+                                    d.result = {
+                                        "message": "Goal rejected by server"
+                                    };
+                                    tabBar.currentIndex = 2;
                                     return;
                                 }
                                 Ros2.debug("Goal accepted by server, waiting for result");
