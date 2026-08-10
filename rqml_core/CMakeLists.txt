@@ -24,7 +24,8 @@ set(CMAKE_AUTOMOC ON)
 set(KDDockWidgets_SOURCE_DIR
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/KDDockWidgets)
 if (NOT EXISTS ${KDDockWidgets_SOURCE_DIR}/CMakeLists.txt)
-  message(FATAL_ERROR "Vendored KDDockWidgets sources not found in ${KDDockWidgets_SOURCE_DIR}")
+  message(FATAL_ERROR
+    "Vendored KDDockWidgets sources not found in ${KDDockWidgets_SOURCE_DIR}")
 endif ()
 
 set(KDDockWidgets_QT6

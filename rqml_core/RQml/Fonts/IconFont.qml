@@ -51,6 +51,7 @@ FontLoader {
     readonly property string iconSearch: "\uf002"
     readonly property string iconSettings: "\uf013"
     readonly property string iconStar: "\uf005"
+    readonly property string iconSuccess: "\uf058"
     readonly property string iconTrash: "\uf1f8"
     readonly property string iconWarning: "\uf071"
 

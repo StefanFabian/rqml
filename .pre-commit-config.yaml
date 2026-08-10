@@ -23,16 +23,16 @@ repos:
       - id: check-merge-conflict
       - id: check-symlinks
       - id: check-xml
-        exclude: ^third_party/
+        exclude: (^|/)third_party/
       - id: check-yaml
         args: ["--allow-multiple-documents"]
       - id: end-of-file-fixer
-        exclude: ^third_party/
+        exclude: (^|/)third_party/
       - id: mixed-line-ending
-        exclude: ^third_party/
+        exclude: (^|/)third_party/
       - id: trailing-whitespace
         exclude_types: [rst, markdown]
-        exclude: ^third_party/
+        exclude: (^|/)third_party/
 
   # CPP Checks
   - repo: https://github.com/pre-commit/mirrors-clang-format
@@ -42,7 +42,7 @@ repos:
         name: Clang Format
         args: [--style=file]
         files: \.(cpp|hpp|h|c|cc)$
-        exclude: ^third_party/
+        exclude: (^|/)third_party/
 
   - repo: local
     hooks:
@@ -58,7 +58,7 @@ repos:
     rev: v0.6.13
     hooks:
     - id: cmake-lint
-      exclude: ^third_party/
+      exclude: (^|/)third_party/
 
   # Package XML
   - repo: https://github.com/Joschi3/package_xml_validation.git
@@ -66,7 +66,7 @@ repos:
     hooks:
       - id: format-package-xml
         name: Validate and Format package.xml
-        exclude: ^third_party/
+        exclude: (^|/)third_party/
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.35.0
@@ -91,3 +91,4 @@ repos:
         # The optional -n flag normalizes the object attribute order based on Qt conventions
         args: [-n, -i]
         files: \.qml$
+        exclude: (^|/)third_party/

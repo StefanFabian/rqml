@@ -1,17 +1,38 @@
 import QtQuick
-import QtQuick.Dialogs
 import Ros2
 import RQml.Utils
 
 Object {
     id: root
 
+    // Mirrors the constants of controller_manager_msgs/srv/SwitchController.
+    enum Strictness {
+        BestEffort = 1,
+        Strict,
+        Auto,
+        ForceAuto
+    }
+
+    // Activate controllers as soon as their hardware dependencies are ready
+    // instead of waiting for all interfaces.
+    property bool activateAsap: false
     property string controllerManager
     property var controllers: ListModel {
     }
     property var hardwareComponents: ListModel {
     }
     readonly property bool loading: d.loadingControllers || d.loadingHardwareComponents
+    // Strictness used for activate/deactivate, see the Strictness enum.
+    property int strictness: ControllerManagerInterface.Strictness.Auto
+    // Timeout in seconds before pending controllers are aborted. Zero makes the
+    // controller manager fall back to its default of 1 s.
+    property real switchTimeout: 0
+
+    // Outcome of a transition
+    signal controllerTransitionFailed(string name, string action, string message)
+    signal controllerTransitionSucceeded(string name, string action, string message)
+    signal hardwareTransitionFailed(string name, string targetLabel, string currentLabel, int currentId)
+    signal hardwareTransitionSucceeded(string name, string targetLabel)
 
     function addParameterControllers() {
         if (!root.controllerManager)
@@ -132,46 +153,16 @@ Object {
         root.loadControllers();
         root.loadHardwareComponents();
     }
+    // Runs the given actions in order, reporting the outcome of the last one.
     function transitionController(controllerName, actions) {
         if (!controllerName || !actions || actions.length === 0)
             return;
         if (!root.controllerManager)
             return;
-        const action = actions[0];
-        const serviceName = getTransitionServiceTopic(root.controllerManager, action);
-        let client = d.controllerTransitionServiceClients[serviceName];
-        if (client == null || client.name != serviceName) {
-            client = Ros2.createServiceClient(serviceName, getTransitionServiceType(action));
-            d.controllerTransitionServiceClients[serviceName] = client;
-        }
-        let request = {};
-        if (action == "activate" || action == "deactivate") {
-            request = {
-                "activate_controllers": action == "activate" ? [controllerName] : [],
-                "deactivate_controllers": action == "deactivate" ? [controllerName] : [],
-                "strictness": 3
-            };
-        } else {
-            request.name = controllerName;
-        }
-        client.sendRequestAsync(request, function (response) {
-                if (!response) {
-                    Ros2.warn("ControllerManager: Failed to call service " + serviceName + ". Trying again.");
-                    transitionController(controllerName, actions);
-                    return;
-                }
-                if (!response.ok) {
-                    errorDialog.title = "Controller Transition Error";
-                    errorDialog.text = "Failed to " + action + " controller " + controllerName + ".";
-                    if (response.message) {
-                        errorDialog.informativeText = "Reason: " + response.message;
-                    }
-                    errorDialog.open();
-                    return;
-                }
-                actions.shift();
-                transitionController(controllerName, actions);
-            });
+        // Work on a copy. The caller may hand in an array it still needs, e.g.
+        // the action list of a context menu entry, which would be consumed
+        // otherwise and leave the entry usable only once.
+        d.runControllerActions(controllerName, actions.slice(), []);
     }
     function transitionHardwareComponent(componentName, target_state) {
         if (!componentName || !target_state)
@@ -184,15 +175,14 @@ Object {
         };
         d.setComponentStateServiceClient.sendRequestAsync(request, function (response) {
                 if (!response) {
-                    Ros2.warn("ControllerManager: Failed to call service " + serviceName + ". Trying again.");
+                    Ros2.warn("ControllerManager: Failed to call service " + root.controllerManager + "/set_hardware_component_state. Trying again.");
                     transitionHardwareComponent(componentName, target_state);
                     return;
                 }
-                if (!response.ok) {
-                    errorDialog.title = "Hardware Component Transition Error";
-                    errorDialog.text = "Failed to transition hardware component " + componentName + " to " + target_state + ".";
-                    errorDialog.informativeText = "Component now in state: " + response.state.label + " (" + response.state.id + ")";
-                    errorDialog.open();
+                if (response.ok) {
+                    root.hardwareTransitionSucceeded(componentName, target_state.label);
+                } else {
+                    root.hardwareTransitionFailed(componentName, target_state.label, response.state.label, response.state.id);
                 }
                 root.loadHardwareComponents();
             });
@@ -218,11 +208,6 @@ Object {
         root.refresh();
     }
 
-    MessageDialog {
-        id: errorDialog
-        buttons: MessageDialog.Ok
-        modality: Qt.WindowModal
-    }
     QtObject {
         id: d
 
@@ -233,6 +218,64 @@ Object {
         property bool loadingHardwareComponents: false
         property var parametersServiceClient: null
         property var setComponentStateServiceClient: null
+
+        // Runs the remaining actions in order. Only the last one reports
+        // success, the collected messages of all of them are passed on because
+        // only switch_controller returns one at all.
+        function runControllerActions(controllerName, remainingActions, collectedMessages) {
+            const action = remainingActions[0];
+            const serviceName = root.getTransitionServiceTopic(root.controllerManager, action);
+            let client = d.controllerTransitionServiceClients[serviceName];
+            if (client == null || client.name != serviceName) {
+                client = Ros2.createServiceClient(serviceName, root.getTransitionServiceType(action));
+                d.controllerTransitionServiceClients[serviceName] = client;
+            }
+            let request = {};
+            if (action == "activate" || action == "deactivate") {
+                request = {
+                    "activate_controllers": action == "activate" ? [controllerName] : [],
+                    "deactivate_controllers": action == "deactivate" ? [controllerName] : [],
+                    "strictness": root.strictness,
+                    "activate_asap": root.activateAsap,
+                    "timeout": d.secondsToDuration(root.switchTimeout)
+                };
+            } else {
+                request.name = controllerName;
+            }
+            client.sendRequestAsync(request, function (response) {
+                    if (!response) {
+                        Ros2.warn("ControllerManager: Failed to call service " + serviceName + ". Trying again.");
+                        d.runControllerActions(controllerName, remainingActions, collectedMessages);
+                        return;
+                    }
+                    if (!response.ok) {
+                        root.controllerTransitionFailed(controllerName, action, response.message || "");
+                        return;
+                    }
+                    if (response.message)
+                        collectedMessages.push(response.message);
+                    remainingActions.shift();
+                    if (remainingActions.length === 0) {
+                        root.controllerTransitionSucceeded(controllerName, action, collectedMessages.join("; "));
+                        return;
+                    }
+                    d.runControllerActions(controllerName, remainingActions, collectedMessages);
+                });
+        }
+        function secondsToDuration(seconds) {
+            const clamped = Math.max(0, seconds);
+            let sec = Math.floor(clamped);
+            let nanosec = Math.round((clamped - sec) * 1e9);
+            // Rounding may push the fraction to a full second.
+            if (nanosec >= 1e9) {
+                sec += 1;
+                nanosec -= 1e9;
+            }
+            return {
+                "sec": sec,
+                "nanosec": nanosec
+            };
+        }
     }
     Subscription {
         id: activitySub

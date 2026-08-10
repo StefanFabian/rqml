@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Ros2
 import RQml.Elements
+import RQml.Fonts
 import "elements"
 import "interfaces"
 
@@ -27,13 +28,19 @@ Rectangle {
     Component.onCompleted: {
         if (context.enabled === undefined)
             context.enabled = true;
+        if (context.switch_strictness === undefined)
+            context.switch_strictness = ControllerManagerInterface.Strictness.Auto;
+        if (context.activate_asap === undefined)
+            context.activate_asap = false;
+        if (context.switch_timeout === undefined)
+            context.switch_timeout = 0;
         d.refresh();
     }
 
     GridLayout {
         anchors.fill: parent
         anchors.margins: 4
-        columns: 3
+        columns: 4
 
         Label {
             text: "Controller Manager"
@@ -59,9 +66,16 @@ Rectangle {
                 animate = false;
             }
         }
+        IconButton {
+            objectName: "cmSettingsButton"
+            text: IconFont.iconSettings
+            tooltipText: qsTr("Settings")
+
+            onClicked: settingsDialog.open()
+        }
         LoadingListView {
             id: controllerListView
-            Layout.columnSpan: 3
+            Layout.columnSpan: 4
             Layout.fillHeight: true
             Layout.fillWidth: true
             Layout.preferredHeight: 240
@@ -91,6 +105,7 @@ Rectangle {
 
                 Menu {
                     id: contextMenu
+                    objectName: "cmControllerContextMenu"
                     width: {
                         let result = 0;
                         let padding = 0;
@@ -159,7 +174,7 @@ Rectangle {
         }
         LoadingListView {
             id: hardwareComponentsListView
-            Layout.columnSpan: 3
+            Layout.columnSpan: 4
             Layout.fillHeight: true
             Layout.fillWidth: true
             Layout.preferredHeight: 120
@@ -190,6 +205,7 @@ Rectangle {
 
                 Menu {
                     id: contextMenu
+                    objectName: "cmHardwareContextMenu"
                     width: {
                         let result = 0;
                         let padding = 0;
@@ -266,15 +282,78 @@ Rectangle {
         id: hardwareComponentInfoDialog
         objectName: "cmHardwareComponentInfoDialog"
     }
+    ControllerManagerSettingsDialog {
+        id: settingsDialog
+        objectName: "cmSettingsDialog"
+        settings: context
+    }
+    ToastManager {
+        id: toastManager
+        objectName: "cmToastManager"
+        z: 100
+    }
     QtObject {
         id: d
 
         property var controllerManager: ControllerManagerInterface {
+            activateAsap: context.activate_asap ?? false
             controllerManager: context.controller_manager_namespace || ""
+            strictness: context.switch_strictness ?? ControllerManagerInterface.Strictness.Auto
+            switchTimeout: context.switch_timeout ?? 0
+
+            onControllerTransitionFailed: (name, action, message) => {
+                toastManager.show(d.controllerFailureMessage(action, name, message), "error");
+            }
+            onControllerTransitionSucceeded: (name, action, message) => {
+                // The message of a switch_controller call names the controllers
+                // the controller manager (de)activated on its own, which is the
+                // whole point of the AUTO and FORCE_AUTO strictness modes.
+                toastManager.show(d.controllerSuccessMessage(action, name, message), "success");
+            }
+            onHardwareTransitionFailed: (name, targetLabel, currentLabel, currentId) => {
+                toastManager.show(d.hardwareFailureMessage(name, targetLabel, currentLabel, currentId), "error");
+            }
+            onHardwareTransitionSucceeded: (name, targetLabel) => {
+                toastManager.show(qsTr("%1 is now %2").arg(name).arg(targetLabel), "success");
+            }
         }
         property var controllerManagers: []
         property var trajectoryClient: null
 
+        // The transition messages are spelled out per action instead of being
+        // composed from a verb and a sentence frame so that translators get a
+        // complete sentence. %1 is the controller, %2 the message reported by
+        // the controller manager.
+        function controllerFailureMessage(action, name, message) {
+            switch (action) {
+            case "activate":
+                return message ? qsTr("Failed to activate %1: %2").arg(name).arg(message) : qsTr("Failed to activate %1").arg(name);
+            case "deactivate":
+                return message ? qsTr("Failed to deactivate %1: %2").arg(name).arg(message) : qsTr("Failed to deactivate %1").arg(name);
+            case "configure":
+                return message ? qsTr("Failed to configure %1: %2").arg(name).arg(message) : qsTr("Failed to configure %1").arg(name);
+            case "load":
+                return message ? qsTr("Failed to load %1: %2").arg(name).arg(message) : qsTr("Failed to load %1").arg(name);
+            case "unload":
+                return message ? qsTr("Failed to unload %1: %2").arg(name).arg(message) : qsTr("Failed to unload %1").arg(name);
+            }
+            return message ? qsTr("Failed to transition %1: %2").arg(name).arg(message) : qsTr("Failed to transition %1").arg(name);
+        }
+        function controllerSuccessMessage(action, name, message) {
+            switch (action) {
+            case "activate":
+                return message ? qsTr("Activated %1: %2").arg(name).arg(message) : qsTr("Activated %1").arg(name);
+            case "deactivate":
+                return message ? qsTr("Deactivated %1: %2").arg(name).arg(message) : qsTr("Deactivated %1").arg(name);
+            case "configure":
+                return message ? qsTr("Configured %1: %2").arg(name).arg(message) : qsTr("Configured %1").arg(name);
+            case "load":
+                return message ? qsTr("Loaded %1: %2").arg(name).arg(message) : qsTr("Loaded %1").arg(name);
+            case "unload":
+                return message ? qsTr("Unloaded %1: %2").arg(name).arg(message) : qsTr("Unloaded %1").arg(name);
+            }
+            return message ? qsTr("Transitioned %1: %2").arg(name).arg(message) : qsTr("Transitioned %1").arg(name);
+        }
         function getTransitionsForControllerState(state) {
             const transitions = {
                 "active": [{
@@ -316,44 +395,50 @@ Rectangle {
                 "active": [{
                         "name": "Deactivate (inactive)",
                         "target_state": {
-                            "id": State.Inactive,
+                            "id": ControllerManager.State.Inactive,
                             "label": "inactive"
                         }
                     }, {
                         "name": "Deactivate and Cleanup (unconfigured)",
                         "target_state": {
-                            "id": State.Unconfigured,
+                            "id": ControllerManager.State.Unconfigured,
                             "label": "unconfigured"
                         }
                     },],
                 "inactive": [{
                         "name": "Activate (active)",
                         "target_state": {
-                            "id": State.Active,
+                            "id": ControllerManager.State.Active,
                             "label": "active"
                         }
                     }, {
                         "name": "Cleanup (unconfigured)",
                         "target_state": {
-                            "id": State.Unconfigured,
+                            "id": ControllerManager.State.Unconfigured,
                             "label": "unconfigured"
                         }
                     },],
                 "unconfigured": [{
                         "name": "Configure and Activate (active)",
                         "target_state": {
-                            "id": State.Active,
+                            "id": ControllerManager.State.Active,
                             "label": "active"
                         }
                     }, {
                         "name": "Configure (inactive)",
                         "target_state": {
-                            "id": State.Inactive,
+                            "id": ControllerManager.State.Inactive,
                             "label": "inactive"
                         }
                     },]
             };
             return transitions[state] || [];
+        }
+
+        // A component that refuses a transition may not report a label, the
+        // numeric lifecycle state id is always there.
+        function hardwareFailureMessage(name, targetLabel, currentLabel, currentId) {
+            return currentLabel ? qsTr("Failed to set %1 to %2, it is now %3 (%4)").arg(name).arg(targetLabel).arg(currentLabel).arg(currentId) : qsTr("Failed to set %1 to %2, it is now in state %3").arg(name).arg(targetLabel).arg(currentId);
         }
         function refresh() {
             const prevControllerManager = context.controller_manager_namespace;
