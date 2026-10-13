@@ -24,7 +24,9 @@ set(CMAKE_AUTOMOC ON)
 set(KDDockWidgets_SOURCE_DIR
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/KDDockWidgets)
 if (NOT EXISTS ${KDDockWidgets_SOURCE_DIR}/CMakeLists.txt)
-  message(FATAL_ERROR "Vendored KDDockWidgets sources not found in ${KDDockWidgets_SOURCE_DIR}")
+  message(
+    FATAL_ERROR
+    "Vendored KDDockWidgets sources not found in ${KDDockWidgets_SOURCE_DIR}")
 endif ()
 
 set(KDDockWidgets_QT6
@@ -54,10 +56,12 @@ add_subdirectory(${KDDockWidgets_SOURCE_DIR} third_party/KDDockWidgets)
 set(HEADERS src/rqml_plugin.h)
 
 set(SOURCES
+  src/helpers/dock_selection.cpp
+  src/helpers/file_system_watcher.cpp
+  src/helpers/last_window_quit.cpp
   src/config_manager.cpp
   src/plugin_manager.cpp
   src/rqml.cpp
-  src/helpers/file_system_watcher.cpp
 )
 
 set(APP_ICON_RESOURCE)

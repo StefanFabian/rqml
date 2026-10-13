@@ -16,31 +16,45 @@
  */
 
 #include "config_manager.hpp"
+#include "helpers/dock_selection.hpp"
+#include "helpers/last_window_quit.hpp"
 #include "plugin_manager.hpp"
 
 #include <filesystem>
 
 #include <QClipboard>
-#include <QCursor>
 #include <QFile>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
-#include <QQuickItem>
 #include <QStandardPaths>
 
 #include <kddockwidgets/Config.h>
-#include <kddockwidgets/core/DockRegistry.h>
 #include <kddockwidgets/qtquick/Platform.h>
+#include <kddockwidgets/qtquick/ViewFactory.h>
 #include <kddockwidgets/qtquick/views/DockWidget.h>
 
 using namespace rqml;
+
+namespace
+{
+/// Replaces the title bar with one that highlights the selected (focused) plugin.
+class RQmlViewFactory : public KDDockWidgets::QtQuick::ViewFactory
+{
+public:
+  QUrl titleBarFilename() const override
+  {
+    return QUrl( QStringLiteral( "qrc:/qml/RQmlTitleBar.qml" ) );
+  }
+};
+} // namespace
 
 class RQml
 {
   RQml()
   {
     auto &kd_config = KDDockWidgets::Config::self();
+    kd_config.setViewFactory( new RQmlViewFactory() );
     kd_config.setFlags( KDDockWidgets::Config::Flag_TitleBarHasMinimizeButton |
                         KDDockWidgets::Config::Flag_NativeTitleBar |
                         KDDockWidgets::Config::Flag_TitleBarHasMaximizeButton |
@@ -95,37 +109,6 @@ public:
     return plugin_loader_->canCreatePlugin( plugin_id );
   }
 
-  void closeFocusedPlugin()
-  {
-    auto *dock_under_cursor = static_cast<KDDockWidgets::Core::DockWidget *>( nullptr );
-    const QPoint global_pos = QCursor::pos();
-    for ( auto *dock_widget : KDDockWidgets::DockRegistry::self()->dockwidgets() ) {
-      if ( dock_widget == nullptr || !dock_widget->isOpen() || !dock_widget->isCurrentTab() )
-        continue;
-
-      auto *dock_item = KDDockWidgets::QtQuick::asQQuickItem( dock_widget );
-      if ( dock_item == nullptr )
-        continue;
-
-      const QPointF local_pos = dock_item->mapFromGlobal( global_pos );
-      if ( dock_item->contains( local_pos ) ) {
-        dock_under_cursor = dock_widget;
-        break;
-      }
-    }
-
-    auto *focused_widget = KDDockWidgets::DockRegistry::self()->focusedDockWidget();
-    if ( focused_widget == nullptr || !focused_widget->isOpen() )
-      return;
-
-    // Safety-first behavior since sometimes focus is not updated correctly:
-    // If cursor is currently not over the focused one, do nothing.
-    if ( dock_under_cursor != focused_widget )
-      return;
-
-    focused_widget->close();
-  }
-
   void save() { config_manager_->save(); }
   void save( const QString &path ) { config_manager_->save( path.toStdString() ); }
   void load( const QString &path ) { config_manager_->load( path.toStdString() ); }
@@ -172,7 +155,11 @@ public:
     return RQml::instance().canCreatePlugin( plugin_id );
   }
 
-  Q_INVOKABLE void closeFocusedPlugin() { RQml::instance().closeFocusedPlugin(); }
+  Q_INVOKABLE void closeFocusedPlugin() { rqml::closeFocusedPlugin(); }
+
+  Q_INVOKABLE void selectNextPlugin() { rqml::cycleFocusedPlugin( true ); }
+
+  Q_INVOKABLE void selectPreviousPlugin() { rqml::cycleFocusedPlugin( false ); }
 
   Q_INVOKABLE void save( const QString &path ) { return RQml::instance().save( path ); }
 
@@ -334,6 +321,12 @@ private:
 int main( int argc, char *argv[] )
 {
   QGuiApplication app( argc, argv );
+  DockSelectionFilter dock_selection_filter;
+  app.installEventFilter( &dock_selection_filter );
+  // This filter handles floating window closing after top-level window was closed.
+  // The normal handling would not catch that and the app would never quit.
+  LastWindowQuitFilter last_window_quit_filter;
+  app.installEventFilter( &last_window_quit_filter );
 
   std::string config_dir =
       QStandardPaths::writableLocation( QStandardPaths::AppConfigLocation ).toStdString();

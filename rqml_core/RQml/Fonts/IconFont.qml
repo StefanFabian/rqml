@@ -36,6 +36,7 @@ FontLoader {
     readonly property string iconExpand: "\uf065"
     readonly property string iconFatal: "\uf714"
     readonly property string iconFilter: "\uf0b0"
+    readonly property string iconFloat: "\uf35d"
     readonly property string iconInfo: "\uf05a"
     readonly property string iconLoad: "\uf56f"
     readonly property string iconMagnifyingGlassMinus: "\uf010"
@@ -53,6 +54,9 @@ FontLoader {
     readonly property string iconStar: "\uf005"
     readonly property string iconTrash: "\uf1f8"
     readonly property string iconWarning: "\uf071"
+    readonly property string iconWindowMaximize: "\uf2d0"
+    readonly property string iconWindowMinimize: "\uf2d1"
+    readonly property string iconWindowRestore: "\uf2d2"
 
     source: "./Font Awesome 7 Free-Solid-900.otf"
 }

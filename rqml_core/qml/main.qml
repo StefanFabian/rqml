@@ -86,14 +86,35 @@ ApplicationWindow {
                 }
             }
             Action {
+                id: selectNextPluginAction
+                shortcut: "Ctrl+Tab"
+                text: qsTr("Select next plugin")
+
+                onTriggered: {
+                    RQml.selectNextPlugin();
+                }
+            }
+            Action {
+                id: selectPreviousPluginAction
+                shortcut: "Ctrl+Shift+Tab"
+                text: qsTr("Select previous plugin")
+
+                onTriggered: {
+                    RQml.selectPreviousPlugin();
+                }
+            }
+            Action {
+                id: closeSelectedPluginAction
                 shortcut: "Ctrl+W"
-                text: qsTr("Close focused plugin")
+                text: qsTr("Close selected plugin")
 
                 onTriggered: {
                     RQml.closeFocusedPlugin();
                 }
             }
             Action {
+                id: closeAllPluginsAction
+                shortcut: "Ctrl+Shift+W"
                 text: qsTr("Close All")
 
                 onTriggered: {
@@ -216,6 +237,21 @@ ApplicationWindow {
         }
     }
 
+    // Action shortcuts only fire while the main window is active. Mirror the plugin selection ones
+    // application wide so they also work from floating plugin windows.
+    Instantiator {
+        model: [selectNextPluginAction, selectPreviousPluginAction, closeSelectedPluginAction, closeAllPluginsAction]
+
+        delegate: Shortcut {
+            required property var modelData
+
+            context: Qt.ApplicationShortcut
+            enabled: !mainWindow.active
+            sequence: modelData.shortcut
+
+            onActivated: modelData.trigger()
+        }
+    }
     Row {
         id: noPluginsLoadedRow
         anchors.centerIn: parent

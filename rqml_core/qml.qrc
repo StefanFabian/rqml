@@ -10,6 +10,7 @@
     <file>qml/main.qml</file>
     <file>qml/OpenConfigDialog.qml</file>
     <file>qml/OpenPluginDialog.qml</file>
+    <file>qml/RQmlTitleBar.qml</file>
     <file>qml/SaveConfigDialog.qml</file>
     <file>qml/SettingsDialog.qml</file>
     <file>qml/UsageHints.js</file>

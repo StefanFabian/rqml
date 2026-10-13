@@ -5,7 +5,9 @@ var shortcuts = [
     qsTr("Press Ctrl+O to open a configuration."),
     qsTr("Press Ctrl+R to open recent configurations."),
     qsTr("Press Ctrl+P to open the plugin picker."),
-    qsTr("Press Ctrl+W to close the focused plugin.")
+    qsTr("Press Ctrl+W to close the selected plugin."),
+    qsTr("Press Ctrl+Shift+W to close all plugins."),
+    qsTr("Press Ctrl+Tab (or Ctrl+Shift+Tab) to cycle through plugins.")
 ];
 
 function getHint(previousHint) {
