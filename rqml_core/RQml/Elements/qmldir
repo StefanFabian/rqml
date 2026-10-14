@@ -6,6 +6,7 @@ DecimalSpinBox 1.0 DecimalSpinBox.qml
 EditMessageDialog 1.0 EditMessageDialog.qml
 FuzzySelector 1.0 FuzzySelector.qml
 Hint 1.0 Hint.qml
+HoldButton 1.0 HoldButton.qml
 IconButton 1.0 IconButton.qml
 IconTextButton 1.0 IconTextButton.qml
 IconToggleButton 1.0 IconToggleButton.qml

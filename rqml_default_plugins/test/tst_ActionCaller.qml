@@ -55,17 +55,22 @@ Item {
         id: testCase
 
         property var lastCallbacks: null
+        property var lastClient: null
 
         function init() {
+            // The client binding must not depend on state that resetState() mutates.
+            failOnWarning(/Binding loop detected/);
             Ros2.reset();
             contextObj.topic = "";
             contextObj.type = "";
             contextObj.request = null;
             lastCallbacks = null;
+            lastClient = null;
 
             // Register a mock action
-            Ros2.registerAction("/test_action", "tf2_msgs/action/LookupTransform", function (goal, callbacks) {
+            Ros2.registerAction("/test_action", "tf2_msgs/action/LookupTransform", function (goal, callbacks, client) {
                     lastCallbacks = callbacks;
+                    lastClient = client;
                     // Test drive the flow from the test case
                 });
             pluginLoader.reload();
@@ -78,6 +83,34 @@ Item {
                     var selector = find("actionTopicSelector");
                     return selector && (selector.model || []).indexOf("/test_action") !== -1;
                 }, 5000);
+        }
+        function test_cancel_available_when_server_dies() {
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
+            var sendButton = find("actionSendCancelButton");
+            tryVerify(function () {
+                    return sendButton.enabled;
+                }, 5000);
+            mouseClick(sendButton);
+            tryVerify(function () {
+                    return lastCallbacks !== null;
+                }, 2000);
+            var handle = Ros2.createGoalHandle("goal_dead_server");
+            handle.setStatus(2); // Executing
+            lastCallbacks.onGoalResponse(handle);
+            tryCompare(sendButton, "text", "Cancel", 2000);
+
+            // Server dies while executing: the goal stays active, but Cancel must
+            // remain usable so it leads to the hold-to-drop escape hatch.
+            lastClient.ready = false;
+            verify(sendButton.enabled);
+            mouseClick(sendButton);
+            compare(Ros2._lastActionCancelled, true);
+            var holdButton = find("actionHoldDropButton");
+            tryVerify(function () {
+                    return holdButton.visible && !sendButton.visible;
+                }, 2000);
         }
         function test_discovery() {
             var topicSelector = find("actionTopicSelector");
@@ -169,6 +202,20 @@ Item {
             tryVerify(function () {
                     return Ros2._lastActionCancelled === true;
                 }, 2000);
+
+            // Hold to drop shows right after the request even without any status
+            // update, e.g. if the server died, and hides once a result arrives.
+            var holdButton = find("actionHoldDropButton");
+            tryVerify(function () {
+                    return holdButton.visible && !sendButton.visible;
+                }, 2000);
+            lastCallbacks.onResult({
+                    "status": 6,
+                    "result": Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform")
+                });
+            tryVerify(function () {
+                    return !holdButton.visible && sendButton.visible;
+                }, 2000);
         }
         function test_goal_execution() {
             contextObj.topic = "/test_action";
@@ -212,6 +259,128 @@ Item {
             tryCompare(tabBar, "currentIndex", 2, 2000); // Result tab
             tryCompare(statusLabel, "text", "Ready", 2000);
         }
+        function test_hold_to_drop_after_cancel() {
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
+            var sendButton = find("actionSendCancelButton");
+            tryVerify(function () {
+                    return sendButton.enabled;
+                }, 5000);
+            mouseClick(sendButton);
+            tryVerify(function () {
+                    return lastCallbacks !== null;
+                }, 2000);
+            var handle = Ros2.createGoalHandle("goal_hang");
+            handle.setStatus(2); // Executing → active
+            lastCallbacks.onGoalResponse(handle);
+            tryCompare(sendButton, "text", "Cancel", 2000);
+
+            // Cancel is requested but the server hangs in the Canceling state.
+            mouseClick(sendButton);
+            compare(Ros2._lastActionCancelled, true);
+            handle.setStatus(3); // Canceling
+
+            // The (now useless) Cancel button hides and the hold-to-drop
+            // escape hatch takes its place.
+            var holdButton = find("actionHoldDropButton");
+            verify(holdButton);
+            tryVerify(function () {
+                    return holdButton.visible && !sendButton.visible;
+                }, 2000);
+
+            // A tap must not drop anything - only a full hold does.
+            holdButton.holdDuration = 120;
+            mouseClick(holdButton);
+            wait(holdButton.holdDuration * 2);
+            verify(holdButton.visible);
+
+            // Holding past holdDuration drops the goal locally and returns to
+            // the request tab, ready to send again.
+            mousePress(holdButton);
+            tryVerify(function () {
+                    return !holdButton.visible;
+                }, 2000);
+            mouseRelease(holdButton);
+            var tabBar = find("actionTabBar");
+            tryCompare(tabBar, "currentIndex", 0, 2000);
+            tryCompare(sendButton, "text", "Send Goal", 2000);
+
+            // A late result belonging to the dropped goal must be ignored: no
+            // jump to the result tab.
+            var result = Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform");
+            lastCallbacks.onResult({
+                    "status": 6,
+                    "result": result
+                });
+            wait(100);
+            compare(tabBar.currentIndex, 0);
+        }
+        function test_hold_to_drop_when_finished_without_result() {
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
+            var sendButton = find("actionSendCancelButton");
+            tryVerify(function () {
+                    return sendButton.enabled;
+                }, 5000);
+            mouseClick(sendButton);
+            tryVerify(function () {
+                    return lastCallbacks !== null;
+                }, 2000);
+            var handle = Ros2.createGoalHandle("goal_no_result");
+            handle.setStatus(2); // Executing
+            lastCallbacks.onGoalResponse(handle);
+            tryCompare(sendButton, "text", "Cancel", 2000);
+
+            // Server reports a terminal status but the result never arrives.
+            handle.setStatus(6); // Aborted
+            var holdButton = find("actionHoldDropButton");
+            tryVerify(function () {
+                    return holdButton.visible && !sendButton.visible;
+                }, 2000);
+            compare(find("actionStatusLabel").text, "Processing goal.");
+            lastCallbacks.onResult({
+                    "status": 6,
+                    "result": Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform")
+                });
+            tryVerify(function () {
+                    return !holdButton.visible && sendButton.visible;
+                }, 2000);
+        }
+        function test_late_acceptance_of_abandoned_goal_cancels_it() {
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
+            var sendButton = find("actionSendCancelButton");
+            tryVerify(function () {
+                    return sendButton.enabled;
+                }, 5000);
+            mouseClick(sendButton);
+            tryVerify(function () {
+                    return lastCallbacks !== null;
+                }, 2000);
+            var abandonedCallbacks = lastCallbacks;
+            lastCallbacks = null;
+
+            // Go back and send a new goal before the first one was accepted.
+            tryCompare(sendButton, "text", "Back", 2000);
+            mouseClick(sendButton);
+            tryCompare(sendButton, "text", "Send Goal", 2000);
+            mouseClick(sendButton);
+            tryVerify(function () {
+                    return lastCallbacks !== null;
+                }, 2000);
+
+            // The first goal is accepted late: it must be canceled and not take over the UI.
+            compare(Ros2._lastActionCancelled, false);
+            var abandonedHandle = Ros2.createGoalHandle("goal_abandoned");
+            abandonedHandle.setStatus(2); // Executing
+            abandonedCallbacks.onGoalResponse(abandonedHandle);
+            compare(Ros2._lastActionCancelled, true);
+            var statusLabel = find("actionStatusLabel");
+            compare(statusLabel.text, "Ready");
+        }
         function test_request_editing() {
             // Pre-populate context.request with a marker value; the editor
             // must adopt it on load (this is how persisted state survives a
@@ -242,6 +411,61 @@ Item {
             tryVerify(function () {
                     return editor.model && editor.model.message && editor.model.message["#messageType"] === "tf2_msgs/action/LookupTransform_Goal";
                 }, 2000);
+        }
+        function test_selectors_locked_while_goal_active() {
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
+            var topicSelector = find("actionTopicSelector");
+            var typeSelector = find("actionTypeSelector");
+            var sendButton = find("actionSendCancelButton");
+            tryVerify(function () {
+                    return sendButton.enabled;
+                }, 5000);
+            mouseClick(sendButton);
+            tryVerify(function () {
+                    return lastCallbacks !== null;
+                }, 2000);
+            var handle = Ros2.createGoalHandle("goal_lock");
+            handle.setStatus(2); // Executing
+            lastCallbacks.onGoalResponse(handle);
+
+            // Changing topic or type would orphan the running goal.
+            tryVerify(function () {
+                    return !topicSelector.enabled && !typeSelector.enabled;
+                }, 2000);
+            lastCallbacks.onResult({
+                    "status": 4,
+                    "result": Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform")
+                });
+            tryVerify(function () {
+                    return topicSelector.enabled && typeSelector.enabled;
+                }, 2000);
+        }
+        function test_server_reported_canceling() {
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
+            var sendButton = find("actionSendCancelButton");
+            tryVerify(function () {
+                    return sendButton.enabled;
+                }, 5000);
+            mouseClick(sendButton);
+            tryVerify(function () {
+                    return lastCallbacks !== null;
+                }, 2000);
+            var handle = Ros2.createGoalHandle("goal_ext_cancel");
+            handle.setStatus(2); // Executing
+            lastCallbacks.onGoalResponse(handle);
+            var statusLabel = find("actionStatusLabel");
+            tryCompare(statusLabel, "text", "Processing goal.", 2000);
+
+            // Canceled from elsewhere: no local cancel request, only the status update.
+            handle.setStatus(3); // Canceling
+            tryCompare(statusLabel, "text", "Canceling...", 2000);
+            compare(Ros2._lastActionCancelled, false);
+            verify(find("actionHoldDropButton").visible);
+            verify(!sendButton.visible);
         }
         function test_topic_refresh() {
             var selector = find("actionTopicSelector");

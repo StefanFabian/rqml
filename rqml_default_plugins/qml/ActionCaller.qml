@@ -19,6 +19,8 @@ Rectangle {
         GridLayout {
             Layout.fillWidth: true
             columns: 2
+            // Switching the client would orphan the running goal.
+            enabled: !d.goalHandle || !!d.result
 
             FuzzySelector {
                 id: topicSelect
@@ -222,7 +224,7 @@ Rectangle {
                     id: resultEditor
                     anchors.fill: parent
                     readonly: true
-                    visible: d.client && d.goalHandle && d.result?.result
+                    visible: d.client && d.goalHandle && d.result?.result || false
 
                     model: MessageItemModel {
                         message: d.result && d.result.result || null
@@ -245,15 +247,19 @@ Rectangle {
                 text: {
                     if (!d.client)
                         return "None";
-                    if (d.goalHandle && !d.result)
+                    if (d.goalHandle && !d.result) {
+                        if (d.canceling)
+                            return "Canceling...";
                         return "Processing goal.";
+                    }
                     if (d.client.ready)
                         return "Ready";
                     return "Connecting...";
                 }
             }
             Button {
-                enabled: (d.client?.ready && d.goalHandle?.status != ActionGoalStatus.Canceling) ?? false
+                // Cancel stays available when the server dies so the hold-to-drop path is reachable.
+                enabled: !!d.goalHandle && !d.result || (d.client?.ready ?? false)
                 objectName: "actionSendCancelButton"
                 text: {
                     if (d.goalHandle && !d.result)
@@ -262,10 +268,12 @@ Rectangle {
                         return "Back";
                     return "Send Goal";
                 }
+                visible: !d.awaitingResult
 
                 onClicked: {
                     if (d.goalHandle && d.goalHandle.isActive) {
                         d.goalHandle.cancel();
+                        d.cancelRequested = true;
                         return;
                     }
                     if (tabBar.currentIndex > 0) {
@@ -273,9 +281,15 @@ Rectangle {
                         return;
                     }
                     d.resetState();
+                    const seq = d.goalSeq;
                     tabBar.currentIndex = 1;
                     d.client.sendGoalAsync(requestEditor.model.message, {
                             "onGoalResponse": function (goalHandle) {
+                                if (seq !== d.goalSeq) {
+                                    // Goal was abandoned before acceptance; nothing in the UI can cancel it later.
+                                    goalHandle?.cancel();
+                                    return;
+                                }
                                 if (!goalHandle) {
                                     Ros2.warn("Goal rejected by server");
                                     d.result = {
@@ -288,6 +302,8 @@ Rectangle {
                                 d.goalHandle = goalHandle;
                             },
                             "onFeedback": function (goalHandle, feedback) {
+                                if (seq !== d.goalSeq)
+                                    return;
                                 if (!d.goalHandle || goalHandle.goalId != d.goalHandle.goalId) {
                                     Ros2.warn("Received feedback for old goal handle. Ignoring.");
                                     return;
@@ -300,10 +316,22 @@ Rectangle {
                                     feedbackList.currentIndex = d.feedbackMessages.count - 1;
                             },
                             "onResult": function (result) {
+                                if (seq !== d.goalSeq)
+                                    return;
                                 tabBar.currentIndex = 2;
                                 d.result = result;
                             }
                         });
+                }
+            }
+            HoldButton {
+                objectName: "actionHoldDropButton"
+                text: qsTr("Hold to drop")
+                visible: d.awaitingResult
+
+                onActivated: {
+                    d.resetState();
+                    tabBar.currentIndex = 0;
                 }
             }
         }
@@ -311,8 +339,11 @@ Rectangle {
     QtObject {
         id: d
 
+        // Canceling or finished but no result yet: Cancel is useless and this hangs if the server died.
+        readonly property bool awaitingResult: canceling || !!goalHandle && !result && !goalHandle.isActive
+        property bool cancelRequested: false
+        readonly property bool canceling: !!goalHandle && !result && (cancelRequested || goalHandle.status === ActionGoalStatus.Canceling)
         property var client: {
-            d.resetState();
             if (!context.topic || !context.type || !Ros2.isValidTopic(context.topic))
                 return null;
             return Ros2.createActionClient(context.topic, context.type);
@@ -320,12 +351,18 @@ Rectangle {
         property var feedbackMessages: ListModel {
         }
         property var goalHandle: null
+        // Bumped on reset so callbacks of abandoned goals can ignore themselves.
+        property int goalSeq: 0
         property var result: null
 
         function resetState() {
+            goalSeq++;
             goalHandle = null;
+            cancelRequested = false;
             feedbackMessages.clear();
             result = null;
         }
+
+        onClientChanged: resetState()
     }
 }

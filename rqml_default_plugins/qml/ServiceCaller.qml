@@ -161,9 +161,12 @@ Rectangle {
 
                         onClicked: {
                             d.resetState();
+                            const seq = d.requestSeq;
                             d.isActive = true;
                             tabBar.currentIndex = 1;
                             d.client.sendRequestAsync(requestEditor.model.message, function (response) {
+                                    if (seq !== d.requestSeq)
+                                        return;
                                     tabBar.currentIndex = 1;
                                     d.response = response;
                                     d.isActive = false;
@@ -240,6 +243,16 @@ Rectangle {
                     return "Connecting...";
                 }
             }
+            HoldButton {
+                objectName: "serviceHoldDropButton"
+                text: qsTr("Hold to drop")
+                visible: d.isActive
+
+                onActivated: {
+                    d.resetState();
+                    tabBar.currentIndex = 0;
+                }
+            }
             CheckBox {
                 id: showDefaultServicesCheck
                 checked: context.showDefaultServices ?? false
@@ -270,9 +283,12 @@ Rectangle {
             return Ros2.createServiceClient(context.service, context.type);
         }
         property bool isActive: false
+        // Bumped on reset so responses to abandoned requests can ignore themselves.
+        property int requestSeq: 0
         property var response: null
 
         function resetState() {
+            requestSeq++;
             isActive = false;
             response = null;
         }

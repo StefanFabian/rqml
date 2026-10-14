@@ -131,11 +131,11 @@ void MockServiceClient::sendRequestAsync( const QVariantMap &req, const QJSValue
 
   connect( timer, &QTimer::timeout, this, [this, timer, cb, req, eng]() mutable {
     timer->deleteLater();
-    pendingRequests_--;
-    emit pendingRequestsChanged();
 
     QJSValue handler = s_mockRos2 ? s_mockRos2->getServiceHandler( name_ ) : QJSValue::NullValue;
     if ( !handler.isCallable() ) {
+      pendingRequests_--;
+      emit pendingRequestsChanged();
       qWarning() << "MOCK: No handler registered for service:" << name_;
       if ( cb.isCallable() )
         cb.call( { QJSValue::NullValue } );
@@ -144,6 +144,12 @@ void MockServiceClient::sendRequestAsync( const QVariantMap &req, const QJSValue
 
     // Call handler: response = handler(request)
     QJSValue response = handler.call( { eng->toScriptValue( req ) } );
+
+    // Handler returning {"#hang": true} models a hung service: request stays pending forever.
+    if ( response.property( "#hang" ).toBool() )
+      return;
+    pendingRequests_--;
+    emit pendingRequestsChanged();
 
     // Wrap the response so it provides the same interface (.at()) as real ROS 2 messages
     QJSValue wrappedResponse = response;
@@ -234,9 +240,10 @@ QJSValue MockActionClient::sendGoalAsync( const QJSValue &goal, const QJSValue &
     return QJSValue::NullValue;
   }
 
-  QTimer::singleShot( 0, [handler, goal, options]() mutable {
+  QJSValue client = s_mockRos2->engine()->newQObject( this );
+  QTimer::singleShot( 0, [handler, goal, options, client]() mutable {
     QJSValueList args;
-    args << goal << options;
+    args << goal << options << client;
     QJSValue mutableHandler = handler;
     mutableHandler.call( args );
   } );

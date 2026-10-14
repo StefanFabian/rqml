@@ -294,20 +294,25 @@ private:
 class MockActionClient : public QObject
 {
   Q_OBJECT
-  Q_PROPERTY( bool ready READ ready CONSTANT )
+  Q_PROPERTY( bool ready READ ready WRITE setReady NOTIFY readyChanged )
   Q_PROPERTY( QString name READ name CONSTANT )
   Q_PROPERTY( QString type READ type CONSTANT )
 public:
   explicit MockActionClient( QObject *p = nullptr );
   MockActionClient( MockRos2 *parent, const QString &name, const QString &type );
-  bool ready() const { return true; }
+  bool ready() const { return ready_; }
+  void setReady( bool ready )
+  {
+    ready_ = ready;
+    emit readyChanged();
+  }
 
   QString name() const { return name_; }
   QString type() const { return type_; }
 
   /// Sends a goal asynchronously. The handler function registered in
   /// `Ros2._actionHandler` is called after one event loop tick with
-  /// (goal, callbacks). The test drives the flow by calling
+  /// (goal, callbacks, client). The test drives the flow by calling
   /// callbacks.onGoalResponse, callbacks.onFeedback, and callbacks.onResult.
   Q_INVOKABLE QJSValue sendGoalAsync( const QJSValue &goal, const QJSValue &options );
   Q_INVOKABLE void cancelAllGoals();
@@ -316,4 +321,5 @@ signals:
 
 private:
   QString name_, type_;
+  bool ready_ = true;
 };

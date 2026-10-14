@@ -99,6 +99,50 @@ Item {
                 }, 5000, "Service type auto-fill failed. Actual: " + typeSelector.text);
             compare(contextObj.type, "std_srvs/srv/SetBool");
         }
+        function test_hold_to_drop_hung_request() {
+            Ros2.registerService("/hang_service", "std_srvs/srv/SetBool", function (req) {
+                    return {
+                        "#hang": true
+                    };
+                });
+            contextObj.service = "/hang_service";
+            contextObj.type = "std_srvs/srv/SetBool";
+            contextObj.request = Ros2.createEmptyServiceRequest("std_srvs/srv/SetBool");
+            var sendButton = find("serviceSendButton");
+            tryVerify(function () {
+                    return sendButton.enabled;
+                }, 5000);
+            mouseClick(sendButton);
+
+            // The call hangs: status stays waiting and the hold-to-drop escape
+            // hatch appears while Send is disabled.
+            var statusLabel = find("serviceStatusLabel");
+            tryCompare(statusLabel, "text", "Waiting for response...", 2000);
+            var holdButton = find("serviceHoldDropButton");
+            verify(holdButton);
+            tryVerify(function () {
+                    return holdButton.visible && !sendButton.enabled;
+                }, 2000);
+
+            // A tap must not drop; only a full hold does.
+            holdButton.holdDuration = 120;
+            mouseClick(holdButton);
+            wait(holdButton.holdDuration * 2);
+            verify(holdButton.visible);
+
+            // Holding past holdDuration drops the request and returns to the
+            // request tab, ready to send again.
+            mousePress(holdButton);
+            tryVerify(function () {
+                    return !holdButton.visible;
+                }, 2000);
+            mouseRelease(holdButton);
+            var tabBar = find("serviceTabBar");
+            tryCompare(tabBar, "currentIndex", 0, 2000);
+            tryVerify(function () {
+                    return sendButton.enabled;
+                }, 2000);
+        }
         function test_reset() {
             contextObj.service = "/test_service";
             contextObj.type = "std_srvs/srv/SetBool";
