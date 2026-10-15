@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtTest
 import Ros2
 import RQml.Elements
+import RQml.Fonts
 
 // Functional tests using a real `MessageItemModel` populated from a
 // ros_babel_fish_test_msgs/msg/TestMessage. Verifies type <-> editor mapping,
@@ -19,6 +20,11 @@ Item {
         id: editor
         anchors.fill: parent
         model: testModel
+    }
+    SignalSpy {
+        id: submittedSpy
+        signalName: "submitted"
+        target: editor
     }
     TestCase {
 
@@ -139,6 +145,26 @@ Item {
             wait(50);
             var inputsAfter = countByType("IntegerInputField") + countByType("DecimalInputField") + countByType("CheckBox") + countByType("TextField");
             verify(inputsAfter === 0, "readonly mode should produce no interactive editors, found " + inputsAfter);
+        }
+        function test_returnInFieldEmitsSubmitted() {
+            var field = collectByType(editor, "IntegerInputField")[0];
+            verify(field, "TestMessage should have an integer field");
+            submittedSpy.clear();
+            mouseClick(field);
+            verify(field.activeFocus);
+            keyClick(Qt.Key_Return);
+            compare(submittedSpy.count, 1, "Return in a field should emit submitted");
+        }
+        function test_returnOnRowButtonDoesNotSubmit() {
+            // point_arr is the last row, out of view otherwise.
+            editor.positionViewAtRow(editor.rows - 1, TableView.AlignBottom);
+            wait(50);
+            var addButton = collectByType(editor, "Button").find(b => b.text === IconFont.iconAdd);
+            verify(addButton, "TestMessage should have an array with an add button");
+            submittedSpy.clear();
+            addButton.forceActiveFocus(Qt.TabFocusReason);
+            keyClick(Qt.Key_Return);
+            compare(submittedSpy.count, 0, "Return on a row button must not submit");
         }
         function test_stringFieldGetsTextField() {
             // `str` and `bounded_str` are short strings → TextField (not TextArea).

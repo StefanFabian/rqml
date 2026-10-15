@@ -24,6 +24,10 @@ TreeView {
 
     property bool readonly: false
 
+    // Return/Enter reached a row without being consumed by its input, e.g. Return in a single-line
+    // field or Ctrl+Return in a multi-line one.
+    signal submitted
+
     clip: true
     columnWidthProvider: function (column) {
         if (column === 0)
@@ -157,6 +161,15 @@ TreeView {
             return layout;
         }
         implicitHeight: 48
+
+        // Runs before the delegate's button handling, which presses the row on Return with some
+        // platform themes (e.g. GTK).
+        Keys.onPressed: event => {
+            if (event.key !== Qt.Key_Return && event.key !== Qt.Key_Enter)
+                return;
+            event.accepted = true;
+            control.submitted();
+        }
     }
 
     Component {
@@ -175,6 +188,8 @@ TreeView {
         Button {
             property var model
 
+            // Themes where only Space presses buttons would let Return bubble up and submit.
+            Keys.priority: Keys.AfterItem
             Layout.alignment: Qt.AlignRight
             Layout.rightMargin: 8
             font.family: IconFont.name
@@ -183,6 +198,7 @@ TreeView {
             implicitWidth: 48
             text: IconFont.iconAdd
 
+            Keys.onPressed: event => event.accepted = event.key === Qt.Key_Return || event.key === Qt.Key_Enter
             onClicked: {
                 const childCount = control.model.rowCount(model.treeIndex);
                 control.model.insertRow(childCount, model.treeIndex);
@@ -194,6 +210,8 @@ TreeView {
         Button {
             property var model
 
+            // Themes where only Space presses buttons would let Return bubble up and submit.
+            Keys.priority: Keys.AfterItem
             Layout.alignment: Qt.AlignRight
             Layout.rightMargin: 8
             font.family: IconFont.name
@@ -202,6 +220,7 @@ TreeView {
             implicitWidth: 48
             text: IconFont.iconTrash
 
+            Keys.onPressed: event => event.accepted = event.key === Qt.Key_Return || event.key === Qt.Key_Enter
             onClicked: {
                 control.model.removeRow(model.treeIndex.row, model.treeIndex.parent);
             }

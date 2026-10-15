@@ -99,8 +99,33 @@ Item {
                 }, 5000, "Service type auto-fill failed. Actual: " + typeSelector.text);
             compare(contextObj.type, "std_srvs/srv/SetBool");
         }
+        function test_enter_sends() {
+            Ros2.registerService("/test_service", "std_srvs/srv/SetBool", function (req) {
+                    return {
+                        "success": true,
+                        "message": ""
+                    };
+                });
+            contextObj.service = "/test_service";
+            contextObj.type = "std_srvs/srv/SetBool";
+            contextObj.request = Ros2.createEmptyServiceRequest("std_srvs/srv/SetBool");
+            var sendButton = find("serviceSendButton");
+            tryVerify(function () {
+                    return sendButton.enabled;
+                }, 5000);
+            // Return in a request field (see tst_MessageContentEditor) sends.
+            find("serviceRequestEditor").submitted();
+            tryCompare(find("serviceTabBar"), "currentIndex", 1, 5000);
+            verify(find("serviceHoldDropButton").activeFocus, "Hold to drop button should take focus after sending");
+            tryVerify(function () {
+                    return sendButton.activeFocus;
+                }, 2000, "Back button should take focus from Hold to drop once the response arrives");
+            compare(sendButton.text, "Back");
+        }
         function test_hold_to_drop_hung_request() {
+            var requestCount = 0;
             Ros2.registerService("/hang_service", "std_srvs/srv/SetBool", function (req) {
+                    requestCount++;
                     return {
                         "#hang": true
                     };
@@ -115,14 +140,17 @@ Item {
             mouseClick(sendButton);
 
             // The call hangs: status stays waiting and the hold-to-drop escape
-            // hatch appears while Send is disabled.
+            // hatch replaces Send, also on the request tab.
             var statusLabel = find("serviceStatusLabel");
             tryCompare(statusLabel, "text", "Waiting for response...", 2000);
             var holdButton = find("serviceHoldDropButton");
             verify(holdButton);
             tryVerify(function () {
-                    return holdButton.visible && !sendButton.enabled;
+                    return holdButton.visible && !sendButton.visible;
                 }, 2000);
+            var tabBar = find("serviceTabBar");
+            tabBar.currentIndex = 0;
+            verify(holdButton.visible, "Hold to drop should stay reachable from the request tab");
 
             // A tap must not drop; only a full hold does.
             holdButton.holdDuration = 120;
@@ -131,17 +159,26 @@ Item {
             verify(holdButton.visible);
 
             // Holding past holdDuration drops the request and returns to the
-            // request tab, ready to send again.
+            // request tab, ready to send again, with the focus on Send.
+            // Let the key guard armed by the earlier click expire.
+            wait(600);
+            holdButton.forceActiveFocus();
             mousePress(holdButton);
             tryVerify(function () {
                     return !holdButton.visible;
                 }, 2000);
             mouseRelease(holdButton);
-            var tabBar = find("serviceTabBar");
             tryCompare(tabBar, "currentIndex", 0, 2000);
             tryVerify(function () {
-                    return sendButton.enabled;
+                    return sendButton.visible && sendButton.enabled;
                 }, 2000);
+            verify(sendButton.activeFocus, "Send should take focus from Hold to drop after dropping");
+
+            // A key still held from the drop must not re-send on the focused Send.
+            var sentBefore = requestCount;
+            keyClick(Qt.Key_Space);
+            wait(50);
+            compare(requestCount, sentBefore, "Space right after dropping must not re-send the request");
         }
         function test_reset() {
             contextObj.service = "/test_service";

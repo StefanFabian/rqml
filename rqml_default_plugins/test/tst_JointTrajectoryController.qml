@@ -89,10 +89,22 @@ Item {
                 });
         }
         function test_controls() {
+            failOnWarning(/Binding loop/);
+            // The speed slider only shows once a controller with joints is selected.
+            test_joint_state_display();
+            var ctrlCombo = find("jtcControllerComboBox");
+            tryVerify(function () {
+                    return ctrlCombo.count > 0;
+                }, 5000);
+            ctrlCombo.currentIndex = 0;
             var slider = find("jtcSpeedSlider");
             verify(slider !== null, "Speed slider should be found");
-            slider.value = 1.5;
-            compare(contextObj.speed, 1.5, "Context speed should sync with slider");
+            tryVerify(function () {
+                    return slider.visible && slider.width > 0;
+                }, 5000);
+            mouseClick(slider, slider.leftPadding + slider.availableWidth * 0.75, slider.height / 2);
+            verify(slider.value > 2, "Clicking should move the slider, value: " + slider.value);
+            compare(contextObj.speed, slider.value, "Context speed should sync with slider");
             var shortestSwitch = find("jtcShortestPathSwitch");
             verify(shortestSwitch !== null, "Shortest path switch should be found");
             mouseClick(shortestSwitch);
@@ -105,6 +117,60 @@ Item {
                     return ctrlCombo.count > 0;
                 }, 5000, "Should find at least 1 controller");
             compare(ctrlCombo.model.get(0).name, "arm_controller");
+        }
+        function test_enter_sends_goal() {
+            test_joint_state_display();
+            var ctrlCombo = find("jtcControllerComboBox");
+            tryVerify(function () {
+                    return ctrlCombo.count > 0;
+                }, 5000);
+            ctrlCombo.currentIndex = 0;
+            var sendBtn = find("jtcSendButton");
+            tryVerify(function () {
+                    return sendBtn.enabled;
+                }, 5000, "Send button should be enabled");
+            find("jtcJointListView").forceActiveFocus();
+            keyClick(Qt.Key_Return);
+            tryVerify(function () {
+                    return lastGoal !== null;
+                }, 5000, "Return should send the goal");
+            verify(sendBtn.activeFocus, "Send/Cancel button should take focus after sending");
+        }
+        function test_goal_field_typing() {
+            failOnWarning(/Binding loop/);
+            test_joint_state_display();
+            // Joint rows only show once a controller is selected.
+            var ctrlCombo = find("jtcControllerComboBox");
+            tryVerify(function () {
+                    return ctrlCombo.count > 0;
+                }, 5000);
+            ctrlCombo.currentIndex = 0;
+            var list = find("jtcJointListView");
+            // ListView creates its delegates on the next polish, not when the model changes.
+            var field = null;
+            tryVerify(function () {
+                    field = find("jtcGoalField_0");
+                    return field !== null && field.visible;
+                }, 5000, "Goal field should be shown");
+            field.forceActiveFocus();
+            field.selectAll();
+            // The goal rounds to 0.13, which must not replace the text being typed.
+            keyClick(Qt.Key_0);
+            keyClick(Qt.Key_Period);
+            keyClick(Qt.Key_1);
+            keyClick(Qt.Key_2);
+            keyClick(Qt.Key_5);
+            compare(field.text, "0.125", "Typing should not be overwritten by the goal binding");
+            compare(list.model.get(0).goal, 0.13);
+
+            // Out-of-range input clamps to joint1's upper limit, shown once the field loses focus.
+            field.selectAll();
+            keyClick(Qt.Key_9);
+            compare(list.model.get(0).goal, 1.57);
+            find("jtcSendButton").forceActiveFocus();
+            compare(field.text, "1.57");
+            list.model.setProperty(0, "goal", 0.25);
+            compare(field.text, "0.25", "External goal changes should show in the field");
         }
         function test_joint_state_display() {
             // 1. Inject URDF

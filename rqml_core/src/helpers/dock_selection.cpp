@@ -129,14 +129,39 @@ void selectDockAt( const QQuickWindow *window, const QPointF &scene_pos )
     return;
   focusDock( dock_widget, Qt::MouseFocusReason );
 }
+
+//! Moves focus from a selected plugin that holds the focus itself (nothing inside is focused) to
+//! its neighbor in the tab focus chain. Qt would otherwise start the chain at the window start
+//! since plugins are not tab stops. Returns whether focus was moved.
+bool tabFromSelectedDock( const QQuickWindow *window, const QKeyEvent *event )
+{
+  if ( event->modifiers() & ( Qt::ControlModifier | Qt::AltModifier ) )
+    return false;
+  const bool backward = event->key() == Qt::Key_Backtab ||
+                        ( event->key() == Qt::Key_Tab && ( event->modifiers() & Qt::ShiftModifier ) );
+  if ( !backward && event->key() != Qt::Key_Tab )
+    return false;
+  auto *dock_item = qobject_cast<KDDockWidgets::QtQuick::DockWidget *>( window->activeFocusItem() );
+  if ( dock_item == nullptr )
+    return false;
+  auto *next_item = dock_item->nextItemInFocusChain( !backward );
+  if ( next_item == nullptr )
+    return false;
+  next_item->forceActiveFocus( backward ? Qt::BacktabFocusReason : Qt::TabFocusReason );
+  return true;
+}
 } // namespace
 
 bool DockSelectionFilter::eventFilter( QObject *watched, QEvent *event )
 {
-  // Handle only the delivery to the window, the filter also sees the press for every item.
+  // Handle only the delivery to the window, the filter also sees the event for every item.
   if ( event->type() == QEvent::MouseButtonPress ) {
     if ( const auto *window = qobject_cast<QQuickWindow *>( watched ) )
       selectDockAt( window, static_cast<QMouseEvent *>( event )->scenePosition() );
+  } else if ( event->type() == QEvent::KeyPress ) {
+    if ( const auto *window = qobject_cast<QQuickWindow *>( watched );
+         window != nullptr && tabFromSelectedDock( window, static_cast<QKeyEvent *>( event ) ) )
+      return true;
   }
   return QObject::eventFilter( watched, event );
 }

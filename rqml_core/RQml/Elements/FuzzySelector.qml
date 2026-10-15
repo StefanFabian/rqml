@@ -123,8 +123,12 @@ Item {
         rightPadding: chevron.width + 12
 
         onActiveFocusChanged: {
+            if (!activeFocus) {
+                popup.close();
+                return;
+            }
             if (!control.editable) return
-            if (activeFocus && !popup.visible && control.filteredItems.length > 0)
+            if (!popup.visible && control.filteredItems.length > 0)
                 popup.open();
         }
 
@@ -190,7 +194,9 @@ Item {
             event.accepted = true;
         }
 
-        Keys.onReturnPressed: function (event) {
+        Keys.onPressed: function (event) {
+            if (event.key !== Qt.Key_Return && event.key !== Qt.Key_Enter)
+                return;
             if (popup.visible && listView.currentIndex >= 0 && listView.currentIndex < control.filteredItems.length) {
                 control.text = control.filteredItems[listView.currentIndex];
                 popup.close();
@@ -228,7 +234,6 @@ Item {
             // Proxy properties: required properties in the delegate cut off outer scope access.
             property Item theControl: control
             property Popup thePopup: popup
-            property Item theField: field
 
             ScrollBar.vertical: ScrollBar {}
 
@@ -236,6 +241,8 @@ Item {
                 required property string modelData
                 required property int index
                 width: ListView.view.width
+                // Keep focus in the field, which closes the popup when it loses focus.
+                focusPolicy: Qt.NoFocus
                 text: modelData
                 highlighted: ListView.isCurrentItem
 
@@ -243,7 +250,6 @@ Item {
                     ListView.view.theControl.text = modelData;
                     ListView.view.currentIndex = index;
                     ListView.view.thePopup.close();
-                    ListView.view.theField.forceActiveFocus();
                 }
             }
         }

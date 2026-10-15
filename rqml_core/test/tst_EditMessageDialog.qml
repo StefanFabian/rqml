@@ -30,6 +30,11 @@ Item {
         visible: true
         width: 700
     }
+    SignalSpy {
+        id: acceptedSpy
+        signalName: "accepted"
+        target: dialog
+    }
     TestCase {
         function cleanupTestCase() {
             TestContextBridge.setContextProperty("RQml", null);
@@ -169,6 +174,19 @@ Item {
             // returns valid buttons for both.
             verify(dialog.standardButton(Dialog.Ok) !== null, "Ok button should be present");
             verify(dialog.standardButton(Dialog.Cancel) !== null, "Cancel button should be present");
+        }
+        function test_submitAccepts() {
+            var editor = findMessageContentEditor();
+            acceptedSpy.clear();
+            dialog.readonly = true;
+            editor.submitted();
+            compare(acceptedSpy.count, 0, "Readonly dialog should ignore submit");
+            dialog.readonly = false;
+            // Return in a field (see tst_MessageContentEditor) accepts the dialog.
+            editor.submitted();
+            compare(acceptedSpy.count, 1, "Submit should accept the dialog");
+            dialog.open();
+            tryCompare(dialog, "opened", true, 1000);
         }
         function test_visualEditPropagatesToText() {
             var tabBar = findTabBar();

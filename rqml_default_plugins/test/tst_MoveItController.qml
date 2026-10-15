@@ -922,16 +922,43 @@ Item {
             }
             findTextField(delegate);
             verify(textField !== null, "TextField should exist in joint row");
-            textField.text = "0.75";
+            failOnWarning(/Binding loop/);
+            textField.forceActiveFocus();
+            textField.selectAll();
+            // "1" sets goal 1, whose formatted "1.00" must not replace the text being typed.
+            keyClick(Qt.Key_1);
+            keyClick(Qt.Key_Period);
+            keyClick(Qt.Key_5);
+            compare(textField.text, "1.5", "Typing should not be overwritten by the goal binding");
             tryVerify(function () {
-                    return Math.abs(jl.model.get(0).goal - 0.75) < 0.02;
+                    return Math.abs(jl.model.get(0).goal - 1.5) < 0.02;
                 }, 3000, "Typing in TextField should update joint goal");
 
             // Out-of-range input should be clamped to joint1's upper limit (1.57).
-            textField.text = "9.99";
+            textField.selectAll();
+            keyClick(Qt.Key_9);
             tryVerify(function () {
                     return Math.abs(jl.model.get(0).goal - 1.57) < 0.02;
                 }, 3000, "Out-of-range input should clamp to joint limits");
+
+            // Leaving the field shows the clamped goal; goals set elsewhere (slider, named pose)
+            // show in the field.
+            find("moveitExecuteButton").forceActiveFocus();
+            verify(!textField.activeFocus);
+            compare(textField.text, "1.57");
+            jl.model.setProperty(0, "goal", 0.123);
+            compare(textField.text, "0.12");
+
+            // Return in a joint field bubbles up to the plugin and executes.
+            tryVerify(function () {
+                    return find("moveitExecuteButton").enabled;
+                }, 5000);
+            textField.forceActiveFocus();
+            keyClick(Qt.Key_Return);
+            tryVerify(function () {
+                    return lastCallbacks !== null;
+                }, 3000, "Return in a joint field should execute");
+            verify(find("moveitExecuteButton").activeFocus, "Execute/Cancel button should take focus after executing");
         }
         function test_move_group_population() {
             contextObj.actionServer = "/move_group";

@@ -142,6 +142,14 @@ Rectangle {
                         context.request = message;
                     }
                 }
+
+                onSubmitted: {
+                    if (d.goalPending || d.goalRunning || !sendButton.enabled)
+                        return;
+                    sendButton.clicked();
+                    // Key focus reason so the style highlights the button, Cancel once the goal is accepted.
+                    sendButton.forceActiveFocus(Qt.ShortcutFocusReason);
+                }
             }
 
             // Feedback Tab
@@ -247,7 +255,7 @@ Rectangle {
                 text: {
                     if (!d.client)
                         return "None";
-                    if (d.goalHandle && !d.result) {
+                    if (d.goalRunning) {
                         if (d.canceling)
                             return "Canceling...";
                         return "Processing goal.";
@@ -258,11 +266,12 @@ Rectangle {
                 }
             }
             Button {
+                id: sendButton
                 // Cancel stays available when the server dies so the hold-to-drop path is reachable.
-                enabled: !!d.goalHandle && !d.result || (d.client?.ready ?? false)
+                enabled: d.goalRunning || (d.client?.ready ?? false)
                 objectName: "actionSendCancelButton"
                 text: {
-                    if (d.goalHandle && !d.result)
+                    if (d.goalRunning)
                         return "Cancel";
                     if (tabBar.currentIndex != 0)
                         return "Back";
@@ -270,7 +279,9 @@ Rectangle {
                 }
                 visible: !d.awaitingResult
 
+                Keys.onPressed: event => keyGuard.filter(event)
                 onClicked: {
+                    keyGuard.arm();
                     if (d.goalHandle && d.goalHandle.isActive) {
                         d.goalHandle.cancel();
                         d.cancelRequested = true;
@@ -283,6 +294,7 @@ Rectangle {
                     d.resetState();
                     const seq = d.goalSeq;
                     tabBar.currentIndex = 1;
+                    d.goalPending = true;
                     d.client.sendGoalAsync(requestEditor.model.message, {
                             "onGoalResponse": function (goalHandle) {
                                 if (seq !== d.goalSeq) {
@@ -290,6 +302,7 @@ Rectangle {
                                     goalHandle?.cancel();
                                     return;
                                 }
+                                d.goalPending = false;
                                 if (!goalHandle) {
                                     Ros2.warn("Goal rejected by server");
                                     d.result = {
@@ -325,11 +338,14 @@ Rectangle {
                 }
             }
             HoldButton {
+                id: holdDropButton
                 objectName: "actionHoldDropButton"
                 text: qsTr("Hold to drop")
                 visible: d.awaitingResult
 
                 onActivated: {
+                    // Send takes the focus while a held key may still auto-repeat.
+                    keyGuard.arm();
                     d.resetState();
                     tabBar.currentIndex = 0;
                 }
@@ -340,9 +356,9 @@ Rectangle {
         id: d
 
         // Canceling or finished but no result yet: Cancel is useless and this hangs if the server died.
-        readonly property bool awaitingResult: canceling || !!goalHandle && !result && !goalHandle.isActive
+        readonly property bool awaitingResult: canceling || goalRunning && !goalHandle.isActive
         property bool cancelRequested: false
-        readonly property bool canceling: !!goalHandle && !result && (cancelRequested || goalHandle.status === ActionGoalStatus.Canceling)
+        readonly property bool canceling: goalRunning && (cancelRequested || goalHandle.status === ActionGoalStatus.Canceling)
         property var client: {
             if (!context.topic || !context.type || !Ros2.isValidTopic(context.topic))
                 return null;
@@ -351,6 +367,9 @@ Rectangle {
         property var feedbackMessages: ListModel {
         }
         property var goalHandle: null
+        // Sent but not yet accepted or rejected.
+        property bool goalPending: false
+        readonly property bool goalRunning: !!goalHandle && !result
         // Bumped on reset so callbacks of abandoned goals can ignore themselves.
         property int goalSeq: 0
         property var result: null
@@ -358,11 +377,22 @@ Rectangle {
         function resetState() {
             goalSeq++;
             goalHandle = null;
+            goalPending = false;
             cancelRequested = false;
             feedbackMessages.clear();
             result = null;
         }
 
+        // Cancel and Hold to drop replace each other, hand over the keyboard focus.
+        onAwaitingResultChanged: {
+            if (awaitingResult && sendButton.activeFocus)
+                holdDropButton.forceActiveFocus(Qt.TabFocusReason);
+            else if (!awaitingResult && holdDropButton.activeFocus)
+                sendButton.forceActiveFocus(Qt.TabFocusReason);
+        }
         onClientChanged: resetState()
+    }
+    KeyActivationGuard {
+        id: keyGuard
     }
 }

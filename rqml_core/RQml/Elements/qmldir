@@ -11,6 +11,7 @@ IconButton 1.0 IconButton.qml
 IconTextButton 1.0 IconTextButton.qml
 IconToggleButton 1.0 IconToggleButton.qml
 IntegerInputField 1.0 IntegerInputField.qml
+KeyActivationGuard 1.0 KeyActivationGuard.qml
 LetterIndicator 1.0 LetterIndicator.qml
 ListHeader 1.0 ListHeader.qml
 LoadingListView 1.0 LoadingListView.qml
