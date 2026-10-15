@@ -37,8 +37,10 @@ jobs:
         setup:
           - rosdistro: jazzy
             os: ubuntu-24.04
-          - rosdistro: rolling
-            os: ubuntu-latest
+          - rosdistro: lyrical
+            os: ubuntu-26.04
+        # Platform themes change key handling, e.g. GTK presses buttons on Return.
+        theme: [default, gtk3]
     runs-on: ${{ matrix.setup.os }}
     container:
       image: ros:${{ matrix.setup.rosdistro }}-ros-base
@@ -55,12 +57,18 @@ jobs:
         run: |
           rosdep update --rosdistro ${{ matrix.setup.rosdistro }} --include-eol-distros
           rosdep install -y --from-paths src --ignore-src --rosdistro ${{ matrix.setup.rosdistro }}
+      - name: install platform theme
+        if: matrix.theme == 'gtk3'
+        run: sudo apt-get install -y qt6-gtk-platformtheme xvfb
       - name: build
         run: |
           source /opt/ros/${{ matrix.setup.rosdistro }}/setup.bash
           colcon build
       - name: test
+        env:
+          QT_QPA_PLATFORMTHEME: ${{ matrix.theme != 'default' && matrix.theme || '' }}
         run: |
           source /opt/ros/${{ matrix.setup.rosdistro }}/setup.bash
-          colcon test --packages-select rqml_core rqml_default_plugins
+          # GTK exits without a display, even with the offscreen Qt platform.
+          ${{ matrix.theme == 'gtk3' && 'xvfb-run -a' || '' }} colcon test --packages-select rqml_core rqml_default_plugins
           colcon test-result --verbose

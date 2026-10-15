@@ -70,6 +70,11 @@ Dialog {
                         textArea.text = Qt.binding(() => JSON.stringify(MessageUtils.toJavaScriptObject(control.message) ?? {}, null, 2));
                     }
                 }
+
+                onSubmitted: {
+                    if (!control.readonly)
+                        control.accept();
+                }
             }
             ColumnLayout {
                 Layout.fillHeight: true

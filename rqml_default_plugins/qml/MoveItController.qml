@@ -66,6 +66,9 @@ Rectangle {
 
         onTriggered: d.showError = false
     }
+    KeyActivationGuard {
+        id: keyGuard
+    }
 
     // ========================================================================
     // Main Layout
@@ -107,11 +110,12 @@ Rectangle {
                     }
                 }
                 onCurrentTextChanged: {
-                    // Auto-select first discovered action server only when
-                    // context has no explicit selection yet.
-                    if (!context.actionServer && currentText) {
-                        context.actionServer = currentText;
-                    }
+                    // Auto-select first discovered action server only when context has no explicit
+                    // selection yet. Deferred since discovery can run inside the actionServer binding.
+                    Qt.callLater(() => {
+                            if (!context.actionServer && currentText)
+                                context.actionServer = currentText;
+                        });
                 }
             }
             RefreshButton {
@@ -308,17 +312,28 @@ Rectangle {
                     }
                 }
                 TextField {
+                    readonly property string goalText: model.goal.toFixed(2)
+
                     horizontalAlignment: Text.AlignRight
                     implicitWidth: 70
                     selectByMouse: true
-                    text: model.goal.toFixed(2)
 
                     validator: DoubleValidator {
                         bottom: model.limits.lower
                         top: model.limits.upper
                     }
 
-                    onTextChanged: {
+                    // Not bound: typing updates the goal live, so only show external goal changes when not editing.
+                    Component.onCompleted: text = goalText
+                    onActiveFocusChanged: {
+                        if (!activeFocus)
+                            text = goalText;
+                    }
+                    onGoalTextChanged: {
+                        if (!activeFocus)
+                            text = goalText;
+                    }
+                    onTextEdited: {
                         let value = parseFloat(text);
                         if (isNaN(value))
                             return;
@@ -329,6 +344,16 @@ Rectangle {
                         model.goal = value;
                     }
                 }
+            }
+
+            Keys.onPressed: event => {
+                if (event.key !== Qt.Key_Return && event.key !== Qt.Key_Enter)
+                    return;
+                if (!executeButton.visible || !executeButton.enabled || moveItInterface.isGoalActive)
+                    return;
+                event.accepted = true;
+                executeButton.clicked();
+                executeButton.forceActiveFocus(Qt.ShortcutFocusReason);
             }
         }
 
@@ -352,6 +377,7 @@ Rectangle {
                 onClicked: moveItInterface.resetGoals()
             }
             Button {
+                id: executeButton
                 Layout.fillWidth: true
                 Layout.margins: 4
                 ToolTip.delay: 500
@@ -367,7 +393,9 @@ Rectangle {
                 objectName: "moveitExecuteButton"
                 text: moveItInterface.isGoalActive ? "Cancel" : "Execute"
 
+                Keys.onPressed: event => keyGuard.filter(event)
                 onClicked: {
+                    keyGuard.arm();
                     if (moveItInterface.isGoalActive) {
                         moveItInterface.cancelGoals();
                     } else {

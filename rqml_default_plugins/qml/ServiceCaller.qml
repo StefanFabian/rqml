@@ -124,6 +124,7 @@ Rectangle {
                     id: requestEditor
                     Layout.fillHeight: true
                     Layout.fillWidth: true
+                    objectName: "serviceRequestEditor"
                     readonly: false
 
                     model: MessageItemModel {
@@ -135,90 +136,52 @@ Rectangle {
                             context.request = message;
                         }
                     }
-                }
-                RowLayout {
-                    Layout.fillWidth: true
 
-                    Button {
-                        enabled: !!context.type
-                        implicitWidth: 120
-                        objectName: "serviceResetButton"
-                        text: qsTr("Reset")
-
-                        onClicked: {
-                            context.request = Ros2.createEmptyServiceRequest(context.type);
-                            requestModel.message = context.request;
-                        }
+                    onSubmitted: {
+                        if (d.isActive || !sendButton.enabled)
+                            return;
+                        sendButton.clicked();
+                        holdToDropButton.forceActiveFocus(Qt.ShortcutFocusReason);
                     }
-                    Item {
-                        Layout.fillWidth: true
-                    } // Spacer
-                    Button {
-                        enabled: (d.client?.ready && !d.isActive) ?? false
-                        implicitWidth: 120
-                        objectName: "serviceSendButton"
-                        text: qsTr("Send")
+                }
+                Button {
+                    enabled: !!context.type
+                    implicitWidth: 120
+                    objectName: "serviceResetButton"
+                    text: qsTr("Reset")
 
-                        onClicked: {
-                            d.resetState();
-                            const seq = d.requestSeq;
-                            d.isActive = true;
-                            tabBar.currentIndex = 1;
-                            d.client.sendRequestAsync(requestEditor.model.message, function (response) {
-                                    if (seq !== d.requestSeq)
-                                        return;
-                                    tabBar.currentIndex = 1;
-                                    d.response = response;
-                                    d.isActive = false;
-                                });
-                        }
+                    onClicked: {
+                        context.request = Ros2.createEmptyServiceRequest(context.type);
+                        requestModel.message = context.request;
                     }
                 }
             }
 
             // Response Tab
-            ColumnLayout {
+            Item {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
 
-                Item {
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
+                Rectangle {
+                    anchors.fill: parent
+                    color: root.palette.base
+                    visible: !responseEditor.visible
 
-                    Rectangle {
-                        anchors.fill: parent
-                        color: root.palette.base
-                        visible: !responseEditor.visible
-
-                        Label {
-                            anchors.centerIn: parent
-                            text: d.response === null ? "Waiting for response..." : "Service call failed."
-                        }
-                    }
-                    MessageContentEditor {
-                        id: responseEditor
-                        anchors.fill: parent
-                        readonly: true
-                        visible: !!d.client && !!d.response
-
-                        model: MessageItemModel {
-                            message: d.response || null
-
-                            onMessageChanged: responseEditor.expandRecursively()
-                        }
+                    Label {
+                        anchors.centerIn: parent
+                        text: d.response === null ? "Waiting for response..." : "Service call failed."
                     }
                 }
-                RowLayout {
-                    Layout.fillWidth: true
+                MessageContentEditor {
+                    id: responseEditor
+                    anchors.fill: parent
+                    readonly: true
+                    visible: !!d.client && !!d.response
 
-                    Item {
-                        Layout.fillWidth: true
-                    } // Spacer
-                    Button {
-                        implicitWidth: 120
-                        text: qsTr("Back")
+                    model: MessageItemModel {
+                        message: d.response || null
 
-                        onClicked: tabBar.currentIndex = 0
+                        onMessageChanged: responseEditor.expandRecursively()
                     }
                 }
             }
@@ -243,16 +206,6 @@ Rectangle {
                     return "Connecting...";
                 }
             }
-            HoldButton {
-                objectName: "serviceHoldDropButton"
-                text: qsTr("Hold to drop")
-                visible: d.isActive
-
-                onActivated: {
-                    d.resetState();
-                    tabBar.currentIndex = 0;
-                }
-            }
             CheckBox {
                 id: showDefaultServicesCheck
                 checked: context.showDefaultServices ?? false
@@ -264,6 +217,47 @@ Rectangle {
                         context.showDefaultServices = checked;
                         serviceSelect.refresh();
                     }
+                }
+            }
+            Button {
+                id: sendButton
+                enabled: tabBar.currentIndex != 0 || (d.client?.ready ?? false)
+                implicitWidth: 120
+                objectName: "serviceSendButton"
+                text: tabBar.currentIndex != 0 ? qsTr("Back") : qsTr("Send")
+                visible: !d.isActive
+
+                Keys.onPressed: event => keyGuard.filter(event)
+                onClicked: {
+                    keyGuard.arm();
+                    if (tabBar.currentIndex != 0) {
+                        tabBar.currentIndex = 0;
+                        return;
+                    }
+                    d.resetState();
+                    const seq = d.requestSeq;
+                    d.isActive = true;
+                    tabBar.currentIndex = 1;
+                    d.client.sendRequestAsync(requestEditor.model.message, function (response) {
+                            if (seq !== d.requestSeq)
+                                return;
+                            tabBar.currentIndex = 1;
+                            d.response = response;
+                            d.isActive = false;
+                        });
+                }
+            }
+            HoldButton {
+                id: holdToDropButton
+                objectName: "serviceHoldDropButton"
+                text: qsTr("Hold to drop")
+                visible: d.isActive
+
+                onActivated: {
+                    // Send takes the focus while a held key may still auto-repeat.
+                    keyGuard.arm();
+                    d.resetState();
+                    tabBar.currentIndex = 0;
                 }
             }
         }
@@ -300,6 +294,14 @@ Rectangle {
                 requestModel.message = context.request;
             }
         }
+
+        // Send/Back and Hold to drop replace each other, hand over the keyboard focus.
+        onIsActiveChanged: {
+            if (isActive && sendButton.activeFocus)
+                holdToDropButton.forceActiveFocus(Qt.TabFocusReason);
+            else if (!isActive && holdToDropButton.activeFocus)
+                sendButton.forceActiveFocus(Qt.TabFocusReason);
+        }
     }
 
     // Poll until the service advertises the expected type, allowing late-starting services.
@@ -309,5 +311,8 @@ Rectangle {
         running: !!context.service && !!context.type && !d.client
 
         onTriggered: d._tick++
+    }
+    KeyActivationGuard {
+        id: keyGuard
     }
 }

@@ -132,6 +132,22 @@ Item {
                     return !popup.visible;
                 }, 1000, "second chevron click should close popup");
         }
+        function test_clickSelectsAndKeepsFocus() {
+            var field = findField();
+            var popup = findPopup();
+            var listView = findListView();
+            field.forceActiveFocus();
+            popup.open();
+            tryVerify(function () {
+                    return popup.visible && listView.itemAtIndex(1) !== null;
+                }, 1000);
+            mouseClick(listView.itemAtIndex(1)); // "apricot"
+            tryVerify(function () {
+                    return !popup.visible;
+                }, 1000, "Clicking an item should close the popup");
+            compare(selector.text, "apricot");
+            verify(field.activeFocus, "Field should keep focus after clicking an item");
+        }
         function test_currentText() {
             compare(selector.currentText, "", "currentText should be empty when currentIndex is -1");
             selector.currentIndex = 1; // "banana"
@@ -180,6 +196,19 @@ Item {
             verify(items.indexOf("blackberry") !== -1);
             verify(items.indexOf("banana") === -1);
         }
+        function test_focusLossClosesPopup() {
+            var field = findField();
+            var popup = findPopup();
+            field.forceActiveFocus();
+            popup.open();
+            tryVerify(function () {
+                    return popup.visible;
+                }, 1000);
+            field.focus = false;
+            tryVerify(function () {
+                    return !popup.visible;
+                }, 1000, "losing focus should close the popup");
+        }
         function test_keyboardNavBoundaries() {
             var field = findField();
             var popup = findPopup();
@@ -223,6 +252,22 @@ Item {
             tryVerify(function () {
                     return !popup.visible;
                 }, 1000, "Return should close the popup");
+            compare(selector.text, "apricot");
+        }
+        function test_keypadEnterSelects() {
+            var field = findField();
+            var popup = findPopup();
+            var listView = findListView();
+            popup.open();
+            field.forceActiveFocus();
+            tryVerify(function () {
+                    return popup.visible;
+                }, 1000);
+            listView.currentIndex = 1; // "apricot"
+            keyClick(Qt.Key_Enter, Qt.KeypadModifier);
+            tryVerify(function () {
+                    return !popup.visible;
+                }, 1000, "Keypad Enter should close the popup");
             compare(selector.text, "apricot");
         }
         function test_popupAutoClosesOnNoMatches() {

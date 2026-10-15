@@ -24,6 +24,8 @@ Item {
 
     property var context: contextObj
     property var plugin: pluginLoader.item
+    // Return presses no item in the plugin accepted.
+    property int unhandledReturns: 0
 
     function find(name) {
         return helpers.findChild(root, name);
@@ -31,6 +33,8 @@ Item {
 
     height: 768
     width: 1024
+
+    Keys.onReturnPressed: unhandledReturns++
 
     QtObject {
         id: contextObj
@@ -41,6 +45,10 @@ Item {
     }
     Utils {
         id: helpers
+    }
+    SignalSpy {
+        id: clickSpy
+        signalName: "clicked"
     }
     Loader {
         id: pluginLoader
@@ -84,6 +92,14 @@ Item {
                     return selector && (selector.model || []).indexOf("/test_action") !== -1;
                 }, 5000);
         }
+
+        // Returns whether a Return press reached its target: depending on the platform theme
+        // it either clicks the button watched by clickSpy or bubbles up to root.
+        function returnPasses() {
+            const before = root.unhandledReturns + clickSpy.count;
+            keyClick(Qt.Key_Return);
+            return root.unhandledReturns + clickSpy.count > before;
+        }
         function test_cancel_available_when_server_dies() {
             contextObj.topic = "/test_action";
             contextObj.type = "tf2_msgs/action/LookupTransform";
@@ -126,6 +142,76 @@ Item {
             tryVerify(function () {
                     return typeSelector.text === "tf2_msgs/action/LookupTransform";
                 }, 5000);
+        }
+        function test_enter_sends_but_never_cancels() {
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
+            // The editor only adopts context.request on load.
+            pluginLoader.reload();
+            tryVerify(function () {
+                    return pluginLoader.status === Loader.Ready;
+                });
+            var sendButton = find("actionSendCancelButton");
+            tryVerify(function () {
+                    return sendButton.enabled;
+                }, 5000);
+            // Return in a number field of the goal bubbles up to the editor and sends.
+            var editor = find("actionRequestEditor");
+            editor.expandRecursively();
+            function findByType(item, typeName) {
+                if (!item)
+                    return null;
+                if (item.visible && item.toString().indexOf(typeName) !== -1)
+                    return item;
+                for (var i = 0; i < item.children.length; i++) {
+                    var found = findByType(item.children[i], typeName);
+                    if (found)
+                        return found;
+                }
+                return null;
+            }
+            var numberField = null;
+            tryVerify(function () {
+                    numberField = findByType(editor.contentItem, "IntegerInputField");
+                    return numberField !== null;
+                }, 2000, "Goal editor should contain an integer field");
+            mouseClick(numberField);
+            verify(numberField.activeFocus);
+            keyClick(Qt.Key_Return);
+            tryVerify(function () {
+                    return lastCallbacks !== null;
+                }, 2000, "Return should send the goal");
+            verify(sendButton.activeFocus, "Send/Cancel button should take focus after sending");
+            var handle = Ros2.createGoalHandle("goal_enter");
+            handle.setStatus(1);
+            lastCallbacks.onGoalResponse(handle);
+            tryCompare(sendButton, "text", "Cancel", 2000);
+            find("actionTabBar").currentIndex = 0;
+            find("actionRequestEditor").submitted();
+            wait(50);
+            compare(Ros2._lastActionCancelled, false, "Return must not cancel an active goal");
+        }
+        function test_enter_while_goal_pending_does_not_resend() {
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
+            var sendButton = find("actionSendCancelButton");
+            tryVerify(function () {
+                    return sendButton.enabled;
+                }, 5000);
+            var editor = find("actionRequestEditor");
+            editor.submitted();
+            tryVerify(function () {
+                    return lastCallbacks !== null;
+                }, 2000, "Return should send the goal");
+
+            // The server has not accepted the goal yet.
+            lastCallbacks = null;
+            find("actionTabBar").currentIndex = 0;
+            editor.submitted();
+            wait(50);
+            compare(lastCallbacks, null, "Return must not send a second goal while the first is pending");
         }
         function test_feedback_selection() {
             contextObj.topic = "/test_action";
@@ -198,6 +284,7 @@ Item {
             // Button flips to Cancel once a goal is active.
             tryCompare(sendButton, "text", "Cancel", 2000);
             compare(Ros2._lastActionCancelled, false);
+            sendButton.forceActiveFocus(Qt.TabFocusReason);
             mouseClick(sendButton);
             tryVerify(function () {
                     return Ros2._lastActionCancelled === true;
@@ -209,6 +296,7 @@ Item {
             tryVerify(function () {
                     return holdButton.visible && !sendButton.visible;
                 }, 2000);
+            verify(holdButton.activeFocus, "Hold to drop should take the focus from Cancel");
             lastCallbacks.onResult({
                     "status": 6,
                     "result": Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform")
@@ -216,6 +304,7 @@ Item {
             tryVerify(function () {
                     return !holdButton.visible && sendButton.visible;
                 }, 2000);
+            verify(sendButton.activeFocus, "Back should take the focus from Hold to drop");
         }
         function test_goal_execution() {
             contextObj.topic = "/test_action";
@@ -297,6 +386,9 @@ Item {
 
             // Holding past holdDuration drops the goal locally and returns to
             // the request tab, ready to send again.
+            // Let the key guard armed by the earlier click expire.
+            wait(600);
+            holdButton.forceActiveFocus();
             mousePress(holdButton);
             tryVerify(function () {
                     return !holdButton.visible;
@@ -305,6 +397,15 @@ Item {
             var tabBar = find("actionTabBar");
             tryCompare(tabBar, "currentIndex", 0, 2000);
             tryCompare(sendButton, "text", "Send Goal", 2000);
+            verify(sendButton.activeFocus, "Send should take focus from Hold to drop after dropping");
+
+            // A key still held from the drop must not re-send on the focused Send.
+            var droppedCallbacks = lastCallbacks;
+            lastCallbacks = null;
+            keyClick(Qt.Key_Space);
+            wait(50);
+            compare(lastCallbacks, null, "Space right after dropping must not re-send the goal");
+            lastCallbacks = droppedCallbacks;
 
             // A late result belonging to the dropped goal must be ignored: no
             // jump to the result tab.
@@ -441,6 +542,29 @@ Item {
             tryVerify(function () {
                     return topicSelector.enabled && typeSelector.enabled;
                 }, 2000);
+        }
+        function test_send_click_swallows_quick_return() {
+            contextObj.topic = "/test_action";
+            contextObj.type = "tf2_msgs/action/LookupTransform";
+            contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
+            var sendButton = find("actionSendCancelButton");
+            tryVerify(function () {
+                    return sendButton.enabled;
+                }, 5000);
+            sendButton.forceActiveFocus(Qt.TabFocusReason);
+            sendButton.clicked();
+            tryVerify(function () {
+                    return lastCallbacks !== null;
+                }, 2000);
+            var handle = Ros2.createGoalHandle("goal_enter_button");
+            handle.setStatus(1);
+            lastCallbacks.onGoalResponse(handle);
+            tryCompare(sendButton, "text", "Cancel", 2000);
+            verify(sendButton.activeFocus);
+            clickSpy.target = sendButton;
+            verify(!returnPasses(), "A quick Return after sending must be swallowed");
+            wait(600);
+            verify(returnPasses(), "A later Return should pass again");
         }
         function test_server_reported_canceling() {
             contextObj.topic = "/test_action";

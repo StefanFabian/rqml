@@ -62,6 +62,9 @@ Rectangle {
             }
         }
     }
+    KeyActivationGuard {
+        id: keyGuard
+    }
     GridLayout {
         anchors.fill: parent
         anchors.margins: 4
@@ -165,16 +168,29 @@ Rectangle {
                 }
                 TextField {
                     id: positionField
+
+                    readonly property string goalText: model.goal
+
                     implicitWidth: 60
+                    objectName: "jtcGoalField_" + model.index
                     selectByMouse: true
-                    text: model.goal
 
                     validator: DoubleValidator {
                         bottom: model.limits.lower
                         top: model.limits.upper
                     }
 
-                    onTextChanged: {
+                    // Not bound: typing updates the goal live, so only show external goal changes when not editing.
+                    Component.onCompleted: text = goalText
+                    onActiveFocusChanged: {
+                        if (!activeFocus)
+                            text = goalText;
+                    }
+                    onGoalTextChanged: {
+                        if (!activeFocus)
+                            text = goalText;
+                    }
+                    onTextEdited: {
                         let value = parseFloat(text);
                         if (isNaN(value) || value == null)
                             return;
@@ -185,6 +201,16 @@ Rectangle {
                         model.goal = value;
                     }
                 }
+            }
+
+            Keys.onPressed: event => {
+                if (event.key !== Qt.Key_Return && event.key !== Qt.Key_Enter)
+                    return;
+                if (!sendButton.visible || !sendButton.enabled || d.trajectoryController.isGoalActive)
+                    return;
+                event.accepted = true;
+                sendButton.clicked();
+                sendButton.forceActiveFocus(Qt.ShortcutFocusReason);
             }
         }
         ColumnLayout {
@@ -206,7 +232,7 @@ Rectangle {
                     to: 3
                     value: context.speed || 0.5
 
-                    onValueChanged: context.speed = value
+                    onMoved: context.speed = value
                 }
                 Label {
                     text: speedSlider.speed.toFixed(2) + " rad/s"
@@ -232,7 +258,9 @@ Rectangle {
                     objectName: "jtcSendButton"
                     text: d.trajectoryController.isGoalActive ? "Cancel" : "Send"
 
+                    Keys.onPressed: event => keyGuard.filter(event)
                     onClicked: {
+                        keyGuard.arm();
                         if (d.trajectoryController.isGoalActive) {
                             d.trajectoryController.cancelGoals();
                         } else {

@@ -25,7 +25,8 @@ namespace rqml
 
 //! Application event filter that selects (focuses) the plugin under a mouse press, so the
 //! selection follows the plugin the user interacts with even if the clicked content is not
-//! focusable.
+//! focusable. Tab (Shift+Tab) on a selected plugin without focused content moves focus to the
+//! next (previous) item in the focus chain relative to that plugin.
 class DockSelectionFilter : public QObject
 {
 public:
