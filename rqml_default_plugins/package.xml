@@ -12,9 +12,11 @@
 
   <depend>rqml_core</depend>
 
+  <exec_depend>composition_interfaces</exec_depend>
   <exec_depend>control_msgs</exec_depend>
   <exec_depend>controller_manager_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>lifecycle_msgs</exec_depend>
   <exec_depend>moveit_msgs</exec_depend>
   <exec_depend>pal_statistics_msgs</exec_depend>
   <exec_depend>qml6-module-qt-labs-qmlmodels</exec_depend>

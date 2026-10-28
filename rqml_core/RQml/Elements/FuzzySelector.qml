@@ -89,6 +89,11 @@ Item {
         return result;
     }
 
+    // Gives the text field keyboard focus.
+    function focusInput() {
+        field.forceActiveFocus();
+    }
+
     // When currentIndex is set programmatically, update text to match.
     onCurrentIndexChanged: {
         if (currentIndex >= 0 && currentIndex < (model ? model.length : 0)) {

@@ -111,9 +111,9 @@ MockServiceClient::MockServiceClient( QObject *p )
     : QObject( p ), qos_( qml6_ros2_plugin::QoSWrapper() )
 {
 }
-MockServiceClient::MockServiceClient( MockRos2 *parent, const QString &name, const QString &type )
-    : QObject( (QObject *)parent ), name_( name ), type_( type ),
-      qos_( qml6_ros2_plugin::QoSWrapper() )
+// Parentless like production, so QML owns the client and destroy() works.
+MockServiceClient::MockServiceClient( const QString &name, const QString &type )
+    : QObject( nullptr ), name_( name ), type_( type ), qos_( qml6_ros2_plugin::QoSWrapper() )
 {
 }
 

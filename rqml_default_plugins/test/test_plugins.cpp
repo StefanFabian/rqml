@@ -44,6 +44,12 @@ void Setup::qmlEngineAvailable( QQmlEngine *engine )
                                     1, 0, "ActionGoalStatus", "Error" );
   qmlRegisterUncreatableMetaObject( action_result_code::staticMetaObject, "Ros2", 1, 0,
                                     "ActionResultCode", "Error" );
+  qmlRegisterUncreatableMetaObject( qos_reliability_policy::staticMetaObject, "Ros2", 1, 0,
+                                    "ReliabilityPolicy", "Error" );
+  qmlRegisterUncreatableMetaObject( qos_durability_policy::staticMetaObject, "Ros2", 1, 0,
+                                    "DurabilityPolicy", "Error" );
+  qmlRegisterUncreatableMetaObject( qos_history_policy::staticMetaObject, "Ros2", 1, 0,
+                                    "HistoryPolicy", "Error" );
 }
 
 QUICK_TEST_MAIN_WITH_SETUP( RqmlDefaultPluginsTest, Setup )

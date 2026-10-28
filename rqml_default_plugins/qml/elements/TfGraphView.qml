@@ -61,10 +61,7 @@ Item {
         for (var i = 0; i < d.nodePositions.length; ++i) {
             var p = d.nodePositions[i];
             if (p.frameId === frameId) {
-                return {
-                    "x": d.offsetX + (p.x + nodeWidth / 2) * d.scale,
-                    "y": d.offsetY + (p.y + nodeHeight / 2) * d.scale
-                };
+                return canvas.mapToScreen(p.x + nodeWidth / 2, p.y + nodeHeight / 2);
             }
         }
         return null;
@@ -85,8 +82,6 @@ Item {
     function fitToView() {
         if (d.nodePositions.length === 0)
             return;
-        if (root.width <= 0 || root.height <= 0)
-            return;
 
         // Find bounding box
         let minX = Infinity, minY = Infinity;
@@ -98,28 +93,11 @@ Item {
             maxX = Math.max(maxX, pos.x + nodeWidth);
             maxY = Math.max(maxY, pos.y + nodeHeight);
         }
-
-        // Add padding
-        const padding = 50;
-        minX -= padding;
-        minY -= padding;
-        maxX += padding;
-        maxY += padding;
-
-        // Calculate scale to fit
-        const scaleX = root.width / (maxX - minX);
-        const scaleY = root.height / (maxY - minY);
-        const newScale = Math.min(scaleX, scaleY, 1.5);
-
-        // Center the view
-        d.scale = Math.max(0.1, Math.min(2.0, newScale));
-        d.offsetX = -minX * d.scale + (root.width - (maxX - minX) * d.scale) / 2;
-        d.offsetY = -minY * d.scale + (root.height - (maxY - minY) * d.scale) / 2;
-        canvas.requestPaint();
+        canvas.fit(Qt.rect(minX, minY, maxX - minX, maxY - minY));
     }
 
     /**
-     * Jump to the next (or previous) node matching the search text, centering it in the view.
+     * Jump to the next (or previous) node matching the search text, centering it in the view at a zoom of at least 100%.
      */
     function jumpToNextMatch(forward) {
         if (root.searchText === "" || d.nodePositions.length === 0)
@@ -143,11 +121,7 @@ Item {
         d.currentSearchIndex = matches[nextIdx];
         // Center the view on the matched node
         const node = d.nodePositions[d.currentSearchIndex];
-        const cx = node.x + nodeWidth / 2;
-        const cy = node.y + nodeHeight / 2;
-        d.offsetX = root.width / 2 - cx * d.scale;
-        d.offsetY = root.height / 2 - cy * d.scale;
-        canvas.requestPaint();
+        canvas.centerOn(node.x + nodeWidth / 2, node.y + nodeHeight / 2);
     }
 
     Component.onCompleted: {
@@ -193,9 +167,6 @@ Item {
         property var edges: []          // Array of {from, to, fromX, fromY, toX, toY}
         property string hoveredNode: ""
         property var nodePositions: []  // Array of {frameId, x, y, level, isStatic, age}
-        property real offsetX: 50
-        property real offsetY: 50
-        property real scale: 1.0
 
         /**
          * Calculate layout for all frames.
@@ -343,16 +314,6 @@ Item {
                 return root.staticColor;
             return root.freshColor;
         }
-
-        /**
-         * Transform screen coordinates to graph coordinates.
-         */
-        function screenToGraph(screenX, screenY) {
-            return {
-                "x": (screenX - d.offsetX) / d.scale,
-                "y": (screenY - d.offsetY) / d.scale
-            };
-        }
     }
 
     // ========================================================================
@@ -385,26 +346,28 @@ Item {
     // ========================================================================
     // Canvas Rendering
     // ========================================================================
-    Canvas {
+    GraphCanvas {
         id: canvas
         anchors.fill: parent
 
-        onPaint: {
-            var ctx = getContext("2d");
-            ctx.reset();
-            ctx.fillStyle = palette.base;
-            ctx.fillRect(0, 0, width, height);
+        buttons: IconButton {
+            text: root.horizontal ? IconFont.iconArrowsUpDown : IconFont.iconArrowsLeftRight
+            tooltipText: root.horizontal ? "Switch to vertical layout" : "Switch to horizontal layout"
+
+            onClicked: root.horizontal = !root.horizontal
+        }
+
+        onFitRequested: root.fitToView()
+        onPaint: ctx => {
             if (d.nodePositions.length === 0) {
                 // Draw empty state message
+                ctx.resetTransform();
                 ctx.fillStyle = palette.mid;
                 ctx.font = "14px sans-serif";
                 ctx.textAlign = "center";
                 ctx.fillText("No TF data", width / 2, height / 2);
                 return;
             }
-            ctx.save();
-            ctx.translate(d.offsetX, d.offsetY);
-            ctx.scale(d.scale, d.scale);
 
             // Pre-compute search match set for dimming
             const searching = root.searchText !== "";
@@ -417,7 +380,7 @@ Item {
             }
 
             // Draw edges with arrows
-            ctx.lineWidth = 2 / d.scale;
+            ctx.lineWidth = 2 / canvas.zoom;
             const arrowSize = 7;
             const arrowWidth = arrowSize * 0.5;
             for (let i = 0; i < d.edges.length; ++i) {
@@ -490,15 +453,15 @@ Item {
                 // Highlight border (source/target take priority over hover)
                 if (isSource) {
                     ctx.strokeStyle = root.sourceFrameColor;
-                    ctx.lineWidth = 2 / d.scale;
+                    ctx.lineWidth = 2 / canvas.zoom;
                     ctx.stroke();
                 } else if (isTarget) {
                     ctx.strokeStyle = root.targetFrameColor;
-                    ctx.lineWidth = 2 / d.scale;
+                    ctx.lineWidth = 2 / canvas.zoom;
                     ctx.stroke();
                 } else if (isHovered) {
                     ctx.strokeStyle = "#ffffff";
-                    ctx.lineWidth = 2 / d.scale;
+                    ctx.lineWidth = 2 / canvas.zoom;
                     ctx.stroke();
                 }
 
@@ -532,81 +495,67 @@ Item {
                     ctx.fillText(isSource ? "S" : "T", node.x + nodeWidth, node.y + nodeHeight);
                 }
             }
-            ctx.restore();
         }
-    }
 
-    // ========================================================================
-    // Mouse Interaction
-    // ========================================================================
-    MouseArea {
-        id: mouseArea
+        // ========================================================================
+        // Mouse Interaction
+        // ========================================================================
+        MouseArea {
+            id: mouseArea
 
-        property bool isPanning: false
-        property real lastX: 0
-        property real lastY: 0
+            property bool isPanning: false
+            property real lastX: 0
+            property real lastY: 0
 
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-        anchors.fill: parent
-        hoverEnabled: true
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            anchors.fill: parent
+            hoverEnabled: true
 
-        onDoubleClicked: mouse => {
-            const graphPos = d.screenToGraph(mouse.x, mouse.y);
-            const nodeId = d.findNodeAt(graphPos.x, graphPos.y);
-            if (nodeId === "") {
-                root.fitToView();
+            onDoubleClicked: mouse => {
+                const graphPos = canvas.mapToGraph(mouse.x, mouse.y);
+                const nodeId = d.findNodeAt(graphPos.x, graphPos.y);
+                if (nodeId === "") {
+                    root.fitToView();
+                }
             }
-        }
-        onPositionChanged: mouse => {
-            // Update hover state
-            const graphPos = d.screenToGraph(mouse.x, mouse.y);
-            const nodeId = d.findNodeAt(graphPos.x, graphPos.y);
-            if (nodeId !== d.hoveredNode) {
-                d.hoveredNode = nodeId;
-                canvas.requestPaint();
-            }
+            onPositionChanged: mouse => {
+                // Update hover state
+                const graphPos = canvas.mapToGraph(mouse.x, mouse.y);
+                const nodeId = d.findNodeAt(graphPos.x, graphPos.y);
+                if (nodeId !== d.hoveredNode) {
+                    d.hoveredNode = nodeId;
+                    canvas.requestPaint();
+                }
 
-            // Pan
-            if (isPanning) {
-                d.offsetX += mouse.x - lastX;
-                d.offsetY += mouse.y - lastY;
+                // Pan
+                if (isPanning) {
+                    canvas.offsetX += mouse.x - lastX;
+                    canvas.offsetY += mouse.y - lastY;
+                    lastX = mouse.x;
+                    lastY = mouse.y;
+                }
+            }
+            onPressed: mouse => {
                 lastX = mouse.x;
                 lastY = mouse.y;
-                canvas.requestPaint();
-            }
-        }
-        onPressed: mouse => {
-            lastX = mouse.x;
-            lastY = mouse.y;
-            const graphPos = d.screenToGraph(mouse.x, mouse.y);
-            const nodeId = d.findNodeAt(graphPos.x, graphPos.y);
-            if (mouse.button === Qt.LeftButton) {
-                if (nodeId === "") {
-                    isPanning = true;
-                    return;
+                const graphPos = canvas.mapToGraph(mouse.x, mouse.y);
+                const nodeId = d.findNodeAt(graphPos.x, graphPos.y);
+                if (mouse.button === Qt.LeftButton) {
+                    if (nodeId === "") {
+                        isPanning = true;
+                        return;
+                    }
+                    root.selectFrame(nodeId, mouse.modifiers);
+                    canvas.requestPaint();
+                } else if (mouse.button === Qt.RightButton && nodeId !== "") {
+                    d.contextMenuFrame = nodeId;
+                    tooltip.close();
+                    nodeContextMenu.popup();
                 }
-                root.selectFrame(nodeId, mouse.modifiers);
-                canvas.requestPaint();
-            } else if (mouse.button === Qt.RightButton && nodeId !== "") {
-                d.contextMenuFrame = nodeId;
-                tooltip.close();
-                nodeContextMenu.popup();
             }
-        }
-        onReleased: {
-            isPanning = false;
-        }
-        onWheel: wheel => {
-            const zoomFactor = wheel.angleDelta.y > 0 ? 1.1 : 0.9;
-            const newScale = Math.max(0.1, Math.min(3.0, d.scale * zoomFactor));
-
-            // Zoom towards mouse position
-            const mouseX = wheel.x;
-            const mouseY = wheel.y;
-            d.offsetX = mouseX - (mouseX - d.offsetX) * (newScale / d.scale);
-            d.offsetY = mouseY - (mouseY - d.offsetY) * (newScale / d.scale);
-            d.scale = newScale;
-            canvas.requestPaint();
+            onReleased: {
+                isPanning = false;
+            }
         }
     }
 
@@ -697,47 +646,6 @@ Item {
             }
 
             target: d
-        }
-    }
-
-    // ========================================================================
-    // Zoom Controls Overlay
-    // ========================================================================
-    Row {
-        id: zoomRow
-        anchors.bottom: parent.bottom
-        anchors.right: parent.right
-        spacing: 4
-
-        IconButton {
-            text: IconFont.iconMagnifyingGlassPlus
-            tooltipText: "Zoom in"
-
-            onClicked: {
-                d.scale = Math.min(3.0, d.scale * 1.2);
-                canvas.requestPaint();
-            }
-        }
-        IconButton {
-            text: IconFont.iconMagnifyingGlassMinus
-            tooltipText: "Zoom out"
-
-            onClicked: {
-                d.scale = Math.max(0.1, d.scale / 1.2);
-                canvas.requestPaint();
-            }
-        }
-        IconButton {
-            text: IconFont.iconExpand
-            tooltipText: "Fit to view"
-
-            onClicked: root.fitToView()
-        }
-        IconButton {
-            text: root.horizontal ? IconFont.iconArrowsUpDown : IconFont.iconArrowsLeftRight
-            tooltipText: root.horizontal ? "Switch to vertical layout" : "Switch to horizontal layout"
-
-            onClicked: root.horizontal = !root.horizontal
         }
     }
 

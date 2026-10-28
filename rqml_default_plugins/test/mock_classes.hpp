@@ -209,7 +209,7 @@ class MockServiceClient : public QObject
   Q_PROPERTY( qml6_ros2_plugin::QoSWrapper qos READ qos WRITE setQos NOTIFY qosChanged )
 public:
   explicit MockServiceClient( QObject *p = nullptr );
-  MockServiceClient( MockRos2 *parent, const QString &name, const QString &type );
+  MockServiceClient( const QString &name, const QString &type );
 
   bool ready() const { return true; }
   QString name() const { return name_; }

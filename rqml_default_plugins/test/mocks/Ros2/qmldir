@@ -1,4 +1,5 @@
 module Ros2
+singleton AmentIndex 1.0 AmentIndex.qml
 ImageTransportSubscription 1.0 ImageTransportSubscription.qml
 TfBuffer 1.0 TfBuffer.qml
 TfTransform 1.0 TfTransform.qml

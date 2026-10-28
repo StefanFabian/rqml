@@ -1,4 +1,5 @@
 module RQml.Utils
 FuzzySearch 1.0 FuzzySearch.js
+InterfaceFilter 1.0 InterfaceFilter.js
 MessageUtils 1.0 MessageUtils.js
 Object 1.0 Object.qml
