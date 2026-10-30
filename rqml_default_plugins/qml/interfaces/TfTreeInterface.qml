@@ -121,22 +121,22 @@ Object {
             const age = root.buffer.getTransformAge(frameId);
             const isCollapsed = d.collapsedFrames[frameId] === true;
             root.frames.append({
-                    "frameId": frame.frameId,
-                    "parentId": frame.parentId,
-                    "depth": depth,
-                    "isStatic": frame.isStatic,
-                    "hasChildren": frame.children.length > 0,
-                    "isCollapsed": isCollapsed,
-                    "age": age,
-                    "frequency": frame.frequency,
-                    "translationX": frame.translation.x,
-                    "translationY": frame.translation.y,
-                    "translationZ": frame.translation.z,
-                    "rotationX": frame.rotation.x,
-                    "rotationY": frame.rotation.y,
-                    "rotationZ": frame.rotation.z,
-                    "rotationW": frame.rotation.w
-                });
+                "frameId": frame.frameId,
+                "parentId": frame.parentId,
+                "depth": depth,
+                "isStatic": frame.isStatic,
+                "hasChildren": frame.children.length > 0,
+                "isCollapsed": isCollapsed,
+                "age": age,
+                "frequency": frame.frequency,
+                "translationX": frame.translation.x,
+                "translationY": frame.translation.y,
+                "translationZ": frame.translation.z,
+                "rotationX": frame.rotation.x,
+                "rotationY": frame.rotation.y,
+                "rotationZ": frame.rotation.z,
+                "rotationW": frame.rotation.w
+            });
             if (isCollapsed)
                 return;
             const children = frame.children.slice().sort();

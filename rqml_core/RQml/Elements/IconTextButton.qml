@@ -6,9 +6,9 @@ Button {
     id: control
 
     property var iconFont: Qt.font({
-            "family": IconFont.name,
-            "pixelSize": 12
-        })
+        "family": IconFont.name,
+        "pixelSize": 12
+    })
     property string iconText: ""
     property string tooltipText
 

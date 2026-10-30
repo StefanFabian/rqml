@@ -50,8 +50,8 @@ Rectangle {
             }
             // Remove empty entries
             controllerManagers = controllerManagers.filter(function (e) {
-                    return e;
-                });
+                return e;
+            });
             controllerManagers.sort();
             d.controllerManagers = [];
             d.controllerManagers = controllerManagers;
@@ -64,6 +64,7 @@ Rectangle {
     }
     KeyActivationGuard {
         id: keyGuard
+
     }
     GridLayout {
         anchors.fill: parent
@@ -79,6 +80,7 @@ Rectangle {
         }
         ComboBox {
             id: namespaceCombobox
+
             Layout.fillWidth: true
             model: d.controllerManagers
             objectName: "jtcNamespaceComboBox"
@@ -91,6 +93,7 @@ Rectangle {
         }
         ComboBox {
             id: controllerComboBox
+
             Layout.fillWidth: true
             currentIndex: {
                 for (let i = 0; i < d.trajectoryController.controllers.count; i++) {
@@ -121,6 +124,7 @@ Rectangle {
         }
         Switch {
             id: shortestPathSwitch
+
             Layout.columnSpan: 3
             checked: context.take_shortest_path || false
             objectName: "jtcShortestPathSwitch"
@@ -130,6 +134,7 @@ Rectangle {
         }
         ListView {
             id: jointListView
+
             Layout.columnSpan: 3
             Layout.fillHeight: true
             Layout.fillWidth: true
@@ -155,6 +160,7 @@ Rectangle {
                 }
                 ChangeSlider {
                     id: positionSlider
+
                     Layout.fillWidth: true
                     currentValue: model.position
                     from: model.limits.lower
@@ -243,6 +249,7 @@ Rectangle {
 
                 Button {
                     id: resetButton
+
                     Layout.fillWidth: true
                     Layout.margins: 8
                     objectName: "jtcResetButton"
@@ -252,6 +259,7 @@ Rectangle {
                 }
                 Button {
                     id: sendButton
+
                     Layout.fillWidth: true
                     Layout.margins: 8
                     enabled: d.trajectoryController.controllerReady

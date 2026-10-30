@@ -45,6 +45,7 @@ Dialog {
 
     QtObject {
         id: d
+
         function loadSelected() {
             if (configsList.currentIndex >= 0 && configsList.currentIndex < filteredModel.count) {
                 const item = filteredModel.get(configsList.currentIndex);
@@ -61,36 +62,37 @@ Dialog {
             input = input || [];
             const matches = [];
             input.forEach(cfg => {
-                    const name = cfg.path.split("/").pop().split(".").slice(0, -1).join(".");
-                    const path = cfg.path;
-                    const score = FuzzySearch.scoreFields([name, path], query);
-                    if (score < 0)
-                        return;
-                    matches.push({
-                            "name": name,
-                            "path": path,
-                            "score": score
-                        });
+                const name = cfg.path.split("/").pop().split(".").slice(0, -1).join(".");
+                const path = cfg.path;
+                const score = FuzzySearch.scoreFields([name, path], query);
+                if (score < 0)
+                    return;
+                matches.push({
+                    "name": name,
+                    "path": path,
+                    "score": score
                 });
+            });
             if (FuzzySearch.splitTerms(query).length > 0) {
                 matches.sort((a, b) => {
-                        if (b.score !== a.score)
-                            return b.score - a.score;
-                        if (a.name !== b.name)
-                            return a.name.localeCompare(b.name);
-                        return a.path.localeCompare(b.path);
-                    });
+                    if (b.score !== a.score)
+                        return b.score - a.score;
+                    if (a.name !== b.name)
+                        return a.name.localeCompare(b.name);
+                    return a.path.localeCompare(b.path);
+                });
             }
             matches.forEach(item => filteredModel.append({
-                            "name": item.name,
-                            "path": item.path
-                        }));
+                    "name": item.name,
+                    "path": item.path
+                }));
             // clamp selection within bounds
             configsList.currentIndex = Math.min(Math.max(0, filteredModel.count > 0 ? 0 : -1), filteredModel.count - 1);
         }
     }
     ListModel {
         id: filteredModel
+
     }
     ColumnLayout {
         anchors.fill: parent
@@ -98,6 +100,7 @@ Dialog {
 
         TextField {
             id: filterInput
+
             Layout.fillWidth: true
             focus: true
             objectName: "openConfigDialogFilterInput"
@@ -122,6 +125,7 @@ Dialog {
         }
         ListView {
             id: configsList
+
             function moveDown() {
                 let newCurrentIndex = currentIndex + 1;
                 if (newCurrentIndex >= model.count)

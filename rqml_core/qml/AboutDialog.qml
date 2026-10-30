@@ -20,6 +20,7 @@ import QtQuick.Layouts
 
 Dialog {
     id: aboutDialog
+
     anchors.centerIn: parent
     modal: true
     padding: 20

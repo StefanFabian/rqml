@@ -45,13 +45,16 @@ Item {
     }
     Utils {
         id: helpers
+
     }
     SignalSpy {
         id: clickSpy
+
         signalName: "clicked"
     }
     Loader {
         id: pluginLoader
+
         function reload() {
             source = "";
             source = "../qml/ActionCaller.qml";
@@ -77,20 +80,20 @@ Item {
 
             // Register a mock action
             Ros2.registerAction("/test_action", "tf2_msgs/action/LookupTransform", function (goal, callbacks, client) {
-                    lastCallbacks = callbacks;
-                    lastClient = client;
-                    // Test drive the flow from the test case
-                });
+                lastCallbacks = callbacks;
+                lastClient = client;
+            // Test drive the flow from the test case
+            });
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                });
+                return pluginLoader.status === Loader.Ready;
+            });
 
             // Wait for discovery
             tryVerify(function () {
-                    var selector = find("actionTopicSelector");
-                    return selector && (selector.model || []).indexOf("/test_action") !== -1;
-                }, 5000);
+                var selector = find("actionTopicSelector");
+                return selector && (selector.model || []).indexOf("/test_action") !== -1;
+            }, 5000);
         }
 
         // Returns whether a Return press reached its target: depending on the platform theme
@@ -106,12 +109,12 @@ Item {
             contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
             var sendButton = find("actionSendCancelButton");
             tryVerify(function () {
-                    return sendButton.enabled;
-                }, 5000);
+                return sendButton.enabled;
+            }, 5000);
             mouseClick(sendButton);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 2000);
+                return lastCallbacks !== null;
+            }, 2000);
             var handle = Ros2.createGoalHandle("goal_dead_server");
             handle.setStatus(2); // Executing
             lastCallbacks.onGoalResponse(handle);
@@ -125,8 +128,8 @@ Item {
             compare(Ros2._lastActionCancelled, true);
             var holdButton = find("actionHoldDropButton");
             tryVerify(function () {
-                    return holdButton.visible && !sendButton.visible;
-                }, 2000);
+                return holdButton.visible && !sendButton.visible;
+            }, 2000);
         }
         function test_discovery() {
             var topicSelector = find("actionTopicSelector");
@@ -136,12 +139,12 @@ Item {
                 keyClick(fullName[i]);
             keyClick(Qt.Key_Enter);
             tryVerify(function () {
-                    return contextObj.topic === "/test_action";
-                }, 5000);
+                return contextObj.topic === "/test_action";
+            }, 5000);
             var typeSelector = find("actionTypeSelector");
             tryVerify(function () {
-                    return typeSelector.text === "tf2_msgs/action/LookupTransform";
-                }, 5000);
+                return typeSelector.text === "tf2_msgs/action/LookupTransform";
+            }, 5000);
         }
         function test_enter_sends_but_never_cancels() {
             contextObj.topic = "/test_action";
@@ -150,12 +153,12 @@ Item {
             // The editor only adopts context.request on load.
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                });
+                return pluginLoader.status === Loader.Ready;
+            });
             var sendButton = find("actionSendCancelButton");
             tryVerify(function () {
-                    return sendButton.enabled;
-                }, 5000);
+                return sendButton.enabled;
+            }, 5000);
             // Return in a number field of the goal bubbles up to the editor and sends.
             var editor = find("actionRequestEditor");
             editor.expandRecursively();
@@ -173,15 +176,15 @@ Item {
             }
             var numberField = null;
             tryVerify(function () {
-                    numberField = findByType(editor.contentItem, "IntegerInputField");
-                    return numberField !== null;
-                }, 2000, "Goal editor should contain an integer field");
+                numberField = findByType(editor.contentItem, "IntegerInputField");
+                return numberField !== null;
+            }, 2000, "Goal editor should contain an integer field");
             mouseClick(numberField);
             verify(numberField.activeFocus);
             keyClick(Qt.Key_Return);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 2000, "Return should send the goal");
+                return lastCallbacks !== null;
+            }, 2000, "Return should send the goal");
             verify(sendButton.activeFocus, "Send/Cancel button should take focus after sending");
             var handle = Ros2.createGoalHandle("goal_enter");
             handle.setStatus(1);
@@ -198,13 +201,13 @@ Item {
             contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
             var sendButton = find("actionSendCancelButton");
             tryVerify(function () {
-                    return sendButton.enabled;
-                }, 5000);
+                return sendButton.enabled;
+            }, 5000);
             var editor = find("actionRequestEditor");
             editor.submitted();
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 2000, "Return should send the goal");
+                return lastCallbacks !== null;
+            }, 2000, "Return should send the goal");
 
             // The server has not accepted the goal yet.
             lastCallbacks = null;
@@ -219,12 +222,12 @@ Item {
             contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
             var sendButton = find("actionSendCancelButton");
             tryVerify(function () {
-                    return sendButton.enabled;
-                }, 5000);
+                return sendButton.enabled;
+            }, 5000);
             mouseClick(sendButton);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 2000);
+                return lastCallbacks !== null;
+            }, 2000);
             var handle = Ros2.createGoalHandle("goal_fb");
             handle.setStatus(1);
             lastCallbacks.onGoalResponse(handle);
@@ -236,8 +239,8 @@ Item {
             lastCallbacks.onFeedback(handle, fb2);
             var feedbackList = find("actionFeedbackList");
             tryVerify(function () {
-                    return feedbackList.count === 3;
-                }, 2000);
+                return feedbackList.count === 3;
+            }, 2000);
             // Auto-follow puts the selection at the latest message.
             tryCompare(feedbackList, "currentIndex", 2, 2000);
             var feedbackEditor = find("actionFeedbackEditor");
@@ -254,16 +257,16 @@ Item {
 
             // The detail editor must be tracking the list's current item.
             tryVerify(function () {
-                    return feedbackEditor.model && feedbackEditor.model.message != null;
-                }, 2000);
+                return feedbackEditor.model && feedbackEditor.model.message != null;
+            }, 2000);
 
             // Switching selection updates the currentItem reference - the
             // binding in the editor's model re-evaluates accordingly.
             var item0 = feedbackList.currentItem;
             feedbackList.currentIndex = 2;
             tryVerify(function () {
-                    return feedbackList.currentItem && feedbackList.currentItem !== item0 && feedbackEditor.model && feedbackEditor.model.message != null;
-                }, 2000);
+                return feedbackList.currentItem && feedbackList.currentItem !== item0 && feedbackEditor.model && feedbackEditor.model.message != null;
+            }, 2000);
         }
         function test_goal_cancellation() {
             contextObj.topic = "/test_action";
@@ -271,12 +274,12 @@ Item {
             contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
             var sendButton = find("actionSendCancelButton");
             tryVerify(function () {
-                    return sendButton.enabled;
-                }, 5000);
+                return sendButton.enabled;
+            }, 5000);
             mouseClick(sendButton);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 2000);
+                return lastCallbacks !== null;
+            }, 2000);
             var handle = Ros2.createGoalHandle("goal_cancel");
             handle.setStatus(1); // Accepted/Executing → active
             lastCallbacks.onGoalResponse(handle);
@@ -287,23 +290,23 @@ Item {
             sendButton.forceActiveFocus(Qt.TabFocusReason);
             mouseClick(sendButton);
             tryVerify(function () {
-                    return Ros2._lastActionCancelled === true;
-                }, 2000);
+                return Ros2._lastActionCancelled === true;
+            }, 2000);
 
             // Hold to drop shows right after the request even without any status
             // update, e.g. if the server died, and hides once a result arrives.
             var holdButton = find("actionHoldDropButton");
             tryVerify(function () {
-                    return holdButton.visible && !sendButton.visible;
-                }, 2000);
+                return holdButton.visible && !sendButton.visible;
+            }, 2000);
             verify(holdButton.activeFocus, "Hold to drop should take the focus from Cancel");
             lastCallbacks.onResult({
-                    "status": 6,
-                    "result": Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform")
-                });
+                "status": 6,
+                "result": Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform")
+            });
             tryVerify(function () {
-                    return !holdButton.visible && sendButton.visible;
-                }, 2000);
+                return !holdButton.visible && sendButton.visible;
+            }, 2000);
             verify(sendButton.activeFocus, "Back should take the focus from Hold to drop");
         }
         function test_goal_execution() {
@@ -312,14 +315,14 @@ Item {
             contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
             var sendButton = find("actionSendCancelButton");
             tryVerify(function () {
-                    return sendButton.enabled;
-                }, 5000);
+                return sendButton.enabled;
+            }, 5000);
             mouseClick(sendButton);
 
             // Wait for mock to receive goal
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 2000);
+                return lastCallbacks !== null;
+            }, 2000);
 
             // 1. Accept goal
             var handle = Ros2.createGoalHandle("goal_123");
@@ -334,16 +337,16 @@ Item {
             lastCallbacks.onFeedback(handle, feedback);
             var feedbackList = find("actionFeedbackList");
             tryVerify(function () {
-                    return feedbackList.count === 1;
-                }, 2000);
+                return feedbackList.count === 1;
+            }, 2000);
 
             // 3. Send result
             handle.setStatus(4); // Succeeded
             var result = Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform");
             lastCallbacks.onResult({
-                    "status": 4,
-                    "result": result
-                });
+                "status": 4,
+                "result": result
+            });
             var tabBar = find("actionTabBar");
             tryCompare(tabBar, "currentIndex", 2, 2000); // Result tab
             tryCompare(statusLabel, "text", "Ready", 2000);
@@ -354,12 +357,12 @@ Item {
             contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
             var sendButton = find("actionSendCancelButton");
             tryVerify(function () {
-                    return sendButton.enabled;
-                }, 5000);
+                return sendButton.enabled;
+            }, 5000);
             mouseClick(sendButton);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 2000);
+                return lastCallbacks !== null;
+            }, 2000);
             var handle = Ros2.createGoalHandle("goal_hang");
             handle.setStatus(2); // Executing → active
             lastCallbacks.onGoalResponse(handle);
@@ -375,8 +378,8 @@ Item {
             var holdButton = find("actionHoldDropButton");
             verify(holdButton);
             tryVerify(function () {
-                    return holdButton.visible && !sendButton.visible;
-                }, 2000);
+                return holdButton.visible && !sendButton.visible;
+            }, 2000);
 
             // A tap must not drop anything - only a full hold does.
             holdButton.holdDuration = 120;
@@ -391,8 +394,8 @@ Item {
             holdButton.forceActiveFocus();
             mousePress(holdButton);
             tryVerify(function () {
-                    return !holdButton.visible;
-                }, 2000);
+                return !holdButton.visible;
+            }, 2000);
             mouseRelease(holdButton);
             var tabBar = find("actionTabBar");
             tryCompare(tabBar, "currentIndex", 0, 2000);
@@ -411,9 +414,9 @@ Item {
             // jump to the result tab.
             var result = Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform");
             lastCallbacks.onResult({
-                    "status": 6,
-                    "result": result
-                });
+                "status": 6,
+                "result": result
+            });
             wait(100);
             compare(tabBar.currentIndex, 0);
         }
@@ -423,12 +426,12 @@ Item {
             contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
             var sendButton = find("actionSendCancelButton");
             tryVerify(function () {
-                    return sendButton.enabled;
-                }, 5000);
+                return sendButton.enabled;
+            }, 5000);
             mouseClick(sendButton);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 2000);
+                return lastCallbacks !== null;
+            }, 2000);
             var handle = Ros2.createGoalHandle("goal_no_result");
             handle.setStatus(2); // Executing
             lastCallbacks.onGoalResponse(handle);
@@ -438,16 +441,16 @@ Item {
             handle.setStatus(6); // Aborted
             var holdButton = find("actionHoldDropButton");
             tryVerify(function () {
-                    return holdButton.visible && !sendButton.visible;
-                }, 2000);
+                return holdButton.visible && !sendButton.visible;
+            }, 2000);
             compare(find("actionStatusLabel").text, "Processing goal.");
             lastCallbacks.onResult({
-                    "status": 6,
-                    "result": Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform")
-                });
+                "status": 6,
+                "result": Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform")
+            });
             tryVerify(function () {
-                    return !holdButton.visible && sendButton.visible;
-                }, 2000);
+                return !holdButton.visible && sendButton.visible;
+            }, 2000);
         }
         function test_late_acceptance_of_abandoned_goal_cancels_it() {
             contextObj.topic = "/test_action";
@@ -455,12 +458,12 @@ Item {
             contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
             var sendButton = find("actionSendCancelButton");
             tryVerify(function () {
-                    return sendButton.enabled;
-                }, 5000);
+                return sendButton.enabled;
+            }, 5000);
             mouseClick(sendButton);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 2000);
+                return lastCallbacks !== null;
+            }, 2000);
             var abandonedCallbacks = lastCallbacks;
             lastCallbacks = null;
 
@@ -470,8 +473,8 @@ Item {
             tryCompare(sendButton, "text", "Send Goal", 2000);
             mouseClick(sendButton);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 2000);
+                return lastCallbacks !== null;
+            }, 2000);
 
             // The first goal is accepted late: it must be canceled and not take over the UI.
             compare(Ros2._lastActionCancelled, false);
@@ -492,13 +495,13 @@ Item {
             contextObj.request = preset;
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                });
+                return pluginLoader.status === Loader.Ready;
+            });
             var editor = find("actionRequestEditor");
             verify(editor);
             tryVerify(function () {
-                    return editor.model && editor.model.message && editor.model.message["#messageType"] === "tf2_msgs/action/LookupTransform_Goal";
-                }, 2000);
+                return editor.model && editor.model.message && editor.model.message["#messageType"] === "tf2_msgs/action/LookupTransform_Goal";
+            }, 2000);
             // Editor is not readonly, so it can be used for composing the goal.
             verify(editor.readonly === false);
 
@@ -510,8 +513,8 @@ Item {
             verify(typeSelector);
             typeSelector.text = "tf2_msgs/action/LookupTransform";
             tryVerify(function () {
-                    return editor.model && editor.model.message && editor.model.message["#messageType"] === "tf2_msgs/action/LookupTransform_Goal";
-                }, 2000);
+                return editor.model && editor.model.message && editor.model.message["#messageType"] === "tf2_msgs/action/LookupTransform_Goal";
+            }, 2000);
         }
         function test_selectors_locked_while_goal_active() {
             contextObj.topic = "/test_action";
@@ -521,27 +524,27 @@ Item {
             var typeSelector = find("actionTypeSelector");
             var sendButton = find("actionSendCancelButton");
             tryVerify(function () {
-                    return sendButton.enabled;
-                }, 5000);
+                return sendButton.enabled;
+            }, 5000);
             mouseClick(sendButton);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 2000);
+                return lastCallbacks !== null;
+            }, 2000);
             var handle = Ros2.createGoalHandle("goal_lock");
             handle.setStatus(2); // Executing
             lastCallbacks.onGoalResponse(handle);
 
             // Changing topic or type would orphan the running goal.
             tryVerify(function () {
-                    return !topicSelector.enabled && !typeSelector.enabled;
-                }, 2000);
+                return !topicSelector.enabled && !typeSelector.enabled;
+            }, 2000);
             lastCallbacks.onResult({
-                    "status": 4,
-                    "result": Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform")
-                });
+                "status": 4,
+                "result": Ros2.createEmptyActionResult("tf2_msgs/action/LookupTransform")
+            });
             tryVerify(function () {
-                    return topicSelector.enabled && typeSelector.enabled;
-                }, 2000);
+                return topicSelector.enabled && typeSelector.enabled;
+            }, 2000);
         }
         function test_send_click_swallows_quick_return() {
             contextObj.topic = "/test_action";
@@ -549,13 +552,13 @@ Item {
             contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
             var sendButton = find("actionSendCancelButton");
             tryVerify(function () {
-                    return sendButton.enabled;
-                }, 5000);
+                return sendButton.enabled;
+            }, 5000);
             sendButton.forceActiveFocus(Qt.TabFocusReason);
             sendButton.clicked();
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 2000);
+                return lastCallbacks !== null;
+            }, 2000);
             var handle = Ros2.createGoalHandle("goal_enter_button");
             handle.setStatus(1);
             lastCallbacks.onGoalResponse(handle);
@@ -572,12 +575,12 @@ Item {
             contextObj.request = Ros2.createEmptyActionGoal("tf2_msgs/action/LookupTransform");
             var sendButton = find("actionSendCancelButton");
             tryVerify(function () {
-                    return sendButton.enabled;
-                }, 5000);
+                return sendButton.enabled;
+            }, 5000);
             mouseClick(sendButton);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 2000);
+                return lastCallbacks !== null;
+            }, 2000);
             var handle = Ros2.createGoalHandle("goal_ext_cancel");
             handle.setStatus(2); // Executing
             lastCallbacks.onGoalResponse(handle);
@@ -603,8 +606,8 @@ Item {
             verify(btn);
             mouseClick(btn);
             tryVerify(function () {
-                    return (selector.model || []).indexOf("/second_action") !== -1;
-                }, 2000);
+                return (selector.model || []).indexOf("/second_action") !== -1;
+            }, 2000);
         }
         function test_type_refresh() {
             // Set topic via context + reload so typeSelect.refresh runs on
@@ -615,13 +618,13 @@ Item {
             contextObj.type = "tf2_msgs/action/LookupTransform";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                });
+                return pluginLoader.status === Loader.Ready;
+            });
             var typeSelector = find("actionTypeSelector");
             verify(typeSelector);
             tryVerify(function () {
-                    return (typeSelector.model || []).indexOf("tf2_msgs/action/LookupTransform") !== -1;
-                }, 2000);
+                return (typeSelector.model || []).indexOf("tf2_msgs/action/LookupTransform") !== -1;
+            }, 2000);
             // Register a second type under the same action name; refresh
             // should pull it into the selector's model.
             Ros2.registerAction("/test_action", "action_tutorials_interfaces/action/Fibonacci", function (goal, callbacks) {});
@@ -630,8 +633,8 @@ Item {
             verify(btn);
             mouseClick(btn);
             tryVerify(function () {
-                    return (typeSelector.model || []).indexOf("action_tutorials_interfaces/action/Fibonacci") !== -1;
-                }, 2000);
+                return (typeSelector.model || []).indexOf("action_tutorials_interfaces/action/Fibonacci") !== -1;
+            }, 2000);
         }
 
         name: "ActionCallerTest"

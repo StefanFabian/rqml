@@ -24,6 +24,7 @@ Rectangle {
 
             FuzzySelector {
                 id: topicSelect
+
                 function refresh() {
                     let result = Ros2.queryActions();
                     if (!!context.topic) {
@@ -59,6 +60,7 @@ Rectangle {
             }
             FuzzySelector {
                 id: typeSelect
+
                 function refresh() {
                     let types = !!context.topic ? Ros2.getActionTypes(context.topic) : [];
                     if (types.length == 0)
@@ -100,6 +102,7 @@ Rectangle {
         }
         TabBar {
             id: tabBar
+
             Layout.fillWidth: true
             objectName: "actionTabBar"
 
@@ -123,6 +126,7 @@ Rectangle {
             // Request Tab
             MessageContentEditor {
                 id: requestEditor
+
                 Layout.fillHeight: true
                 Layout.fillWidth: true
                 objectName: "actionRequestEditor"
@@ -130,6 +134,7 @@ Rectangle {
 
                 model: MessageItemModel {
                     id: requestModel
+
                     Component.onCompleted: {
                         if (!!context.request)
                             message = context.request;
@@ -169,11 +174,13 @@ Rectangle {
                 }
                 RowLayout {
                     id: feedbackLayout
+
                     anchors.fill: parent
                     visible: d.feedbackMessages && d.feedbackMessages.count > 0 || false
 
                     ListView {
                         id: feedbackList
+
                         Layout.fillHeight: true
                         Layout.preferredWidth: 120
                         clip: true
@@ -193,6 +200,7 @@ Rectangle {
                     }
                     MessageContentEditor {
                         id: feedbackEditor
+
                         Layout.fillHeight: true
                         Layout.fillWidth: true
                         objectName: "actionFeedbackEditor"
@@ -230,6 +238,7 @@ Rectangle {
                 }
                 MessageContentEditor {
                     id: resultEditor
+
                     anchors.fill: parent
                     readonly: true
                     visible: d.client && d.goalHandle && d.result?.result || false
@@ -250,6 +259,7 @@ Rectangle {
             }
             Label {
                 id: statusText
+
                 Layout.fillWidth: true
                 objectName: "actionStatusLabel"
                 text: {
@@ -267,6 +277,7 @@ Rectangle {
             }
             Button {
                 id: sendButton
+
                 // Cancel stays available when the server dies so the hold-to-drop path is reachable.
                 enabled: d.goalRunning || (d.client?.ready ?? false)
                 objectName: "actionSendCancelButton"
@@ -296,49 +307,50 @@ Rectangle {
                     tabBar.currentIndex = 1;
                     d.goalPending = true;
                     d.client.sendGoalAsync(requestEditor.model.message, {
-                            "onGoalResponse": function (goalHandle) {
-                                if (seq !== d.goalSeq) {
-                                    // Goal was abandoned before acceptance; nothing in the UI can cancel it later.
-                                    goalHandle?.cancel();
-                                    return;
-                                }
-                                d.goalPending = false;
-                                if (!goalHandle) {
-                                    Ros2.warn("Goal rejected by server");
-                                    d.result = {
-                                        "message": "Goal rejected by server"
-                                    };
-                                    tabBar.currentIndex = 2;
-                                    return;
-                                }
-                                Ros2.debug("Goal accepted by server, waiting for result");
-                                d.goalHandle = goalHandle;
-                            },
-                            "onFeedback": function (goalHandle, feedback) {
-                                if (seq !== d.goalSeq)
-                                    return;
-                                if (!d.goalHandle || goalHandle.goalId != d.goalHandle.goalId) {
-                                    Ros2.warn("Received feedback for old goal handle. Ignoring.");
-                                    return;
-                                }
-                                const displayingLatest = feedbackList.currentIndex == d.feedbackMessages.count - 1;
-                                d.feedbackMessages.append({
-                                        "message": feedback
-                                    });
-                                if (displayingLatest)
-                                    feedbackList.currentIndex = d.feedbackMessages.count - 1;
-                            },
-                            "onResult": function (result) {
-                                if (seq !== d.goalSeq)
-                                    return;
-                                tabBar.currentIndex = 2;
-                                d.result = result;
+                        "onGoalResponse": function (goalHandle) {
+                            if (seq !== d.goalSeq) {
+                                // Goal was abandoned before acceptance; nothing in the UI can cancel it later.
+                                goalHandle?.cancel();
+                                return;
                             }
-                        });
+                            d.goalPending = false;
+                            if (!goalHandle) {
+                                Ros2.warn("Goal rejected by server");
+                                d.result = {
+                                    "message": "Goal rejected by server"
+                                };
+                                tabBar.currentIndex = 2;
+                                return;
+                            }
+                            Ros2.debug("Goal accepted by server, waiting for result");
+                            d.goalHandle = goalHandle;
+                        },
+                        "onFeedback": function (goalHandle, feedback) {
+                            if (seq !== d.goalSeq)
+                                return;
+                            if (!d.goalHandle || goalHandle.goalId != d.goalHandle.goalId) {
+                                Ros2.warn("Received feedback for old goal handle. Ignoring.");
+                                return;
+                            }
+                            const displayingLatest = feedbackList.currentIndex == d.feedbackMessages.count - 1;
+                            d.feedbackMessages.append({
+                                "message": feedback
+                            });
+                            if (displayingLatest)
+                                feedbackList.currentIndex = d.feedbackMessages.count - 1;
+                        },
+                        "onResult": function (result) {
+                            if (seq !== d.goalSeq)
+                                return;
+                            tabBar.currentIndex = 2;
+                            d.result = result;
+                        }
+                    });
                 }
             }
             HoldButton {
                 id: holdDropButton
+
                 objectName: "actionHoldDropButton"
                 text: qsTr("Hold to drop")
                 visible: d.awaitingResult
@@ -394,5 +406,6 @@ Rectangle {
     }
     KeyActivationGuard {
         id: keyGuard
+
     }
 }

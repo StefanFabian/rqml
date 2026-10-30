@@ -74,10 +74,10 @@ Item {
         while (getToastById(toastId) !== null)
             toastId = createToastId();
         toastModel.append({
-                "toastId": toastId,
-                "message": message,
-                "level": level || "info"
-            });
+            "toastId": toastId,
+            "message": message,
+            "level": level || "info"
+        });
     }
 
     anchors.bottom: parent.bottom
@@ -88,9 +88,11 @@ Item {
 
     ListModel {
         id: toastModel
+
     }
     ListView {
         id: toastListView
+
         anchors.fill: parent
         interactive: false
         model: toastModel
@@ -125,9 +127,11 @@ Item {
 
             HoverHandler {
                 id: toastHover
+
             }
             RowLayout {
                 id: toastLayout
+
                 anchors.fill: parent
                 anchors.margins: 12
                 spacing: 12
@@ -151,6 +155,7 @@ Item {
                 }
                 IconButton {
                     id: closeButton
+
                     Layout.alignment: Qt.AlignVCenter
                     flat: true
                     radius: width / 2
@@ -161,6 +166,7 @@ Item {
             }
             Rectangle {
                 id: progressBar
+
                 anchors.bottom: parent.bottom
                 anchors.left: parent.left
                 anchors.leftMargin: parent.radius
@@ -168,8 +174,9 @@ Item {
                 height: 4
                 width: parent.width
 
-                NumberAnimation on width  {
+                NumberAnimation on width {
                     id: progressAnim
+
                     duration: root.dismissDuration
                     from: toastItemDelegate.width
                     paused: toastHover.hovered

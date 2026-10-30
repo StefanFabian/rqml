@@ -39,6 +39,7 @@ Dialog {
 
         TabBar {
             id: tabBar
+
             Layout.fillWidth: true
 
             TabButton {
@@ -57,12 +58,14 @@ Dialog {
 
             MessageContentEditor {
                 id: messageContentEditor
+
                 Layout.fillHeight: true
                 Layout.fillWidth: true
                 readonly: control.readonly
 
                 model: MessageItemModel {
                     id: messageModel
+
                     onMessageChanged: {
                         messageContentEditor.expandRecursively();
                     }
@@ -87,6 +90,7 @@ Dialog {
 
                     TextArea {
                         id: textArea
+
                         anchors.fill: parent
                         objectName: "editMessageDialogJsonTextArea"
                         readOnly: control.readonly
@@ -100,8 +104,7 @@ Dialog {
                                 control.message = JSON.parse(text);
                             } catch (e)
                             // ignore parse errors
-                            {
-                            }
+                            {}
                         }
                     }
                 }
@@ -113,6 +116,7 @@ Dialog {
                     }
                     IconTextButton {
                         id: copyJsonButton
+
                         iconText: IconFont.iconCopy
                         objectName: "editMessageDialogCopyJsonButton"
                         text: qsTr("Copy JSON")

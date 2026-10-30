@@ -55,6 +55,7 @@ Rectangle {
 
     ListModel {
         id: messagesListModel
+
         dynamicRoles: true
     }
     ColumnLayout {
@@ -67,6 +68,7 @@ Rectangle {
 
             FuzzySelector {
                 id: topicSelect
+
                 function refresh() {
                     model = Ros2.queryTopics();
                     if (!text)
@@ -89,6 +91,7 @@ Rectangle {
             }
             FuzzySelector {
                 id: typeSelect
+
                 function refresh() {
                     model = Ros2.getTopicTypes(topicSelect.text);
                     if (model.length > 0)
@@ -118,6 +121,7 @@ Rectangle {
         }
         ListView {
             id: messagesListView
+
             Layout.fillHeight: true
             Layout.fillWidth: true
             model: messagesListModel
@@ -144,6 +148,7 @@ Rectangle {
                     }
                     CheckBox {
                         id: enabledCheckBox
+
                         Layout.rowSpan: 2
                         checked: model.enabled
                         objectName: "enabledCheckBox_" + model.index
@@ -152,8 +157,8 @@ Rectangle {
                             if (checked == model.enabled)
                                 return;
                             root.updateEntry(model.index, {
-                                    "enabled": checked
-                                });
+                                "enabled": checked
+                            });
                             model.enabled = checked;
                         }
                     }
@@ -184,6 +189,7 @@ Rectangle {
                     }
                     DecimalSpinBox {
                         id: rateSpinBox
+
                         editable: true
                         implicitWidth: 128
                         objectName: "rateSpinBox_" + model.index
@@ -194,8 +200,8 @@ Rectangle {
                             if (value == model.rate)
                                 return;
                             root.updateEntry(model.index, {
-                                    "rate": value
-                                });
+                                "rate": value
+                            });
                             model.rate = value;
                         }
                     }
@@ -228,6 +234,7 @@ Rectangle {
                     }
                     EditMessageDialog {
                         id: editDialog
+
                         anchors.centerIn: Overlay.overlay
                         height: Math.max(400, (Overlay.overlay?.height ?? 0) * 0.8)
                         modal: true
@@ -239,9 +246,9 @@ Rectangle {
                         onAccepted: {
                             let type = message["#messageType"] || model.type;
                             root.updateEntry(model.index, {
-                                    "content": message,
-                                    "type": type
-                                });
+                                "content": message,
+                                "type": type
+                            });
                             model.content = message;
                             model.type = type;
                         }

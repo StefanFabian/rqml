@@ -40,6 +40,7 @@ Button {
 
     NumberAnimation {
         id: fillAnimation
+
         property: "_progress"
         target: control
         to: 1
@@ -51,6 +52,7 @@ Button {
     }
     NumberAnimation {
         id: drainAnimation
+
         duration: 150
         property: "_progress"
         target: control

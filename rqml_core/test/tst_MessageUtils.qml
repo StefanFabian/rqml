@@ -115,9 +115,11 @@ Item {
             compare(list[1].display, 2);
         }
         function test_toListElement_nestedObjects() {
-            var msg = [{
+            var msg = [
+                {
                     "x": 1
-                }, "plain"];
+                },
+                "plain"];
             var list = MessageUtils.toListElement(msg);
             compare(list.length, 2);
             // Object elements are recursively converted, not wrapped in display

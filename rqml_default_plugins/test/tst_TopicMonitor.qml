@@ -22,9 +22,11 @@ Item {
     }
     Utils {
         id: helpers
+
     }
     Loader {
         id: pluginLoader
+
         function reload() {
             source = "";
             source = "../qml/TopicMonitor.qml";
@@ -39,8 +41,8 @@ Item {
             contextObj.monitoredTopics = [];
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000, "Loader should be ready");
+                return pluginLoader.status === Loader.Ready;
+            }, 2000, "Loader should be ready");
             wait(100);
         }
         function test_add_and_remove_topic() {
@@ -52,8 +54,8 @@ Item {
             verify(listView !== null);
             topicSelector.text = "/test_topic";
             tryVerify(function () {
-                    return addButton.enabled;
-                }, 1000, "Add button should enable for a known topic");
+                return addButton.enabled;
+            }, 1000, "Add button should enable for a known topic");
             mouseClick(addButton);
             tryCompare(listView, "count", 1, 2000, "Should have one monitored topic");
             compare(contextObj.monitoredTopics.length, 1, "Context should persist monitored topics");
@@ -61,9 +63,9 @@ Item {
             compare(contextObj.monitoredTopics[0].type, "std_msgs/msg/String");
             var deleteButton = null;
             tryVerify(function () {
-                    deleteButton = find("topicMonitorDeleteButton_0");
-                    return deleteButton !== null;
-                }, 2000, "Delete button should exist");
+                deleteButton = find("topicMonitorDeleteButton_0");
+                return deleteButton !== null;
+            }, 2000, "Delete button should exist");
             mouseClick(deleteButton);
             tryCompare(listView, "count", 0, 2000, "Topic should be removed");
             compare(contextObj.monitoredTopics.length, 0, "Context should be updated after removal");
@@ -85,14 +87,14 @@ Item {
             var addButton = find("topicMonitorAddButton");
             topicSelector.text = "/test_topic";
             tryVerify(function () {
-                    return addButton.enabled;
-                }, 1000);
+                return addButton.enabled;
+            }, 1000);
             mouseClick(addButton);
             var sub = null;
             tryVerify(function () {
-                    sub = Ros2.findSubscription("/test_topic");
-                    return sub !== null;
-                }, 2000, "Subscription should be created");
+                sub = Ros2.findSubscription("/test_topic");
+                return sub !== null;
+            }, 2000, "Subscription should be created");
             var msg = Ros2.createEmptyMessage("std_msgs/msg/String");
             msg.data = "hello monitor";
             sub.injectMessage(msg);
@@ -101,10 +103,10 @@ Item {
             var frequencyLabel = null;
             var bandwidthLabel = null;
             tryVerify(function () {
-                    frequencyLabel = find("topicMonitorFrequencyLabel_0");
-                    bandwidthLabel = find("topicMonitorBandwidthLabel_0");
-                    return frequencyLabel !== null && bandwidthLabel !== null;
-                }, 2000);
+                frequencyLabel = find("topicMonitorFrequencyLabel_0");
+                bandwidthLabel = find("topicMonitorBandwidthLabel_0");
+                return frequencyLabel !== null && bandwidthLabel !== null;
+            }, 2000);
             tryCompare(frequencyLabel, "text", "8.5 Hz", 2500);
             tryCompare(bandwidthLabel, "text", "2.0 KiB/s", 2500);
             var pauseButton = find("topicMonitorPauseButton_0");
@@ -123,19 +125,19 @@ Item {
             var dialog = null;
             var jsonTextArea = null;
             tryVerify(function () {
-                    dialog = find("topicMonitorMessageDialog");
-                    return dialog !== null && dialog.visible;
-                }, 3000, "Latest-message dialog should be visible");
+                dialog = find("topicMonitorMessageDialog");
+                return dialog !== null && dialog.visible;
+            }, 3000, "Latest-message dialog should be visible");
             tryVerify(function () {
-                    return dialog.message && dialog.message.data === "hello monitor";
-                }, 2000, "Readonly dialog should show the latest message");
+                return dialog.message && dialog.message.data === "hello monitor";
+            }, 2000, "Readonly dialog should show the latest message");
             var jsonTabButton = find("editMessageDialogJsonTabButton");
             verify(jsonTabButton !== null, "JSON tab button should exist");
             mouseClick(jsonTabButton);
             tryVerify(function () {
-                    jsonTextArea = find("editMessageDialogJsonTextArea");
-                    return jsonTextArea !== null && jsonTextArea.text.indexOf("\"data\": \"hello monitor\"") !== -1;
-                }, 3000, "JSON view should show the latest message");
+                jsonTextArea = find("editMessageDialogJsonTextArea");
+                return jsonTextArea !== null && jsonTextArea.text.indexOf("\"data\": \"hello monitor\"") !== -1;
+            }, 3000, "JSON view should show the latest message");
             var copyJsonButton = find("editMessageDialogCopyJsonButton");
             verify(copyJsonButton !== null);
             RQml.resetClipboard();
@@ -146,30 +148,32 @@ Item {
             verify(plugin !== null, "TopicMonitor plugin should load");
         }
         function test_restored_topic_syncs_live_type() {
-            contextObj.monitoredTopics = [{
+            contextObj.monitoredTopics = [
+                {
                     "topic": "/test_topic",
                     "type": "std_msgs/msg/Bool",
                     "paused": false
-                }];
+                }
+            ];
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000, "Loader should be ready after restoring a topic");
+                return pluginLoader.status === Loader.Ready;
+            }, 2000, "Loader should be ready after restoring a topic");
             var listView = find("topicMonitorListView");
             verify(listView !== null);
             tryCompare(listView, "count", 1, 2000, "Restored topic should be shown");
             var sub = null;
             tryVerify(function () {
-                    sub = Ros2.findSubscription("/test_topic");
-                    return sub !== null;
-                }, 2000, "Subscription should be created for restored topic");
+                sub = Ros2.findSubscription("/test_topic");
+                return sub !== null;
+            }, 2000, "Subscription should be created for restored topic");
             tryCompare(sub, "messageType", "std_msgs/msg/String", 2000, "Subscription should resolve the live topic type");
             tryCompare(contextObj.monitoredTopics[0], "type", "std_msgs/msg/String", 2000, "Persisted entry should self-heal to the live topic type");
             var typeLabel = null;
             tryVerify(function () {
-                    typeLabel = find("topicMonitorTypeLabel_0");
-                    return typeLabel !== null;
-                }, 2000, "Type label should exist");
+                typeLabel = find("topicMonitorTypeLabel_0");
+                return typeLabel !== null;
+            }, 2000, "Type label should exist");
             tryCompare(typeLabel, "text", "std_msgs/msg/String", 2000, "Visible row type should update to the live topic type");
             var msg = Ros2.createEmptyMessage("std_msgs/msg/String");
             msg.data = "restored message";
@@ -179,13 +183,13 @@ Item {
             mouseClick(viewButton);
             var dialog = null;
             tryVerify(function () {
-                    dialog = find("topicMonitorMessageDialog");
-                    return dialog !== null && dialog.visible;
-                }, 3000, "Latest-message dialog should be visible for restored topic");
+                dialog = find("topicMonitorMessageDialog");
+                return dialog !== null && dialog.visible;
+            }, 3000, "Latest-message dialog should be visible for restored topic");
             compare(dialog.messageType, "std_msgs/msg/String", "Dialog should use the live resolved topic type");
             tryVerify(function () {
-                    return dialog.message && dialog.message.data === "restored message";
-                }, 2000, "Dialog should show the restored topic's latest message");
+                return dialog.message && dialog.message.data === "restored message";
+            }, 2000, "Dialog should show the restored topic's latest message");
         }
 
         name: "TopicMonitorTest"

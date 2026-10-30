@@ -9,6 +9,7 @@ Item {
 
     LoadingListView {
         id: listView
+
         anchors.fill: parent
         model: 3
 
@@ -19,6 +20,7 @@ Item {
     }
     LoadingListView {
         id: overflowingListView
+
         height: 50
         model: 50
         width: 200

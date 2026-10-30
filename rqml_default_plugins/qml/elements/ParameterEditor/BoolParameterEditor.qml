@@ -17,11 +17,11 @@ CheckBox {
     onClicked: {
         let prev = !checked;
         ParameterService.setParameter(modelData.nodeName, modelData.paramName, checked, modelData.paramType, function (success, reason) {
-                if (!success) {
-                    checked = prev;
-                    root.parameterSetFailed(modelData.paramName, reason);
-                }
-            });
+            if (!success) {
+                checked = prev;
+                root.parameterSetFailed(modelData.paramName, reason);
+            }
+        });
     }
     onLocalParamValueChanged: if (localParamValue !== undefined)
         checked = localParamValue

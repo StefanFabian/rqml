@@ -4,19 +4,24 @@ import "../qml" as Dialogs
 
 Item {
     id: root
+
     height: 600
     width: 800
 
     QtObject {
         id: configRqml
 
-        property var configs: [{
+        property var configs: [
+            {
                 "path": "/tmp/robot/image_raw_monitor.rqml"
-            }, {
+            },
+            {
                 "path": "/tmp/robot/controller_manager.rqml"
-            }, {
+            },
+            {
                 "path": "/tmp/camera/raw_image_tools.rqml"
-            }]
+            }
+        ]
         property string lastLoadedPath: ""
         property var recentConfigs: configs
 
@@ -28,19 +33,23 @@ Item {
         id: pluginRqml
 
         property string createdPluginId: ""
-        property var plugins: [{
+        property var plugins: [
+            {
                 "id": "image_view",
                 "name": "Image View",
                 "group": "Raw Sensors"
-            }, {
+            },
+            {
                 "id": "controller_manager",
                 "name": "Controller Manager",
                 "group": "Robot Control"
-            }, {
+            },
+            {
                 "id": "service_caller",
                 "name": "Service Caller",
                 "group": "Robot Tools"
-            }]
+            }
+        ]
 
         function canCreatePlugin(id) {
             return id !== "service_caller";
@@ -59,13 +68,14 @@ Item {
 
         function addDockWidget(instance, location) {
             addedInstances.push({
-                    "instance": instance,
-                    "location": location
-                });
+                "instance": instance,
+                "location": location
+            });
         }
     }
     Component {
         id: openConfigDialogComponent
+
         Dialogs.OpenConfigDialog {
             property QtObject mainWindow: root
 
@@ -74,6 +84,7 @@ Item {
     }
     Component {
         id: openPluginDialogComponent
+
         Dialogs.OpenPluginDialog {
             property QtObject mainWindow: root
             property var rootDockingArea: rootDockingAreaMock

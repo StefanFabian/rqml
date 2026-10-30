@@ -40,6 +40,7 @@ Rectangle {
     }
     MoveItInterface {
         id: moveItInterface
+
         accelerationScale: context.accelerationScale ?? 0.1
         actionServer: context.actionServer ?? ""
         moveGroupName: context.moveGroup ?? ""
@@ -62,12 +63,14 @@ Rectangle {
     // Timer to auto-hide error after 10 seconds
     Timer {
         id: errorHideTimer
+
         interval: 10000
 
         onTriggered: d.showError = false
     }
     KeyActivationGuard {
         id: keyGuard
+
     }
 
     // ========================================================================
@@ -92,6 +95,7 @@ Rectangle {
 
             ComboBox {
                 id: actionServerComboBox
+
                 Layout.fillWidth: true
                 currentIndex: {
                     for (let i = 0; i < moveItInterface.actionServers.count; i++) {
@@ -113,9 +117,9 @@ Rectangle {
                     // Auto-select first discovered action server only when context has no explicit
                     // selection yet. Deferred since discovery can run inside the actionServer binding.
                     Qt.callLater(() => {
-                            if (!context.actionServer && currentText)
-                                context.actionServer = currentText;
-                        });
+                        if (!context.actionServer && currentText)
+                            context.actionServer = currentText;
+                    });
                 }
             }
             RefreshButton {
@@ -152,6 +156,7 @@ Rectangle {
         }
         ComboBox {
             id: moveGroupComboBox
+
             Layout.columnSpan: 2
             Layout.fillWidth: true
             currentIndex: {
@@ -228,6 +233,7 @@ Rectangle {
 
             ColumnLayout {
                 id: errorBannerColumn
+
                 anchors.fill: parent
                 anchors.margins: 6
                 spacing: 2
@@ -275,6 +281,7 @@ Rectangle {
         }
         ListView {
             id: jointListView
+
             Layout.columnSpan: 3
             Layout.fillHeight: true
             Layout.fillWidth: true
@@ -300,6 +307,7 @@ Rectangle {
                 }
                 ChangeSlider {
                     id: positionSlider
+
                     Layout.fillWidth: true
                     currentValue: model.position
                     from: model.limits.lower
@@ -378,6 +386,7 @@ Rectangle {
             }
             Button {
                 id: executeButton
+
                 Layout.fillWidth: true
                 Layout.margins: 4
                 ToolTip.delay: 500
@@ -420,6 +429,7 @@ Rectangle {
 
             GridLayout {
                 id: planningContent
+
                 anchors.fill: parent
                 anchors.margins: 6
                 columns: 3
@@ -433,6 +443,7 @@ Rectangle {
                 }
                 Slider {
                     id: velocitySlider
+
                     Layout.fillWidth: true
                     from: 0.01
                     objectName: "moveitVelocitySlider"
@@ -459,6 +470,7 @@ Rectangle {
                 }
                 Slider {
                     id: accelerationSlider
+
                     Layout.fillWidth: true
                     from: 0.01
                     objectName: "moveitAccelerationSlider"
@@ -485,6 +497,7 @@ Rectangle {
                 }
                 Slider {
                     id: planningTimeSlider
+
                     Layout.fillWidth: true
                     from: 1.0
                     objectName: "moveitPlanningTimeSlider"
@@ -511,6 +524,7 @@ Rectangle {
                 }
                 Slider {
                     id: planningAttemptsSlider
+
                     Layout.fillWidth: true
                     from: 1
                     objectName: "moveitPlanningAttemptsSlider"
@@ -532,6 +546,7 @@ Rectangle {
                 // Toggle header stays at the bottom so the content expands upward.
                 Button {
                     id: planningConfigHeaderButton
+
                     Layout.columnSpan: 3
                     Layout.fillWidth: true
                     flat: true

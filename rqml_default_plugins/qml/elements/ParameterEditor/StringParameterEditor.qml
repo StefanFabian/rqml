@@ -23,11 +23,11 @@ TextField {
             return;
         let prev = localParamValue;
         ParameterService.setParameter(modelData.nodeName, modelData.paramName, text, modelData.paramType, function (success, reason) {
-                if (!success) {
-                    text = prev !== undefined ? prev : "";
-                    root.parameterSetFailed(modelData.paramName, reason);
-                }
-            });
+            if (!success) {
+                text = prev !== undefined ? prev : "";
+                root.parameterSetFailed(modelData.paramName, reason);
+            }
+        });
     }
     onLocalParamValueChanged: if (localParamValue !== undefined)
         text = localParamValue

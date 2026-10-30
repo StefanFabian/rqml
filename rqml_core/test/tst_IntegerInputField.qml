@@ -8,6 +8,7 @@ Item {
 
     IntegerInputField {
         id: field
+
         from: -10
         to: 10
         value: 5

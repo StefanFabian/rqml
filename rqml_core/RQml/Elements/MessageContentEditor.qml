@@ -38,41 +38,42 @@ TreeView {
 
     delegate: TreeViewDelegate {
         id: delegate
+
         contentItem: {
             // model has properties:
             // objectName, index, row, column, model, hasModelChildren, isArrayElement, edit, display, statusTip, whatsThis, decoration, type, toolTip
             if (model.edit == null) {
                 let text = String(model.display ?? "");
                 return labelComponent.createObject(delegate, {
-                        "text": model.isArrayElement ? "[" + text + "]" : text
-                    });
+                    "text": model.isArrayElement ? "[" + text + "]" : text
+                });
             }
             if (control.readonly) {
                 return labelComponent.createObject(delegate, {
-                        "text": model.type === "array" || model.type === "compound" ? "" : String(model.display ?? "")
-                    });
+                    "text": model.type === "array" || model.type === "compound" ? "" : String(model.display ?? "")
+                });
             }
             let layout = rowLayoutComponent.createObject(delegate);
             let component = null;
             switch (model.type) {
             case "array":
                 component = addRowButtonComponent.createObject(layout, {
-                        "model": model
-                    });
+                    "model": model
+                });
                 break;
             case "compound":
                 component = null;
                 break;
             case "bool":
                 component = checkboxComponent.createObject(layout, {
-                        "checked": !!model.edit
-                    });
+                    "checked": !!model.edit
+                });
                 component.checkedChanged.connect(function () {
-                        if (model.edit == component.checked)
-                            return;
-                        model.edit = component.checked;
-                        component.checked = model.edit;
-                    });
+                    if (model.edit == component.checked)
+                        return;
+                    model.edit = component.checked;
+                    component.checked = model.edit;
+                });
                 break;
             case "uint8":
             case "uint16":
@@ -82,13 +83,13 @@ TreeView {
                     const size = model.type.substring(4);
                     const maxValue = size === "8" ? 255 : size === "16" ? 65535 : size === "32" ? 4294967295.0 : 18446744073709551615.0;
                     component = integerFieldComponent.createObject(layout, {
-                            "from": 0,
-                            "to": maxValue,
-                            "value": model.edit ?? 0
-                        });
+                        "from": 0,
+                        "to": maxValue,
+                        "value": model.edit ?? 0
+                    });
                     component.valueChanged.connect(function () {
-                            model.edit = component.value;
-                        });
+                        model.edit = component.value;
+                    });
                     break;
                 }
             case "int8":
@@ -100,63 +101,63 @@ TreeView {
                     const minValue = size === "8" ? -128 : size === "16" ? -32768 : size === "32" ? -2147483648 : -9223372036854775808.0;
                     const maxValue = size === "8" ? 127 : size === "16" ? 32767 : size === "32" ? 2147483647 : 9223372036854775807.0;
                     component = integerFieldComponent.createObject(layout, {
-                            "from": minValue,
-                            "to": maxValue,
-                            "value": model.edit ?? 0
-                        });
+                        "from": minValue,
+                        "to": maxValue,
+                        "value": model.edit ?? 0
+                    });
                     component.valueChanged.connect(function () {
-                            model.edit = component.value;
-                        });
+                        model.edit = component.value;
+                    });
                     break;
                 }
             case "float":
             case "double":
                 component = doubleFieldComponent.createObject(layout, {
-                        "value": model.edit ?? 0.0
-                    });
+                    "value": model.edit ?? 0.0
+                });
                 component.valueChanged.connect(function () {
-                        model.edit = component.value;
-                    });
+                    model.edit = component.value;
+                });
                 break;
             case "string":
             case "wstring":
                 if (model.edit.length > 40) {
                     component = textArea.createObject(layout, {
-                            "text": String(model.edit ?? "")
-                        });
-                    component.textChanged.connect(function () {
-                            if (model.edit == component.text)
-                                return;
-                            model.edit = component.text;
-                            component.text = model.edit;
-                        });
-                } else {
-                    component = textFieldComponent.createObject(layout, {
-                            "text": String(model.edit ?? "")
-                        });
-                    component.textChanged.connect(function () {
-                            if (model.edit == component.text)
-                                return;
-                            model.edit = component.text;
-                            component.text = model.edit;
-                        });
-                }
-                break;
-            default:
-                component = textFieldComponent.createObject(layout, {
-                        "text": String(model.edit ?? "DEFAULT")
+                        "text": String(model.edit ?? "")
                     });
-                component.textChanged.connect(function () {
+                    component.textChanged.connect(function () {
                         if (model.edit == component.text)
                             return;
                         model.edit = component.text;
                         component.text = model.edit;
                     });
+                } else {
+                    component = textFieldComponent.createObject(layout, {
+                        "text": String(model.edit ?? "")
+                    });
+                    component.textChanged.connect(function () {
+                        if (model.edit == component.text)
+                            return;
+                        model.edit = component.text;
+                        component.text = model.edit;
+                    });
+                }
+                break;
+            default:
+                component = textFieldComponent.createObject(layout, {
+                    "text": String(model.edit ?? "DEFAULT")
+                });
+                component.textChanged.connect(function () {
+                    if (model.edit == component.text)
+                        return;
+                    model.edit = component.text;
+                    component.text = model.edit;
+                });
             }
             if (model.isArrayElement) {
                 const deleteButton = deleteRowButtonComponent.createObject(layout, {
-                        "model": model
-                    });
+                    "model": model
+                });
             }
             return layout;
         }
@@ -174,17 +175,20 @@ TreeView {
 
     Component {
         id: labelComponent
+
         TruncatedLabel {
         }
     }
     Component {
         id: rowLayoutComponent
+
         RowLayout {
             implicitHeight: 48
         }
     }
     Component {
         id: addRowButtonComponent
+
         Button {
             property var model
 
@@ -207,6 +211,7 @@ TreeView {
     }
     Component {
         id: deleteRowButtonComponent
+
         Button {
             property var model
 
@@ -228,18 +233,21 @@ TreeView {
     }
     Component {
         id: textArea
+
         TextArea {
             Layout.fillWidth: true
         }
     }
     Component {
         id: textFieldComponent
+
         TextField {
             Layout.fillWidth: true
         }
     }
     Component {
         id: checkboxComponent
+
         CheckBox {
             Layout.alignment: Qt.AlignHCenter
             Layout.fillWidth: true
@@ -247,15 +255,19 @@ TreeView {
     }
     Component {
         id: integerFieldComponent
+
         IntegerInputField {
             id: numberField
+
             Layout.fillWidth: true
         }
     }
     Component {
         id: doubleFieldComponent
+
         DecimalInputField {
             id: doubleField
+
             Layout.fillWidth: true
         }
     }

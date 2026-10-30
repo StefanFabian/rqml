@@ -34,24 +34,10 @@ Rectangle {
                 return;
             if (stampedCheckBox.checked) {
                 publisher.publish({
-                        "header": {
-                            "stamp": Ros2.now()
-                        },
-                        "twist": {
-                            "linear": {
-                                "x": linearSlider.value,
-                                "y": 0,
-                                "z": 0
-                            },
-                            "angular": {
-                                "x": 0,
-                                "y": 0,
-                                "z": angularSlider.value
-                            }
-                        }
-                    });
-            } else {
-                publisher.publish({
+                    "header": {
+                        "stamp": Ros2.now()
+                    },
+                    "twist": {
                         "linear": {
                             "x": linearSlider.value,
                             "y": 0,
@@ -62,7 +48,21 @@ Rectangle {
                             "y": 0,
                             "z": angularSlider.value
                         }
-                    });
+                    }
+                });
+            } else {
+                publisher.publish({
+                    "linear": {
+                        "x": linearSlider.value,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "angular": {
+                        "x": 0,
+                        "y": 0,
+                        "z": angularSlider.value
+                    }
+                });
             }
         }
     }
@@ -80,6 +80,7 @@ Rectangle {
         RowLayout {
             FuzzySelector {
                 id: topicSelect
+
                 function refresh() {
                     let topics = Ros2.queryTopics("geometry_msgs/msg/Twist");
                     let stampedTopics = Ros2.queryTopics("geometry_msgs/msg/TwistStamped");
@@ -133,6 +134,7 @@ Rectangle {
 
             CheckBox {
                 id: stampedCheckBox
+
                 checked: !!context.stamped
                 display: AbstractButton.TextUnderIcon
                 objectName: "steeringStampedCheckbox"
@@ -145,6 +147,7 @@ Rectangle {
             }
             SpinBox {
                 id: rate
+
                 editable: true
                 from: 0
                 objectName: "steeringRateSpinBox"
@@ -160,6 +163,7 @@ Rectangle {
             }
             Button {
                 id: playButton
+
                 ToolTip.delay: 500
                 ToolTip.text: checked ? "Click to pause" : "Click to start"
                 ToolTip.visible: hovered
@@ -177,6 +181,7 @@ Rectangle {
         }
         SpeedSlider {
             id: linearSlider
+
             Layout.alignment: Qt.AlignHCenter
             Layout.fillHeight: true
             enabled: !!context.enabled
@@ -193,6 +198,7 @@ Rectangle {
         }
         SpeedSlider {
             id: angularSlider
+
             Layout.fillWidth: true
             direction: Qt.Horizontal
             enabled: !!context.enabled

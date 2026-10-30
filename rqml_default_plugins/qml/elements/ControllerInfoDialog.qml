@@ -25,32 +25,40 @@ Dialog {
         property var attributes: {
             if (!root.controller || root.controller.state == "unloaded")
                 return [];
-            return [{
+            return [
+                {
                     "name": "Type",
                     "data": root.controller.type
-                }, {
+                },
+                {
                     "name": "Is Async",
                     "data": root.controller.is_async
-                }, {
+                },
+                {
                     "name": "Update Rate",
                     "data": root.controller.update_rate
-                }, {
+                },
+                {
                     "name": "Is Chainable",
                     "data": root.controller.is_chainable
-                }, {
+                },
+                {
                     "name": "Is Chained",
                     "data": root.controller.is_chained
-                }];
+                }
+            ];
         }
     }
     ScrollView {
         id: scrollView
+
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
         ScrollBar.vertical.policy: ScrollBar.AsNeeded
         anchors.fill: parent
 
         GridLayout {
             id: mainLayout
+
             columns: 2
             width: scrollView.availableWidth
 
@@ -95,22 +103,28 @@ Dialog {
                 model: {
                     if (!root.controller || root.controller.state == "unloaded")
                         return [];
-                    return [{
+                    return [
+                        {
                             "name": "Claimed Interfaces",
                             "data": root.controller.claimed_interfaces
-                        }, {
+                        },
+                        {
                             "name": "Required Command Interfaces",
                             "data": root.controller.required_command_interfaces
-                        }, {
+                        },
+                        {
                             "name": "Required State Interfaces",
                             "data": root.controller.required_state_interfaces
-                        }, {
+                        },
+                        {
                             "name": "Exported State Interfaces",
                             "data": root.controller.exported_state_interfaces
-                        }, {
+                        },
+                        {
                             "name": "Reference Interfaces",
                             "data": root.controller.reference_interfaces
-                        }];
+                        }
+                    ];
                 }
 
                 ListView {

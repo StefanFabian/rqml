@@ -48,8 +48,8 @@ Rectangle {
             return;
         monitorListModel.setProperty(index, "type", resolvedType);
         updateEntry(index, {
-                "type": resolvedType
-            });
+            "type": resolvedType
+        });
     }
     function updateEntry(index, update) {
         const values = Array.from(context.monitoredTopics ?? []);
@@ -67,19 +67,21 @@ Rectangle {
         for (let i = 0; i < context.monitoredTopics.length; ++i) {
             const entry = context.monitoredTopics[i];
             monitorListModel.append({
-                    "topic": entry.topic,
-                    "type": entry.type || d.resolveType(entry.topic),
-                    "paused": entry.paused ?? false
-                });
+                "topic": entry.topic,
+                "type": entry.type || d.resolveType(entry.topic),
+                "paused": entry.paused ?? false
+            });
         }
     }
 
     ListModel {
         id: monitorListModel
+
         dynamicRoles: true
     }
     EditMessageDialog {
         id: latestMessageDialog
+
         anchors.centerIn: Overlay.overlay
         height: Math.min(600, (Overlay.overlay?.height ?? root.height) * 0.8)
         modal: true
@@ -90,6 +92,7 @@ Rectangle {
     }
     QtObject {
         id: d
+
         function formatBandwidth(bytesPerSecond) {
             const value = Number(bytesPerSecond ?? 0);
             if (!isFinite(value) || value <= 0)
@@ -133,6 +136,7 @@ Rectangle {
 
             FuzzySelector {
                 id: topicSelector
+
                 function refresh() {
                     const topics = Ros2.queryTopics().slice().sort();
                     if (text) {
@@ -173,6 +177,7 @@ Rectangle {
         }
         RowLayout {
             id: headerLayout
+
             Layout.fillWidth: true
             Layout.margins: 6
             opacity: 0.6
@@ -211,6 +216,7 @@ Rectangle {
             }
             ListView {
                 id: monitorListView
+
                 Layout.fillHeight: true
                 Layout.fillWidth: true
                 clip: true
@@ -242,6 +248,7 @@ Rectangle {
 
                     ColumnLayout {
                         id: contentColumn
+
                         anchors.fill: parent
                         anchors.margins: 6
                         spacing: 0
@@ -309,8 +316,8 @@ Rectangle {
                                     onClicked: {
                                         const paused = !model.paused;
                                         root.updateEntry(model.index, {
-                                                "paused": paused
-                                            });
+                                            "paused": paused
+                                        });
                                         model.paused = paused;
                                     }
                                 }
@@ -327,6 +334,7 @@ Rectangle {
                     }
                     Subscription {
                         id: topicSubscription
+
                         enabled: !model.paused
                         messageType: resolvedType || model.type
                         objectName: "topicMonitorSubscription_" + model.index

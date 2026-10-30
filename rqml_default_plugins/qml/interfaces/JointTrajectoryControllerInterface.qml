@@ -41,25 +41,25 @@ Object {
             return; // Already requesting
         Ros2.debug("JointTrajectoryController: Loading controllers from " + root.controllerManager);
         d.listControllersClient.sendRequestAsync({}, function (response) {
-                if (!response) {
-                    Ros2.warn("JointTrajectoryController: Failed to get controllers from " + root.controllerManager + ". Trying again.");
-                    root.loadControllers();
-                    return;
-                }
-                Ros2.debug("JointTrajectoryController: Received " + response.controller.length + " controllers from " + root.controllerManager);
-                controllers.clear();
-                for (let i = 0; i < response.controller.length; i++) {
-                    let controller = response.controller.at(i);
-                    if (!controller)
-                        continue;
-                    if (controller.type !== "joint_trajectory_controller/JointTrajectoryController" || controller.state !== "active")
-                        continue;
-                    controllers.append({
-                            "name": controller.name,
-                            "controller": controller
-                        });
-                }
-            });
+            if (!response) {
+                Ros2.warn("JointTrajectoryController: Failed to get controllers from " + root.controllerManager + ". Trying again.");
+                root.loadControllers();
+                return;
+            }
+            Ros2.debug("JointTrajectoryController: Received " + response.controller.length + " controllers from " + root.controllerManager);
+            controllers.clear();
+            for (let i = 0; i < response.controller.length; i++) {
+                let controller = response.controller.at(i);
+                if (!controller)
+                    continue;
+                if (controller.type !== "joint_trajectory_controller/JointTrajectoryController" || controller.state !== "active")
+                    continue;
+                controllers.append({
+                    "name": controller.name,
+                    "controller": controller
+                });
+            }
+        });
     }
     function refresh() {
         root.loadControllers();
@@ -102,23 +102,23 @@ Object {
         Ros2.debug("JointTrajectoryController: Sending goal to action server with duration " + duration + "s. Positions: " + goal.positions);
         root.isGoalActive = true;
         d.trajectoryClient.sendGoalAsync(msg, {
-                "onGoalResponse": function (goal_handle) {
-                    if (!goal_handle) {
-                        Ros2.warn("JointTrajectoryController: Goal rejected by action server");
-                        root.isGoalActive = false;
-                        return;
-                    }
-                },
-                "onResult": function (result) {
+            "onGoalResponse": function (goal_handle) {
+                if (!goal_handle) {
+                    Ros2.warn("JointTrajectoryController: Goal rejected by action server");
                     root.isGoalActive = false;
-                    Ros2.debug("JointTrajectoryController: Goal completed with code: " + result.code);
-                    if (result.code !== ActionResultCode.SUCCEEDED) {
-                        errorDialog.text = "Goal failed with code: " + result.code;
-                        errorDialog.informativeText = result.result.error_string || "";
-                        errorDialog.open();
-                    }
+                    return;
                 }
-            });
+            },
+            "onResult": function (result) {
+                root.isGoalActive = false;
+                Ros2.debug("JointTrajectoryController: Goal completed with code: " + result.code);
+                if (result.code !== ActionResultCode.SUCCEEDED) {
+                    errorDialog.text = "Goal failed with code: " + result.code;
+                    errorDialog.informativeText = result.result.error_string || "";
+                    errorDialog.open();
+                }
+            }
+        });
     }
 
     onControllerManagerChanged: {
@@ -127,11 +127,13 @@ Object {
 
     MessageDialog {
         id: errorDialog
+
         buttons: MessageDialog.Ok
         modality: Qt.WindowModal
     }
     Subscription {
         id: jointStateSubscription
+
         messageType: "sensor_msgs/msg/JointState"
         throttleRate: 5
         topic: d.findBestMatch("/joint_states", "sensor_msgs/msg/JointState")
@@ -158,6 +160,7 @@ Object {
     }
     Subscription {
         id: urdfSubscription
+
         messageType: "std_msgs/msg/String"
         qos: Ros2.QoS().transient_local().reliable()
         topic: d.findBestMatch("/robot_description", "std_msgs/msg/String")
@@ -309,6 +312,7 @@ Object {
     }
     QtObject {
         id: parser
+
         function parseURDF(urdfString) {
             var xhr = new XMLHttpRequest();
             xhr.open("GET", "data:text/xml," + encodeURIComponent(urdfString));
@@ -346,13 +350,13 @@ Object {
                     }
                     Ros2.debug("Adding joint " + name + " - limits: lower=" + limitLower + ", upper=" + limitUpper);
                     d.addJoint({
-                            "name": name,
-                            "type": type,
-                            "limits": {
-                                "upper": limitUpper,
-                                "lower": limitLower
-                            }
-                        });
+                        "name": name,
+                        "type": type,
+                        "limits": {
+                            "upper": limitUpper,
+                            "lower": limitLower
+                        }
+                    });
                 }
                 Ros2.debug("Found " + root.joints.count + " joints in URDF.");
                 root.hasRobotDescription = true;

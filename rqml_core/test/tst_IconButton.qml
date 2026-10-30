@@ -9,11 +9,13 @@ Item {
 
     IconButton {
         id: iconBtn
+
         text: "A"
         tooltipText: "Tooltip A"
     }
     IconToggleButton {
         id: toggleBtn
+
         checked: false
         iconOff: "F"
         iconOn: "O"

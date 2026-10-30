@@ -69,6 +69,7 @@ Item {
 
     QtObject {
         id: d
+
         function getAgeColor(age) {
             if (age < 0)
                 return palette.text;
@@ -85,6 +86,7 @@ Item {
 
         ListView {
             id: frameListView
+
             Layout.fillHeight: true
             Layout.fillWidth: true
             boundsBehavior: Flickable.StopAtBounds
@@ -182,6 +184,7 @@ Item {
 
                         MouseArea {
                             id: staticMouseArea
+
                             anchors.fill: parent
                             hoverEnabled: true
                         }
@@ -190,6 +193,7 @@ Item {
                     // Frame name - fills all remaining space
                     TruncatedLabel {
                         id: frameNameLabel
+
                         Layout.alignment: Qt.AlignVCenter
                         Layout.fillWidth: true
                         text: model.frameId
@@ -198,6 +202,7 @@ Item {
                     // Source indicator
                     LetterIndicator {
                         id: sourceIndicator
+
                         Layout.alignment: Qt.AlignVCenter
                         color: Material.color(Material.Red, Material.Shade400)
                         objectName: "sourceIndicator"
@@ -209,6 +214,7 @@ Item {
                     // Target indicator
                     LetterIndicator {
                         id: targetIndicator
+
                         Layout.alignment: Qt.AlignVCenter
                         color: Material.color(Material.Red, Material.Shade1000)
                         objectName: "targetIndicator"
@@ -236,6 +242,7 @@ Item {
                 }
                 Menu {
                     id: contextMenu
+
                     objectName: "tfContextMenu"
 
                     MenuItem {
@@ -322,6 +329,7 @@ Item {
         }
         TfTransformDisplay {
             id: transformDisplay
+
             Layout.fillWidth: true
             buffer: root.buffer
             expanded: context.listTransformOpen ?? true

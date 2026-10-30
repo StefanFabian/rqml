@@ -53,9 +53,11 @@ Item {
     }
     Utils {
         id: helpers
+
     }
     Loader {
         id: pluginLoader
+
         function reload() {
             source = "";
             source = "../qml/RobotSteering.qml";
@@ -65,6 +67,7 @@ Item {
     }
     Subscription {
         id: twistSub
+
         messageType: "geometry_msgs/msg/Twist"
         topic: contextObj.topic
 
@@ -75,6 +78,7 @@ Item {
     }
     Subscription {
         id: twistStampedSub
+
         messageType: "geometry_msgs/msg/TwistStamped"
         topic: contextObj.topic
 
@@ -85,6 +89,7 @@ Item {
     }
     TestCase {
         id: testCase
+
         function init() {
             Ros2.reset();
             // Re-register static subscriptions because reset() cleared them
@@ -111,8 +116,8 @@ Item {
             lastTwistStamped = null;
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000, "Loader should be ready");
+                return pluginLoader.status === Loader.Ready;
+            }, 2000, "Loader should be ready");
             // Wait for initial model population
             wait(50);
         }
@@ -131,8 +136,8 @@ Item {
             };
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             var linearSlider = find("steeringLinearSlider");
             var angularSlider = find("steeringAngularSlider");
             verify(linearSlider !== null);
@@ -160,12 +165,12 @@ Item {
             // configured limits survive a reload.
             linearSlider.to = 6;
             tryVerify(function () {
-                    return contextObj.linear.max === 6;
-                }, 2000, "context.linear.max should reflect slider.to");
+                return contextObj.linear.max === 6;
+            }, 2000, "context.linear.max should reflect slider.to");
             angularSlider.from = -4;
             tryVerify(function () {
-                    return contextObj.angular.min === -4;
-                }, 2000, "context.angular.min should reflect slider.from");
+                return contextObj.angular.min === -4;
+            }, 2000, "context.angular.min should reflect slider.from");
         }
         function test_play_pause() {
             var playButton = find("steeringPlayButton");
@@ -176,8 +181,8 @@ Item {
             mouseClick(playButton);
             tryCompare(contextObj, "enabled", true, 3000, "Context enabled property should be true");
             tryVerify(function () {
-                    return twistCount > 0;
-                }, 5000, "Should receive published Twist messages");
+                return twistCount > 0;
+            }, 5000, "Should receive published Twist messages");
             mouseClick(playButton);
             tryCompare(contextObj, "enabled", false, 3000, "Context enabled property should be false");
         }
@@ -211,13 +216,13 @@ Item {
             // If it follows standard Slider pattern, mouseClick at an offset moves it.
             mouseClick(linearSlider, linearSlider.width / 2, linearSlider.height * 0.2);
             tryVerify(function () {
-                    return Math.abs(linearSlider.value) > 0.1;
-                }, 2000, "Slider value should change after mouse click at offset");
+                return Math.abs(linearSlider.value) > 0.1;
+            }, 2000, "Slider value should change after mouse click at offset");
             tryVerify(function () {
-                    if (!lastTwist)
-                        return false;
-                    return Math.abs(lastTwist.linear.x - linearSlider.value) < 0.05;
-                }, 3000, "Published message should reflect the slider's value after interaction");
+                if (!lastTwist)
+                    return false;
+                return Math.abs(lastTwist.linear.x - linearSlider.value) < 0.05;
+            }, 3000, "Published message should reflect the slider's value after interaction");
         }
         function test_stamped_checkbox() {
             var stampedCheckbox = find("steeringStampedCheckbox");
@@ -227,8 +232,8 @@ Item {
             mouseClick(stampedCheckbox);
             tryCompare(contextObj, "stamped", true, 3000, "Context stamped property should update");
             tryVerify(function () {
-                    return twistStampedCount > 0;
-                }, 5000, "Should receive TwistStamped messages");
+                return twistStampedCount > 0;
+            }, 5000, "Should receive TwistStamped messages");
             mouseClick(stampedCheckbox);
             tryCompare(contextObj, "stamped", false, 3000, "Context stamped property should update back");
         }
@@ -247,10 +252,10 @@ Item {
             compare(linearSlider.value, 0, "Linear slider should be reset to zero");
             compare(angularSlider.value, 0, "Angular slider should be reset to zero");
             tryVerify(function () {
-                    if (!lastTwist)
-                        return false;
-                    return Math.abs(lastTwist.linear.x) < 0.01 && Math.abs(lastTwist.angular.z) < 0.01;
-                }, 3000, "Should receive a zero velocity command");
+                if (!lastTwist)
+                    return false;
+                return Math.abs(lastTwist.linear.x) < 0.01 && Math.abs(lastTwist.angular.z) < 0.01;
+            }, 3000, "Should receive a zero velocity command");
         }
         function test_topic_selector() {
             var topicSelector = find("steeringTopicSelector");

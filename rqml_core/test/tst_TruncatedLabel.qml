@@ -20,11 +20,13 @@ Item {
 
     TruncatedLabel {
         id: label
+
         text: "This is a very long text that should be truncated"
         width: 50
     }
     TruncatedLabel {
         id: shortLabel
+
         height: 40
         text: "hi"
         width: 200
