@@ -1,1 +1,1 @@
-prepend-non-duplicate;QML2_IMPORT_PATH;share/@PROJECT_NAME@
+prepend-non-duplicate;QML_IMPORT_PATH;share/@PROJECT_NAME@
