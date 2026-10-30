@@ -50,6 +50,8 @@ set(KDDockWidgets_PYTHON_BINDINGS
 set(KDDockWidgets_DEVELOPER_MODE
   OFF
   CACHE BOOL "Enable KDDockWidgets developer mode")
+# spdlog registry created early by KDDW outlives the dlopened rcl_logging_spdlog -> segfault on exit.
+set(KDDockWidgets_NO_SPDLOG ON)
 
 add_subdirectory(${KDDockWidgets_SOURCE_DIR} third_party/KDDockWidgets)
 
