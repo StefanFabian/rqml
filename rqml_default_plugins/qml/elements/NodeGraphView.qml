@@ -119,10 +119,10 @@ Item {
         event.accepted = d.selectedNode !== "";
         d.select("");
     }
-    onEdgesChanged: Qt.callLater(d.relayout)
-    onGroupNamespacesChanged: Qt.callLater(d.relayout)
-    onIgnoredNodesChanged: Qt.callLater(d.relayout)
-    onNodesChanged: Qt.callLater(d.relayout)
+    onEdgesChanged: relayoutTimer.restart()
+    onGroupNamespacesChanged: relayoutTimer.restart()
+    onIgnoredNodesChanged: relayoutTimer.restart()
+    onNodesChanged: relayoutTimer.restart()
     onSearchTextChanged: {
         d.currentMatch = "";
         canvas.requestPaint();
@@ -344,6 +344,14 @@ Item {
             d.hoveredEdge = edge;
             canvas.requestPaint();
         }
+    }
+    // Not Qt.callLater, which would still run relayout() after this view is destroyed.
+    Timer {
+        id: relayoutTimer
+
+        interval: 0
+
+        onTriggered: d.relayout()
     }
     FontMetrics {
         id: labelMetrics

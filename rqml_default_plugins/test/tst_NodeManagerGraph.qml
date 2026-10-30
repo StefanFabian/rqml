@@ -597,6 +597,13 @@ Item {
             tryCompare(view, "nodes", demoNodes.filter(id => id !== "/talker"));
             tryVerify(() => view._testSelectedNode() === "", 1000, "a removed node is unselected");
         }
+        function test_destroyed_with_pending_relayout() {
+            const loader = createTemporaryQmlObject("import QtQuick; Loader {}", root);
+            loader.sourceComponent = viewComponent;
+            loader.item.nodes = demoNodes;
+            loader.sourceComponent = undefined;
+            wait(50);
+        }
         function test_double_click_node_requests_inspect() {
             const view = createView(demoNodes, []);
             const spy = createTemporaryObject(signalSpyComponent, root, {
