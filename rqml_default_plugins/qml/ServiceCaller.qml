@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Ros2
 import RQml.Elements
+import RQml.Utils
 
 Rectangle {
     id: root
@@ -24,11 +25,7 @@ Rectangle {
                 id: serviceSelect
 
                 function refresh() {
-                    let services = Ros2.queryServices();
-                    if (!(context.showDefaultServices ?? false)) {
-                        const defaultSuffixes = ["/describe_parameters", "/get_logger_levels", "/get_parameter_types", "/get_parameters", "/get_type_description", "/list_parameters", "/set_logger_levels", "/set_parameters", "/set_parameters_atomically"];
-                        services = services.filter(s => !defaultSuffixes.some(suffix => s.endsWith(suffix)));
-                    }
+                    let services = InterfaceFilter.filterServices(Ros2.queryServices(), context.showDefaultServices ?? false);
                     if (!!context.service) {
                         const index = services.indexOf(context.service);
                         if (index != -1)

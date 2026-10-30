@@ -71,6 +71,7 @@ The `rqml_default_plugins` package includes these awesome tools:
 * **JointTrajectoryController**: Interface for sending joint trajectory commands.
 * **MessagePublisher**: Publish custom ROS 2 messages.
 * **MoveItController**: Execute robot motions via MoveIt.
+* **NodeManager**: Inspect nodes and their interfaces, manage lifecycle nodes and component containers, and view the node graph.
 * **ParameterEditor**: Discover, view, and dynamically reconfigure ROS 2 node parameters.
 * **RobotSteering**: Teleoperation tool for mobile robots.
 * **ServiceCaller**: Interface for calling ROS 2 Services.

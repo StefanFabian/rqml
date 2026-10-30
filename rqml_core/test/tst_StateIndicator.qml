@@ -20,9 +20,23 @@ Item {
             indicator.state = "active";
             compare(indicator.color, Material.color(Material.Green), "Active state should be green");
         }
+        function test_errorProcessingState() {
+            indicator.state = "errorprocessing";
+            compare(indicator.color, Material.color(Material.Red), "Error processing state should be red");
+        }
+        function test_finalizedState() {
+            indicator.state = "finalized";
+            compare(indicator.color, Material.color(Material.Grey, Material.Shade700), "Finalized state should be dark grey");
+        }
         function test_inactiveState() {
             indicator.state = "inactive";
             compare(indicator.color, Material.color(Material.Blue), "Inactive state should be blue");
+        }
+        function test_transientStates() {
+            for (const state of ["configuring", "cleaningup", "shuttingdown", "activating", "deactivating"]) {
+                indicator.state = state;
+                compare(indicator.color, Material.color(Material.Amber), state + " should be amber");
+            }
         }
         function test_unconfiguredState() {
             indicator.state = "unconfigured";

@@ -197,6 +197,12 @@ Item {
             verify(items.indexOf("blackberry") !== -1);
             verify(items.indexOf("banana") === -1);
         }
+        function test_focusInput() {
+            findField().focus = false;
+            verify(!findField().activeFocus, "precondition: the field has no focus");
+            selector.focusInput();
+            verify(findField().activeFocus, "focusInput should give the text field focus");
+        }
         function test_focusLossClosesPopup() {
             var field = findField();
             var popup = findPopup();

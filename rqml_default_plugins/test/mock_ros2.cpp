@@ -234,6 +234,90 @@ QStringList MockRos2::getActionTypes( const QString &name ) const
   return jsStringList( mockTypeMap_, name );
 }
 
+QJSValue MockRos2::getNodeNamesAndNamespaces() const
+{
+  if ( !engine_ )
+    return QJSValue::NullValue;
+  // Copy so a caller holding a previous result does not see later registrations.
+  QJSValue result = engine_->newArray();
+  const quint32 len = mockNodes_.property( "length" ).toUInt();
+  for ( quint32 i = 0; i < len; ++i ) result.setProperty( i, mockNodes_.property( i ) );
+  return result;
+}
+
+QJSValue MockRos2::getAllNodeInfo() const
+{
+  if ( !engine_ )
+    return QJSValue::NullValue;
+  QJSValue result = engine_->newArray();
+  const quint32 len = mockNodes_.property( "length" ).toUInt();
+  for ( quint32 i = 0; i < len; ++i ) {
+    const QJSValue node = mockNodes_.property( i );
+    const QJSValue info = mockNodeInfos_.property( node.property( "fullName" ).toString() );
+    QJSValue entry = engine_->newObject();
+    for ( const char *key : { "name", "namespace", "fullName" } )
+      entry.setProperty( key, node.property( key ) );
+    for ( const char *key : { "publishers", "subscriptions", "serviceServers", "serviceClients",
+                              "actionServers", "actionClients" } ) {
+      const QJSValue list = info.isObject() ? info.property( key ) : QJSValue();
+      entry.setProperty( key, list.isArray() ? list : engine_->newArray() );
+    }
+    if ( !info.property( "serviceServers" ).isArray() ) {
+      QVariantList servers;
+      const QString prefix = node.property( "fullName" ).toString() + '/';
+      for ( const QString &service : queryServices() ) {
+        if ( service.startsWith( prefix ) )
+          servers.append(
+              QVariantMap{ { "name", service }, { "datatypes", getServiceTypes( service ) } } );
+      }
+      entry.setProperty( "serviceServers", engine_->toScriptValue( servers ) );
+    }
+    result.setProperty( i, entry );
+  }
+  return result;
+}
+
+QJSValue MockRos2::getPublishersInfoByTopic( const QString &topic ) const
+{
+  return endpointsInfoByTopic( topic, "publishers" );
+}
+
+QJSValue MockRos2::getSubscriptionsInfoByTopic( const QString &topic ) const
+{
+  return endpointsInfoByTopic( topic, "subscriptions" );
+}
+
+QJSValue MockRos2::endpointsInfoByTopic( const QString &topic, const char *role ) const
+{
+  if ( !engine_ )
+    return QJSValue::NullValue;
+  QJSValue result = engine_->newArray();
+  quint32 count = 0;
+  const quint32 len = mockNodes_.property( "length" ).toUInt();
+  for ( quint32 i = 0; i < len; ++i ) {
+    const QJSValue node = mockNodes_.property( i );
+    const QJSValue entries =
+        mockNodeInfos_.property( node.property( "fullName" ).toString() ).property( role );
+    const quint32 entry_count = entries.property( "length" ).toUInt();
+    for ( quint32 j = 0; j < entry_count; ++j ) {
+      const QJSValue entry = entries.property( j );
+      if ( entry.property( "name" ).toString() != topic )
+        continue;
+      const QJSValue qos = entry.property( "qos" );
+      const quint32 qos_count = qos.property( "length" ).toUInt();
+      for ( quint32 k = 0; k < qos_count; ++k ) {
+        QJSValue endpoint = engine_->newObject();
+        endpoint.setProperty( "nodeName", node.property( "name" ) );
+        endpoint.setProperty( "nodeNamespace", node.property( "namespace" ) );
+        endpoint.setProperty( "datatype", entry.property( "datatypes" ).property( 0 ) );
+        endpoint.setProperty( "qos", qos.property( k ) );
+        result.setProperty( count++, endpoint );
+      }
+    }
+  }
+  return result;
+}
+
 // Factory implementations
 QObject *MockRos2::createPublisher( const QString &topic, const QString &type, quint32 )
 {
@@ -242,7 +326,7 @@ QObject *MockRos2::createPublisher( const QString &topic, const QString &type, q
 }
 QObject *MockRos2::createServiceClient( const QString &name, const QString &type )
 {
-  return new MockServiceClient( this, name, type );
+  return new MockServiceClient( name, type );
 }
 QObject *MockRos2::createActionClient( const QString &name, const QString &type )
 {
@@ -284,6 +368,20 @@ void MockRos2::registerService( const QString &name, const QString &type, const 
   }
 }
 
+void MockRos2::registerNode( const QString &full_name, const QJSValue &info )
+{
+  if ( !engine_ )
+    return;
+  const qsizetype sep = full_name.lastIndexOf( '/' );
+  QJSValue entry = engine_->newObject();
+  entry.setProperty( "name", full_name.mid( sep + 1 ) );
+  entry.setProperty( "namespace", sep <= 0 ? QStringLiteral( "/" ) : full_name.left( sep ) );
+  entry.setProperty( "fullName", full_name );
+  mockNodes_.setProperty( mockNodes_.property( "length" ).toUInt(), entry );
+  mockNodeInfos_.setProperty( full_name, info );
+  emit graphChanged();
+}
+
 void MockRos2::reset()
 {
   mockTopics_ = QJSValue::NullValue;
@@ -296,6 +394,8 @@ void MockRos2::reset()
   publishedMessages_ = QJSValue::NullValue;
   lastActionGoalMessage_ = QJSValue::NullValue;
   lastActionCancelled_ = false;
+  mockNodes_ = QJSValue::NullValue;
+  mockNodeInfos_ = QJSValue::NullValue;
 
   if ( engine_ ) {
     mockTopics_ = engine_->newObject();
@@ -305,6 +405,8 @@ void MockRos2::reset()
     serviceHandlers_ = engine_->newObject();
     actionHandlers_ = engine_->newObject();
     publishedMessages_ = engine_->newArray();
+    mockNodes_ = engine_->newArray();
+    mockNodeInfos_ = engine_->newObject();
   }
 
   subscriptions_.clear();

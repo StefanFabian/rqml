@@ -20,6 +20,46 @@ enum ResultCode { SUCCEEDED = 4, ABORTED = 5, CANCELED = 6 };
 Q_ENUM_NS( ResultCode )
 } // namespace action_result_code
 
+// shortcut: mirrors qml6_ros2_plugin's QoS policy enums for CI against releases without them, register the
+// plugin's own qos_*_policy namespaces instead once a release with them is in the ROS testing repo.
+namespace qos_reliability_policy
+{
+Q_NAMESPACE
+enum ReliabilityPolicy {
+  BestEffort = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
+  Reliable = RMW_QOS_POLICY_RELIABILITY_RELIABLE,
+  SystemDefault = RMW_QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
+  BestAvailable = RMW_QOS_POLICY_RELIABILITY_BEST_AVAILABLE,
+  Unknown = RMW_QOS_POLICY_RELIABILITY_UNKNOWN
+};
+Q_ENUM_NS( ReliabilityPolicy )
+} // namespace qos_reliability_policy
+
+namespace qos_durability_policy
+{
+Q_NAMESPACE
+enum DurabilityPolicy {
+  Volatile = RMW_QOS_POLICY_DURABILITY_VOLATILE,
+  TransientLocal = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
+  SystemDefault = RMW_QOS_POLICY_DURABILITY_SYSTEM_DEFAULT,
+  BestAvailable = RMW_QOS_POLICY_DURABILITY_BEST_AVAILABLE,
+  Unknown = RMW_QOS_POLICY_DURABILITY_UNKNOWN
+};
+Q_ENUM_NS( DurabilityPolicy )
+} // namespace qos_durability_policy
+
+namespace qos_history_policy
+{
+Q_NAMESPACE
+enum HistoryPolicy {
+  KeepLast = RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+  KeepAll = RMW_QOS_POLICY_HISTORY_KEEP_ALL,
+  SystemDefault = RMW_QOS_POLICY_HISTORY_SYSTEM_DEFAULT,
+  Unknown = RMW_QOS_POLICY_HISTORY_UNKNOWN
+};
+Q_ENUM_NS( HistoryPolicy )
+} // namespace qos_history_policy
+
 class MockServiceClient;
 class MockPublisher;
 class MockActionClient;
@@ -42,6 +82,14 @@ class MockActionClient;
  * `Ros2.createEmptyMessage(type)` + field population). MockServiceClient calls
  * the handler asynchronously (1 event loop tick) and passes the result to the
  * caller's callback.
+ *
+ * Nodes are added with `registerNode(fullName, info)`; `info` holds the interface lists of the
+ * node's getAllNodeInfo() entry ({ publishers, subscriptions, serviceServers, ... }), {} if omitted.
+ * Without serviceServers in `info`, the node serves the services registered with registerService() whose name
+ * starts with its full name and '/'.
+ * registerNode() emits graphChanged(). Publisher and subscriber entries may carry the mock-only
+ * `qos`, one QoS per endpoint of the node on that topic, which getPublishersInfoByTopic() and
+ * getSubscriptionsInfoByTopic() report.
  */
 class MockRos2 : public QObject
 {
@@ -114,6 +162,13 @@ public:
   Q_INVOKABLE QStringList getServiceTypes( const QString &name ) const;
   Q_INVOKABLE QStringList queryActions( const QString &datatype = QString() ) const;
   Q_INVOKABLE QStringList getActionTypes( const QString &name ) const;
+  //! RQml's own node, as named by Ros2.init("rqml") in main.qml.
+  Q_INVOKABLE QString getName() const { return QStringLiteral( "rqml" ); }
+  Q_INVOKABLE QString getNamespace() const { return QStringLiteral( "/" ); }
+  Q_INVOKABLE QJSValue getNodeNamesAndNamespaces() const;
+  Q_INVOKABLE QJSValue getAllNodeInfo() const;
+  Q_INVOKABLE QJSValue getPublishersInfoByTopic( const QString &topic ) const;
+  Q_INVOKABLE QJSValue getSubscriptionsInfoByTopic( const QString &topic ) const;
 
   Q_INVOKABLE QObject *createPublisher( const QString &topic, const QString &type,
                                         quint32 queue_size = 10 );
@@ -126,6 +181,7 @@ public:
                                    const QJSValue &handler = QJSValue() );
   Q_INVOKABLE void registerService( const QString &name, const QString &type,
                                     const QJSValue &handler = QJSValue() );
+  Q_INVOKABLE void registerNode( const QString &full_name, const QJSValue &info = QJSValue() );
 
   Q_INVOKABLE void reset();
   // Test-only API. Prefixed with _ to mark as internal; intentionally invoked
@@ -145,8 +201,13 @@ public:
 
   void recordPublishedMessage( const QJSValue &entry );
 
+signals:
+  void graphChanged();
+
 private:
   QStringList jsStringList( const QJSValue &map, const QString &key ) const;
+  //! The endpoints on @p topic of the registered nodes' @p role lists, e.g. "publishers".
+  QJSValue endpointsInfoByTopic( const QString &topic, const char *role ) const;
 
   QQmlEngine *engine_ = nullptr;
   qml6_ros2_plugin::IO io_;
@@ -155,6 +216,7 @@ private:
   QJSValue serviceHandlers_, actionHandler_;
   QJSValue actionHandlers_;
   QJSValue publishedMessages_, lastActionGoalMessage_;
+  QJSValue mockNodes_, mockNodeInfos_;
   bool lastActionCancelled_ = false;
   QList<QObject *> subscriptions_;
 

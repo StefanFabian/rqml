@@ -1,5 +1,9 @@
+ContainerInterface 1.0 ContainerInterface.qml
 ControllerManagerInterface 1.0 ControllerManagerInterface.qml
 JointTrajectoryControllerInterface 1.0 JointTrajectoryControllerInterface.qml
+LifecycleInterface 1.0 LifecycleInterface.qml
+NodeGraphInterface 1.0 NodeGraphInterface.qml
 singleton ParameterService 1.0 ParameterService.qml
+internal ServiceClientCache ServiceClientCache.qml
 TfTreeInterface 1.0 TfTreeInterface.qml
 XmlUtils 1.0 XmlUtils.js

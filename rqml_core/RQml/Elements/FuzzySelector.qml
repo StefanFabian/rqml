@@ -84,6 +84,11 @@ Item {
 
     signal accepted(string text)
 
+    // Gives the text field keyboard focus.
+    function focusInput() {
+        field.forceActiveFocus();
+    }
+
     implicitHeight: field.implicitHeight
     implicitWidth: field.implicitWidth
 
