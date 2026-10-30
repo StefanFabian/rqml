@@ -18,6 +18,7 @@ Item {
 
         Label {
             id: headerLabel
+
             anchors.left: parent.left
             anchors.leftMargin: 8
             anchors.verticalCenter: parent.verticalCenter

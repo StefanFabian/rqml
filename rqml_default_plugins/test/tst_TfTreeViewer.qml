@@ -42,9 +42,11 @@ Item {
     }
     Utils {
         id: helpers
+
     }
     Loader {
         id: pluginLoader
+
         function reload() {
             source = "";
             source = "../qml/TfTreeViewer.qml";
@@ -54,11 +56,13 @@ Item {
     }
     Publisher {
         id: tfPublisher
+
         topic: "/tf"
         type: "tf2_msgs/msg/TFMessage"
     }
     Publisher {
         id: tfStaticPublisher
+
         topic: "/tf_static"
         type: "tf2_msgs/msg/TFMessage"
     }
@@ -80,8 +84,8 @@ Item {
             contextObj.listTransformOpen = undefined;
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000, "Loader should be ready");
+                return pluginLoader.status === Loader.Ready;
+            }, 2000, "Loader should be ready");
             wait(50);
         }
 
@@ -167,9 +171,9 @@ Item {
             // Realize the delegate and find its branch indicator MouseArea
             var delegate = null;
             tryVerify(function () {
-                    delegate = listView.itemAtIndex(baseLinkIndex);
-                    return delegate !== null;
-                }, 2000, "Delegate for base_link should be realized");
+                delegate = listView.itemAtIndex(baseLinkIndex);
+                return delegate !== null;
+            }, 2000, "Delegate for base_link should be realized");
             var branchArea = helpers.findChild(delegate, "tfBranchIndicatorArea");
             verify(branchArea !== null, "Branch indicator MouseArea should exist");
             mouseClick(branchArea);
@@ -184,12 +188,12 @@ Item {
             var delegate2 = null;
             var branchArea2 = null;
             tryVerify(function () {
-                    delegate2 = listView.itemAtIndex(baseLinkIndex);
-                    if (delegate2 === null)
-                        return false;
-                    branchArea2 = helpers.findChild(delegate2, "tfBranchIndicatorArea");
-                    return branchArea2 !== null;
-                }, 2000, "Branch indicator should be realized again after collapse");
+                delegate2 = listView.itemAtIndex(baseLinkIndex);
+                if (delegate2 === null)
+                    return false;
+                branchArea2 = helpers.findChild(delegate2, "tfBranchIndicatorArea");
+                return branchArea2 !== null;
+            }, 2000, "Branch indicator should be realized again after collapse");
             mouseClick(branchArea2);
             tryCompare(listView.model, "count", 3, 2000, "Sensor should re-appear after expanding base_link");
             verify(modelHasFrame(listView, "sensor"), "sensor should be back in model");
@@ -211,9 +215,9 @@ Item {
             listView.positionViewAtIndex(baseLinkIndex, ListView.Beginning);
             var delegate = null;
             tryVerify(function () {
-                    delegate = listView.itemAtIndex(baseLinkIndex);
-                    return delegate !== null;
-                }, 2000, "Delegate for base_link should be realized");
+                delegate = listView.itemAtIndex(baseLinkIndex);
+                return delegate !== null;
+            }, 2000, "Delegate for base_link should be realized");
 
             // Copy Frame ID
             RQml.resetClipboard();
@@ -236,8 +240,8 @@ Item {
             verify(copyTransformAction, "Copy Transform action should be found");
             copyTransformAction.triggered();
             tryVerify(function () {
-                    return RQml.clipboard.length > 0 && RQml.clipboard.indexOf("translation") !== -1 && RQml.clipboard.indexOf("rotation") !== -1;
-                }, 1000, "Clipboard should contain translation and rotation");
+                return RQml.clipboard.length > 0 && RQml.clipboard.indexOf("translation") !== -1 && RQml.clipboard.indexOf("rotation") !== -1;
+            }, 1000, "Clipboard should contain translation and rotation");
         }
         function test_empty_state_message() {
             var emptyLabel = find("tfEmptyStateLabel");
@@ -276,8 +280,8 @@ Item {
             publishTfStatic([makeTransform("world", "base_link", 0, 0, 0)]);
             publishTf([makeTransform("base_link", "sensor", 0, 0, 0)]);
             tryVerify(function () {
-                    return label.text.indexOf("Frames: 3") !== -1 && label.text.indexOf("Root frames: 1") !== -1;
-                }, 2000, "Label should include both total and root frame counts");
+                return label.text.indexOf("Frames: 3") !== -1 && label.text.indexOf("Root frames: 1") !== -1;
+            }, 2000, "Label should include both total and root frame counts");
         }
         function test_frame_display() {
             var listView = find("tfFrameListView");
@@ -374,22 +378,22 @@ Item {
             mouseMove(gv, wCenter.x, wCenter.y);
             wait(100);
             tryVerify(function () {
-                    return tooltip.visible;
-                }, 3000, "Tooltip should become visible on hover");
+                return tooltip.visible;
+            }, 3000, "Tooltip should become visible on hover");
 
             // Check if authority info is present in the tooltip
             tryVerify(function () {
-                    var content = tooltip.contentItem;
-                    if (!content)
-                        return false;
-                    for (var i = 0; i < content.data.length; ++i) {
-                        var item = content.data[i];
-                        if (item && item.text && item.text.indexOf("Authority: world_authority") !== -1) {
-                            return true;
-                        }
-                    }
+                var content = tooltip.contentItem;
+                if (!content)
                     return false;
-                }, 3000, "Tooltip should show authority information");
+                for (var i = 0; i < content.data.length; ++i) {
+                    var item = content.data[i];
+                    if (item && item.text && item.text.indexOf("Authority: world_authority") !== -1) {
+                        return true;
+                    }
+                }
+                return false;
+            }, 3000, "Tooltip should show authority information");
         }
         function test_graph_search_overlay_clamps_width_in_narrow_layout() {
             var gv = useGraphMode();
@@ -402,8 +406,8 @@ Item {
             var searchBar = find("tfGraphSearchBar");
             verify(searchBar !== null, "Expanded graph search bar should exist");
             tryVerify(function () {
-                    return searchBar.visible && searchBar.width > 0;
-                }, 1000, "Graph search bar should remain usable in a narrow dock");
+                return searchBar.visible && searchBar.width > 0;
+            }, 1000, "Graph search bar should remain usable in a narrow dock");
         }
         function test_list_click_sets_parent_and_target() {
             var listView = find("tfFrameListView");
@@ -423,9 +427,9 @@ Item {
             listView.positionViewAtIndex(blIdx, ListView.Beginning);
             var blItem = null;
             tryVerify(function () {
-                    blItem = listView.itemAtIndex(blIdx);
-                    return blItem !== null;
-                }, 2000, "Delegate for base_link should be realized");
+                blItem = listView.itemAtIndex(blIdx);
+                return blItem !== null;
+            }, 2000, "Delegate for base_link should be realized");
 
             // Click base_link -> source = base_link, target = world (parent)
             mouseClick(blItem);
@@ -454,10 +458,10 @@ Item {
             // Click base_link in list -> source = base_link, target = world (parent)
             var blItem = null;
             tryVerify(function () {
-                    listView.positionViewAtIndex(blIdx, ListView.Beginning);
-                    blItem = listView.itemAtIndex(blIdx);
-                    return blItem !== null;
-                }, 2000);
+                listView.positionViewAtIndex(blIdx, ListView.Beginning);
+                blItem = listView.itemAtIndex(blIdx);
+                return blItem !== null;
+            }, 2000);
             mouseClick(blItem);
             tryCompare(plugin, "sourceFrame", "base_link", 1000, "Clicking list item should set sourceFrame to clicked frame");
             tryCompare(plugin, "targetFrame", "world", 1000, "Clicking list item should set targetFrame to parent");
@@ -467,10 +471,10 @@ Item {
             // Verify source indicator on base_link
             // Re-fetch blItem since delegates may have been recycled
             tryVerify(function () {
-                    listView.positionViewAtIndex(blIdx, ListView.Beginning);
-                    blItem = listView.itemAtIndex(blIdx);
-                    return blItem !== null;
-                }, 2000);
+                listView.positionViewAtIndex(blIdx, ListView.Beginning);
+                blItem = listView.itemAtIndex(blIdx);
+                return blItem !== null;
+            }, 2000);
             var srcIndicator = helpers.findChild(blItem, "sourceIndicator");
             verify(srcIndicator !== null && srcIndicator.visible, "Source indicator should be visible on base_link");
 
@@ -483,10 +487,10 @@ Item {
             verify(worldIdx !== -1);
             var worldItem = null;
             tryVerify(function () {
-                    listView.positionViewAtIndex(worldIdx, ListView.Beginning);
-                    worldItem = listView.itemAtIndex(worldIdx);
-                    return worldItem !== null;
-                }, 2000);
+                listView.positionViewAtIndex(worldIdx, ListView.Beginning);
+                worldItem = listView.itemAtIndex(worldIdx);
+                return worldItem !== null;
+            }, 2000);
             var tgtIndicator = helpers.findChild(worldItem, "targetIndicator");
             verify(tgtIndicator !== null && tgtIndicator.visible, "Target indicator should be visible on world");
         }
@@ -500,14 +504,14 @@ Item {
             // Reload so the plugin discovers them at construction time
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             var nsCombo = find("tfNamespaceComboBox");
             verify(nsCombo !== null, "Namespace ComboBox should exist");
             tryVerify(function () {
-                    var m = nsCombo.model || [];
-                    return Array.prototype.indexOf.call(m, "(global)") !== -1 && Array.prototype.indexOf.call(m, "/robot1") !== -1 && Array.prototype.indexOf.call(m, "/robot2") !== -1 && Array.prototype.indexOf.call(m, "/robot3") !== -1;
-                }, 2000, "Namespace dropdown should list (global), /robot1, /robot2, /robot3");
+                var m = nsCombo.model || [];
+                return Array.prototype.indexOf.call(m, "(global)") !== -1 && Array.prototype.indexOf.call(m, "/robot1") !== -1 && Array.prototype.indexOf.call(m, "/robot2") !== -1 && Array.prototype.indexOf.call(m, "/robot3") !== -1;
+            }, 2000, "Namespace dropdown should list (global), /robot1, /robot2, /robot3");
         }
 
         // -----------------------------------------------------------------
@@ -522,9 +526,9 @@ Item {
 
             // Initially only the global namespace is registered
             tryVerify(function () {
-                    var m = nsCombo.model || [];
-                    return Array.prototype.indexOf.call(m, "(global)") !== -1;
-                }, 2000, "Global namespace should be present initially");
+                var m = nsCombo.model || [];
+                return Array.prototype.indexOf.call(m, "(global)") !== -1;
+            }, 2000, "Global namespace should be present initially");
             var beforeModel = nsCombo.model || [];
             verify(Array.prototype.indexOf.call(beforeModel, "/robot_late") === -1, "/robot_late should not be present before refresh");
 
@@ -534,9 +538,9 @@ Item {
             verify(refreshButton !== null, "Refresh button should exist");
             mouseClick(refreshButton);
             tryVerify(function () {
-                    var m = nsCombo.model || [];
-                    return Array.prototype.indexOf.call(m, "/robot_late") !== -1;
-                }, 2000, "Refresh should pick up newly-registered namespace");
+                var m = nsCombo.model || [];
+                return Array.prototype.indexOf.call(m, "/robot_late") !== -1;
+            }, 2000, "Refresh should pick up newly-registered namespace");
         }
         function test_static_and_dynamic_frames() {
             var listView = find("tfFrameListView");
@@ -617,8 +621,8 @@ Item {
             RQml.resetClipboard();
             mouseClick(copyBtn);
             tryVerify(function () {
-                    return RQml.clipboard.length > 0;
-                }, 1000, "Clipboard should receive JSON");
+                return RQml.clipboard.length > 0;
+            }, 1000, "Clipboard should receive JSON");
             var parsed = JSON.parse(RQml.clipboard);
             compare(parsed.source_frame, "world");
             compare(parsed.target_frame, "base_link");
@@ -654,8 +658,8 @@ Item {
             RQml.resetClipboard();
             mouseClick(copyBtn);
             tryVerify(function () {
-                    return RQml.clipboard.length > 0;
-                }, 1000);
+                return RQml.clipboard.length > 0;
+            }, 1000);
             var yaml = RQml.clipboard;
             verify(yaml.indexOf("source_frame: world") !== -1, "YAML should contain source_frame");
             verify(yaml.indexOf("target_frame: base_link") !== -1, "YAML should contain target_frame");

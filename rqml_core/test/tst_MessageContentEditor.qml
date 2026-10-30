@@ -14,15 +14,18 @@ Item {
 
     MessageItemModel {
         id: testModel
+
         messageType: "ros_babel_fish_test_msgs/msg/TestMessage"
     }
     MessageContentEditor {
         id: editor
+
         anchors.fill: parent
         model: testModel
     }
     SignalSpy {
         id: submittedSpy
+
         signalName: "submitted"
         target: editor
     }

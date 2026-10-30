@@ -9,6 +9,7 @@ Item {
 
     RefreshButton {
         id: btn
+
     }
     TestCase {
         function test_animationLifecycle() {
@@ -18,8 +19,8 @@ Item {
             compare(icon.rotation, 0);
             btn.animate = true;
             tryVerify(function () {
-                    return icon.rotation !== 0;
-                }, 2000, "icon should rotate while animate is true");
+                return icon.rotation !== 0;
+            }, 2000, "icon should rotate while animate is true");
             btn.animate = false;
             // The animation only stops at the end of a cycle (~600ms rotate + 400ms pause).
             // After it stops, the icon's rotation must stabilise (no longer changing).

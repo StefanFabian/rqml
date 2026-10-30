@@ -23,6 +23,7 @@ Rectangle {
         RowLayout {
             FuzzySelector {
                 id: topicSelect
+
                 function refresh() {
                     let topics = Ros2.queryTopics("sensor_msgs/msg/Image");
                     let compressedTopics = Ros2.queryTopics("sensor_msgs/msg/CompressedImage");
@@ -51,6 +52,7 @@ Rectangle {
             }
             RefreshButton {
                 id: refreshButton
+
                 onClicked: {
                     animate = true;
                     topicSelect.refresh();
@@ -59,6 +61,7 @@ Rectangle {
             }
             IconToggleButton {
                 id: playButton
+
                 checked: context.enabled ?? true
                 iconOff: IconFont.iconPlay
                 iconOn: IconFont.iconPause
@@ -74,6 +77,7 @@ Rectangle {
             }
             IconButton {
                 id: saveButton
+
                 objectName: "imageSaveButton"
                 text: IconFont.iconSave
                 tooltipText: qsTr("Save Image")
@@ -148,6 +152,7 @@ Rectangle {
         }
         VideoOutput {
             id: videoOutput
+
             Layout.fillHeight: true
             Layout.fillWidth: true
             layer.enabled: {
@@ -196,11 +201,13 @@ Rectangle {
             // Processes depth images, forwards all other images unchanged
             DepthImageProcessor {
                 id: depthProcessor
+
                 maxDepth: context.depth ?? 3.0
                 outputVideoSink: videoOutput.videoSink
             }
             ImageTransportSubscription {
                 id: imageSubscriber
+
                 defaultTransport: d.topicInformation?.transport ?? "raw"
                 enabled: context.enabled ?? true
                 timeout: 3000
@@ -275,6 +282,7 @@ Rectangle {
     }
     FileDialog {
         id: fileDialog
+
         function saveImage() {
             depthProcessor.grabFrame();
             open();

@@ -39,9 +39,11 @@ Item {
     }
     Utils {
         id: helpers
+
     }
     Loader {
         id: pluginLoader
+
         function reload() {
             source = "";
             source = "../qml/MessagePublisher.qml";
@@ -51,6 +53,7 @@ Item {
     }
     Subscription {
         id: testSub
+
         messageType: "std_msgs/msg/String"
         topic: "/test_topic"
 
@@ -61,6 +64,7 @@ Item {
     }
     TestCase {
         id: testCase
+
         function init() {
             Ros2.reset();
             Ros2._registerSubscription(testSub);
@@ -70,8 +74,8 @@ Item {
             lastMessage = null;
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000, "Loader should be ready");
+                return pluginLoader.status === Loader.Ready;
+            }, 2000, "Loader should be ready");
             wait(200);
         }
         function test_add_and_publish_flow() {
@@ -93,17 +97,17 @@ Item {
             // 2. Wait for delegate to be instantiated and find it
             var enabledCheckBox = null;
             tryVerify(function () {
-                    enabledCheckBox = find("enabledCheckBox_0");
-                    return enabledCheckBox !== null;
-                }, 3000, "Enabled checkbox for row 0 should exist");
+                enabledCheckBox = find("enabledCheckBox_0");
+                return enabledCheckBox !== null;
+            }, 3000, "Enabled checkbox for row 0 should exist");
             compare(enabledCheckBox.checked, false, "Should be disabled initially");
             mouseClick(enabledCheckBox);
             tryCompare(enabledCheckBox, "checked", true, 2000, "Checkbox should be checked after click");
 
             // 3. Verify publication
             tryVerify(function () {
-                    return messageCount > 0;
-                }, 5000, "Should receive published messages");
+                return messageCount > 0;
+            }, 5000, "Should receive published messages");
             verify(lastMessage !== null, "Received message should not be null");
 
             // 4. Disable and verify it stops
@@ -122,9 +126,9 @@ Item {
             tryCompare(listView, "count", 1, 2000);
             var deleteButton = null;
             tryVerify(function () {
-                    deleteButton = find("deleteButton_0");
-                    return deleteButton !== null;
-                }, 3000, "Delete button for row 0 should exist");
+                deleteButton = find("deleteButton_0");
+                return deleteButton !== null;
+            }, 3000, "Delete button for row 0 should exist");
             mouseClick(deleteButton);
             tryCompare(listView, "count", 0, 2000, "Message should be removed from list");
             compare(contextObj.messages.length, 0, "Context messages array should be empty");
@@ -142,14 +146,14 @@ Item {
             var enabledCheckBox = null;
             var rateSpinBox = null;
             tryVerify(function () {
-                    enabledCheckBox = find("enabledCheckBox_0");
-                    rateSpinBox = find("rateSpinBox_0");
-                    return enabledCheckBox !== null && rateSpinBox !== null;
-                }, 3000, "Controls for row 0 should exist");
+                enabledCheckBox = find("enabledCheckBox_0");
+                rateSpinBox = find("rateSpinBox_0");
+                return enabledCheckBox !== null && rateSpinBox !== null;
+            }, 3000, "Controls for row 0 should exist");
             mouseClick(enabledCheckBox);
             tryVerify(function () {
-                    return messageCount > 0;
-                }, 3000);
+                return messageCount > 0;
+            }, 3000);
 
             // Change rate and verify timing.
             // 20 Hz target, sampled over 2s after a 500ms settle, ±25% tolerance

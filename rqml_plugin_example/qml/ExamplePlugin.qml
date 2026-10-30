@@ -14,6 +14,7 @@ Rectangle {
 
     Subscription {
         id: chatterSub
+
         topic: "/chatter"
 
         onNewMessage: msg => {

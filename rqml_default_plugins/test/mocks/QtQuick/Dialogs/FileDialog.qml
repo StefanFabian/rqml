@@ -7,6 +7,7 @@ import QtQuick.Controls
  */
 QtObject {
     id: root
+
     enum FileModes {
         OpenFile,
         OpenFiles,

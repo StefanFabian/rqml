@@ -43,9 +43,11 @@ Item {
     }
     Utils {
         id: helpers
+
     }
     Loader {
         id: pluginLoader
+
         function reload() {
             source = "";
             source = "../qml/ImageView.qml";
@@ -55,6 +57,7 @@ Item {
     }
     TestCase {
         id: testCase
+
         function init() {
             Ros2.reset();
             // Discovery setup for image topics
@@ -68,8 +71,8 @@ Item {
             contextObj.rotation = 0;
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000, "Loader should be ready");
+                return pluginLoader.status === Loader.Ready;
+            }, 2000, "Loader should be ready");
             wait(200);
         }
         function test_discovery() {
@@ -81,9 +84,9 @@ Item {
         function test_invert_toggle() {
             var invertCheckbox = null;
             tryVerify(function () {
-                    invertCheckbox = find("imageInvertCheckbox");
-                    return invertCheckbox !== null;
-                }, 3000, "Invert checkbox should be found");
+                invertCheckbox = find("imageInvertCheckbox");
+                return invertCheckbox !== null;
+            }, 3000, "Invert checkbox should be found");
 
             // Initially false
             compare(invertCheckbox.checked, false);

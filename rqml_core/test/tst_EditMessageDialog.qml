@@ -23,6 +23,7 @@ Item {
     }
     EditMessageDialog {
         id: dialog
+
         anchors.centerIn: parent
         height: 500
         message: Ros2.createEmptyMessage("ros_babel_fish_test_msgs/msg/TestMessage")
@@ -32,6 +33,7 @@ Item {
     }
     SignalSpy {
         id: acceptedSpy
+
         signalName: "accepted"
         target: dialog
     }
@@ -61,23 +63,23 @@ Item {
         }
         function findMessageContentEditor() {
             return findItemBy(dialog, function (c) {
-                    return c && c.toString().indexOf("MessageContentEditor") !== -1;
-                });
+                return c && c.toString().indexOf("MessageContentEditor") !== -1;
+            });
         }
         function findStackLayout() {
             return findItemBy(dialog, function (c) {
-                    return c && c.toString().indexOf("StackLayout") !== -1;
-                });
+                return c && c.toString().indexOf("StackLayout") !== -1;
+            });
         }
         function findTabBar() {
             return findItemBy(dialog, function (c) {
-                    return c && c.toString().indexOf("TabBar") !== -1 && c.hasOwnProperty("currentIndex");
-                });
+                return c && c.toString().indexOf("TabBar") !== -1 && c.hasOwnProperty("currentIndex");
+            });
         }
         function findTextArea() {
             return findItemBy(dialog, function (c) {
-                    return c && c.toString().indexOf("TextArea") !== -1 && c.hasOwnProperty("text");
-                });
+                return c && c.toString().indexOf("TextArea") !== -1 && c.hasOwnProperty("text");
+            });
         }
         function init() {
             dialog.message = Ros2.createEmptyMessage("ros_babel_fish_test_msgs/msg/TestMessage");
@@ -98,11 +100,11 @@ Item {
             var button = null;
             tabBar.currentIndex = 1;
             tryVerify(function () {
-                    button = findItemBy(dialog, function (c) {
-                            return c && c.objectName === "editMessageDialogCopyJsonButton" && c.visible;
-                        });
-                    return button !== null;
-                }, 1000, "Copy JSON button should be visible on the JSON tab");
+                button = findItemBy(dialog, function (c) {
+                    return c && c.objectName === "editMessageDialogCopyJsonButton" && c.visible;
+                });
+                return button !== null;
+            }, 1000, "Copy JSON button should be visible on the JSON tab");
             RQml.resetClipboard();
             mouseClick(button);
             compare(RQml.clipboard, textArea.text, "Copy JSON button should copy the JSON text");
@@ -165,8 +167,8 @@ Item {
             compare(textArea.readOnly, true, "JSON text area should be readonly in readonly mode");
             verify(dialog.standardButton(Dialog.Close) !== null, "Close button should be present in readonly mode");
             verify(findItemBy(dialog, function (c) {
-                        return c && c.objectName === "editMessageDialogCopyJsonButton" && c.visible;
-                    }) !== null, "Copy JSON button should be visible in readonly mode");
+                return c && c.objectName === "editMessageDialogCopyJsonButton" && c.visible;
+            }) !== null, "Copy JSON button should be visible in readonly mode");
             dialog.readonly = false;
         }
         function test_standardOkCancelButtons() {
@@ -212,12 +214,12 @@ Item {
             verify(done, "i32 field should be present");
             // The dialog updates textArea.text via Qt.binding on `modified`.
             tryVerify(function () {
-                    try {
-                        return JSON.parse(textArea.text).i32 === 9001;
-                    } catch (e) {
-                        return false;
-                    }
-                }, 1000, "text area should reflect visual edits");
+                try {
+                    return JSON.parse(textArea.text).i32 === 9001;
+                } catch (e) {
+                    return false;
+                }
+            }, 1000, "text area should reflect visual edits");
         }
 
         name: "EditMessageDialogTest"

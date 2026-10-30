@@ -35,6 +35,7 @@ RowLayout {
     }
     Slider {
         id: numSlider
+
         Layout.fillWidth: true
         enabled: !modelData.readOnly
         from: root.hasRange ? root.range.from : 0
@@ -58,15 +59,15 @@ RowLayout {
             if (!pressed) {
                 let prev = localParamValue;
                 ParameterService.setParameter(modelData.nodeName, modelData.paramName, value, modelData.paramType, function (success, reason) {
-                        if (!success) {
-                            numSlider.value = prev;
-                            if (root.isInteger)
-                                intField.value = prev;
-                            else
-                                doubleField.value = prev;
-                            root.parameterSetFailed(modelData.paramName, reason);
-                        }
-                    });
+                    if (!success) {
+                        numSlider.value = prev;
+                        if (root.isInteger)
+                            intField.value = prev;
+                        else
+                            doubleField.value = prev;
+                        root.parameterSetFailed(modelData.paramName, reason);
+                    }
+                });
             }
         }
     }
@@ -78,6 +79,7 @@ RowLayout {
     }
     IntegerInputField {
         id: intField
+
         Layout.fillWidth: !root.hasRange
         Layout.preferredWidth: root.hasRange ? 80 : -1
         enabled: !modelData.readOnly
@@ -94,17 +96,18 @@ RowLayout {
                 numSlider.value = value;
             let prev = localParamValue;
             ParameterService.setParameter(modelData.nodeName, modelData.paramName, parseInt(value), modelData.paramType, function (success, reason) {
-                    if (!success) {
-                        intField.value = prev;
-                        if (root.hasRange)
-                            numSlider.value = prev;
-                        root.parameterSetFailed(modelData.paramName, reason);
-                    }
-                });
+                if (!success) {
+                    intField.value = prev;
+                    if (root.hasRange)
+                        numSlider.value = prev;
+                    root.parameterSetFailed(modelData.paramName, reason);
+                }
+            });
         }
     }
     DecimalInputField {
         id: doubleField
+
         Layout.fillWidth: !root.hasRange
         Layout.preferredWidth: root.hasRange ? 80 : -1
         enabled: !modelData.readOnly
@@ -121,13 +124,13 @@ RowLayout {
                 numSlider.value = value;
             let prev = localParamValue;
             ParameterService.setParameter(modelData.nodeName, modelData.paramName, Number(value), modelData.paramType, function (success, reason) {
-                    if (!success) {
-                        doubleField.value = prev;
-                        if (root.hasRange)
-                            numSlider.value = prev;
-                        root.parameterSetFailed(modelData.paramName, reason);
-                    }
-                });
+                if (!success) {
+                    doubleField.value = prev;
+                    if (root.hasRange)
+                        numSlider.value = prev;
+                    root.parameterSetFailed(modelData.paramName, reason);
+                }
+            });
         }
     }
 }

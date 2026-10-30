@@ -8,6 +8,7 @@ Item {
 
     RqmlUtils.Object {
         id: obj
+
         QtObject {
             objectName: "child1"
         }

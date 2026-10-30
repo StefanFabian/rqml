@@ -45,31 +45,31 @@ Item {
     implicitHeight: d.boxHeight + 12 + (labelsRow.visible ? labelsRow.implicitHeight + 4 : 0)
     implicitWidth: 200
 
-    Behavior on _animMax  {
+    Behavior on _animMax {
         NumberAnimation {
             duration: d.animationDuration
             easing.type: Easing.OutQuad
         }
     }
-    Behavior on _animMedian  {
+    Behavior on _animMedian {
         NumberAnimation {
             duration: d.animationDuration
             easing.type: Easing.OutQuad
         }
     }
-    Behavior on _animMin  {
+    Behavior on _animMin {
         NumberAnimation {
             duration: d.animationDuration
             easing.type: Easing.OutQuad
         }
     }
-    Behavior on _animQ1  {
+    Behavior on _animQ1 {
         NumberAnimation {
             duration: d.animationDuration
             easing.type: Easing.OutQuad
         }
     }
-    Behavior on _animQ3  {
+    Behavior on _animQ3 {
         NumberAnimation {
             duration: d.animationDuration
             easing.type: Easing.OutQuad
@@ -118,6 +118,7 @@ Item {
     // Boxplot canvas
     Canvas {
         id: canvas
+
         anchors.left: parent.left
         anchors.leftMargin: d.marginH
         anchors.right: parent.right
@@ -190,6 +191,7 @@ Item {
     // Statistics labels
     RowLayout {
         id: labelsRow
+
         anchors.left: parent.left
         anchors.leftMargin: d.marginH
         anchors.right: parent.right

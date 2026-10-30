@@ -168,6 +168,7 @@ Rectangle {
             }
             ComboBox {
                 id: namespaceComboBox
+
                 Layout.fillWidth: true
                 model: d.namespaces
                 objectName: "tfNamespaceComboBox"
@@ -211,6 +212,7 @@ Rectangle {
             // View mode toggle
             ButtonGroup {
                 id: viewModeGroup
+
             }
             Button {
                 ButtonGroup.group: viewModeGroup
@@ -259,6 +261,7 @@ Rectangle {
         // --------------------------------------------------------------------
         SearchBar {
             id: searchBar
+
             Layout.fillWidth: true
             objectName: "tfSearchBar"
             placeholderText: "Search frames..."
@@ -281,6 +284,7 @@ Rectangle {
             // Graph View
             TfGraphView {
                 id: graphView
+
                 buffer: d.tfBuffer
                 freshColor: root.freshColor
                 objectName: "tfGraphView"
@@ -298,6 +302,7 @@ Rectangle {
             // List View
             TfListView {
                 id: listView
+
                 buffer: d.tfBuffer
                 freshColor: root.freshColor
                 indentPerLevel: root.indentPerLevel

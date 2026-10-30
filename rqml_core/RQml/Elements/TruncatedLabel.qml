@@ -19,6 +19,7 @@ import QtQuick.Controls
 
 Label {
     id: control
+
     elide: Text.ElideRight
 
     MouseArea {

@@ -87,6 +87,7 @@ ApplicationWindow {
             }
             Action {
                 id: selectNextPluginAction
+
                 shortcut: "Ctrl+Tab"
                 text: qsTr("Select next plugin")
 
@@ -96,6 +97,7 @@ ApplicationWindow {
             }
             Action {
                 id: selectPreviousPluginAction
+
                 shortcut: "Ctrl+Shift+Tab"
                 text: qsTr("Select previous plugin")
 
@@ -105,6 +107,7 @@ ApplicationWindow {
             }
             Action {
                 id: closeSelectedPluginAction
+
                 shortcut: "Ctrl+W"
                 text: qsTr("Close selected plugin")
 
@@ -114,6 +117,7 @@ ApplicationWindow {
             }
             Action {
                 id: closeAllPluginsAction
+
                 shortcut: "Ctrl+Shift+W"
                 text: qsTr("Close All")
 
@@ -143,6 +147,7 @@ ApplicationWindow {
         }
         Menu {
             id: pluginsMenu
+
             title: qsTr("&Plugins")
 
             Action {
@@ -159,10 +164,10 @@ ApplicationWindow {
                 model: {
                     let groups = new Set();
                     RQml.plugins.forEach(plugin => {
-                            if (plugin.group) {
-                                groups.add(plugin.group);
-                            }
-                        });
+                        if (plugin.group) {
+                            groups.add(plugin.group);
+                        }
+                    });
                     return Array.from(groups);
                 }
 
@@ -254,11 +259,13 @@ ApplicationWindow {
     }
     Row {
         id: noPluginsLoadedRow
+
         anchors.centerIn: parent
         spacing: -Qt.application.font.pixelSize * 2
 
         ColumnLayout {
             id: noPluginsLoadedMessage
+
             anchors.bottom: parent.bottom
             anchors.bottomMargin: Qt.application.font.pixelSize * 2
             spacing: Qt.application.font.pixelSize / 2
@@ -298,23 +305,29 @@ ApplicationWindow {
     }
     KDDW.DockingArea {
         id: rootDockingArea
+
         anchors.fill: parent
         // Each main layout needs a unique id
         uniqueName: "MainLayout-1"
     }
     AboutDialog {
         id: aboutDialog
+
     }
     SettingsDialog {
         id: settingsDialog
+
     }
     OpenConfigDialog {
         id: openConfigDialog
+
     }
     OpenPluginDialog {
         id: openPluginDialog
+
     }
     SaveConfigDialog {
         id: saveConfigDialog
+
     }
 }

@@ -60,6 +60,7 @@ Rectangle {
             }
             ComboBox {
                 id: controllerManagerComboBox
+
                 Layout.fillWidth: true
                 model: d.controllerManagers
                 objectName: "rsControllerManagerComboBox"
@@ -167,6 +168,7 @@ Rectangle {
         // Statistics list
         ListView {
             id: statsListView
+
             Layout.fillHeight: true
             Layout.fillWidth: true
             clip: true
@@ -257,6 +259,7 @@ Rectangle {
             }
             Slider {
                 id: sampleSizeSlider
+
                 Layout.fillWidth: true
                 from: 100
                 objectName: "rsSampleSizeSlider"
@@ -282,6 +285,7 @@ Rectangle {
     //--------------------------------------------------------------------------
     Subscription {
         id: statisticsSubscription
+
         enabled: !!(context.enabled ?? true) && topic !== ""
         messageType: "pal_statistics_msgs/msg/Statistics"
         objectName: "rsStatisticsSubscription"
@@ -310,6 +314,7 @@ Rectangle {
     // Debounced UI update timer
     Timer {
         id: updateTimer
+
         interval: _updateIntervalMs
         repeat: false
 
@@ -482,14 +487,14 @@ Rectangle {
                 if (!stats)
                     continue;
                 elementsModel.append({
-                        "label": label,
-                        "min": stats.min,
-                        "q1": stats.q1,
-                        "median": stats.median,
-                        "q3": stats.q3,
-                        "max": stats.max,
-                        "count": stats.count
-                    });
+                    "label": label,
+                    "min": stats.min,
+                    "q1": stats.q1,
+                    "median": stats.median,
+                    "q3": stats.q3,
+                    "max": stats.max,
+                    "count": stats.count
+                });
             }
         }
 

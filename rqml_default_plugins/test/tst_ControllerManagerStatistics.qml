@@ -41,9 +41,11 @@ Item {
     }
     Utils {
         id: helpers
+
     }
     Loader {
         id: pluginLoader
+
         function reload() {
             source = "";
             source = "../qml/ControllerManagerStatistics.qml";
@@ -61,16 +63,16 @@ Item {
         function init() {
             Ros2.reset();
             Ros2.registerService("/mock_cm/list_controllers", "controller_manager_msgs/srv/ListControllers", function (req) {
-                    return Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/ListControllers");
-                });
+                return Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/ListControllers");
+            });
             Ros2.registerTopic(statsTopic, statsType);
             contextObj.enabled = true;
             contextObj.controller_manager_namespace = "";
             contextObj.max_samples = undefined;
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000, "Plugin should load");
+                return pluginLoader.status === Loader.Ready;
+            }, 2000, "Plugin should load");
             wait(50);
         }
 
@@ -83,17 +85,19 @@ Item {
             var sub = find("rsStatisticsSubscription");
             verify(sub !== null, "Statistics subscription should exist");
             sub.injectMessage({
-                    "statistics": entries
-                });
+                "statistics": entries
+            });
         }
 
         //! Inject N messages for a single element with given values.
         function injectValues(elementName, values) {
             for (var i = 0; i < values.length; i++) {
-                injectStats([{
-                            "name": elementName + ".stats/execution_time/current_value",
-                            "value": values[i]
-                        }]);
+                injectStats([
+                    {
+                        "name": elementName + ".stats/execution_time/current_value",
+                        "value": values[i]
+                    }
+                ]);
             }
         }
 
@@ -102,12 +106,12 @@ Item {
             contextObj.controller_manager_namespace = "/mock_cm";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000, "Plugin should load");
+                return pluginLoader.status === Loader.Ready;
+            }, 2000, "Plugin should load");
             // Wait for subscription element to be available
             tryVerify(function () {
-                    return find("rsStatisticsSubscription") !== null;
-                }, 2000, "Statistics subscription should be created");
+                return find("rsStatisticsSubscription") !== null;
+            }, 2000, "Statistics subscription should be created");
         }
 
         //! Count currently rendered stats delegates in the ListView content item.
@@ -162,16 +166,20 @@ Item {
             loadWithNamespace();
 
             // Populate with 3 elements
-            injectStats([{
-                        "name": "a.stats/execution_time/current_value",
-                        "value": 10
-                    }, {
-                        "name": "b.stats/execution_time/current_value",
-                        "value": 20
-                    }, {
-                        "name": "c.stats/execution_time/current_value",
-                        "value": 30
-                    }]);
+            injectStats([
+                {
+                    "name": "a.stats/execution_time/current_value",
+                    "value": 10
+                },
+                {
+                    "name": "b.stats/execution_time/current_value",
+                    "value": 20
+                },
+                {
+                    "name": "c.stats/execution_time/current_value",
+                    "value": 30
+                }
+            ]);
             var listView = find("rsStatsListView");
             tryCompare(listView.model, "count", 3, 2000, "Three elements before clear");
 
@@ -190,13 +198,16 @@ Item {
             loadWithNamespace();
 
             // Inject limited data (1 message, few elements)
-            injectStats([{
-                        "name": "ctrl_a.stats/execution_time/current_value",
-                        "value": 15
-                    }, {
-                        "name": "ctrl_b.stats/execution_time/current_value",
-                        "value": 25
-                    }]);
+            injectStats([
+                {
+                    "name": "ctrl_a.stats/execution_time/current_value",
+                    "value": 15
+                },
+                {
+                    "name": "ctrl_b.stats/execution_time/current_value",
+                    "value": 25
+                }
+            ]);
             var listView = find("rsStatsListView");
             tryCompare(listView.model, "count", 2, 2000, "Two elements before pause+clear");
 
@@ -211,10 +222,12 @@ Item {
             tryCompare(listView.model, "count", 0, 2000, "Model should be empty after clear while paused");
 
             // Simulate a late message while paused; it should be ignored.
-            injectStats([{
-                        "name": "ctrl_late.stats/execution_time/current_value",
-                        "value": 55
-                    }]);
+            injectStats([
+                {
+                    "name": "ctrl_late.stats/execution_time/current_value",
+                    "value": 55
+                }
+            ]);
 
             // Wait longer than update timer + animation duration and verify stays empty
             wait(1500);
@@ -227,17 +240,17 @@ Item {
         }
         function test_controller_manager_discovery() {
             Ros2.registerService("/another_cm/list_controllers", "controller_manager_msgs/srv/ListControllers", function (req) {
-                    return Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/ListControllers");
-                });
+                return Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/ListControllers");
+            });
             var combo = find("rsControllerManagerComboBox");
             verify(combo !== null, "ComboBox should exist");
             var refreshBtn = find("rsRefreshButton");
             verify(refreshBtn !== null, "Refresh button should exist");
             mouseClick(refreshBtn);
             tryVerify(function () {
-                    var m = combo.model || [];
-                    return m.indexOf("/mock_cm") !== -1 && m.indexOf("/another_cm") !== -1;
-                }, 2000, "Both controller managers should appear");
+                var m = combo.model || [];
+                return m.indexOf("/mock_cm") !== -1 && m.indexOf("/another_cm") !== -1;
+            }, 2000, "Both controller managers should appear");
         }
         function test_empty_state_message() {
             // When messages arrive but none match the execution_time filter,
@@ -245,10 +258,12 @@ Item {
             loadWithNamespace();
 
             // Inject a message with NO execution_time entries
-            injectStats([{
-                        "name": "unrelated_stat/something_else",
-                        "value": 99
-                    }]);
+            injectStats([
+                {
+                    "name": "unrelated_stat/something_else",
+                    "value": 99
+                }
+            ]);
 
             // processMessage increments messageCount even when no data matches
             var listView = find("rsStatsListView");
@@ -271,13 +286,13 @@ Item {
 
             // All values < 1000, so scale should show µs
             tryVerify(function () {
-                    return scaleMax.text.indexOf("\u00b5s") !== -1;
-                }, 2000, "Scale should use \u00b5s for values < 1000");
+                return scaleMax.text.indexOf("\u00b5s") !== -1;
+            }, 2000, "Scale should use \u00b5s for values < 1000");
 
             // Sub-1µs value should use 2 decimal places in scale
             tryVerify(function () {
-                    return scaleMin.text.indexOf("\u00b5s") !== -1;
-                }, 2000, "Scale min should also use \u00b5s");
+                return scaleMin.text.indexOf("\u00b5s") !== -1;
+            }, 2000, "Scale min should also use \u00b5s");
 
             // Clear and test millisecond range
             mouseClick(find("rsClearButton"));
@@ -285,21 +300,25 @@ Item {
             injectValues("ms_elem", [1500, 2000, 3500]);
             tryCompare(listView.model, "count", 1, 2000);
             tryVerify(function () {
-                    return scaleMax.text.indexOf("ms") !== -1;
-                }, 2000, "Scale should use ms for values >= 1000");
+                return scaleMax.text.indexOf("ms") !== -1;
+            }, 2000, "Scale should use ms for values >= 1000");
         }
         function test_label_parsing() {
             loadWithNamespace();
-            injectStats([{
-                        "name": "joint_state_broadcaster.stats/execution_time/current_value",
-                        "value": 10
-                    }, {
-                        "name": "arm_interface.stats/read_cycle/execution_time/current_value",
-                        "value": 20
-                    }, {
-                        "name": "arm_interface.stats/write_cycle/execution_time/current_value",
-                        "value": 30
-                    }]);
+            injectStats([
+                {
+                    "name": "joint_state_broadcaster.stats/execution_time/current_value",
+                    "value": 10
+                },
+                {
+                    "name": "arm_interface.stats/read_cycle/execution_time/current_value",
+                    "value": 20
+                },
+                {
+                    "name": "arm_interface.stats/write_cycle/execution_time/current_value",
+                    "value": 30
+                }
+            ]);
             var listView = find("rsStatsListView");
             tryCompare(listView.model, "count", 3, 2000, "Three elements expected");
 
@@ -314,16 +333,20 @@ Item {
         }
         function test_message_processing() {
             loadWithNamespace();
-            injectStats([{
-                        "name": "controller_a.stats/execution_time/current_value",
-                        "value": 50.0
-                    }, {
-                        "name": "controller_b.stats/execution_time/current_value",
-                        "value": 100.0
-                    }, {
-                        "name": "some_other_stat/not_execution_time",
-                        "value": 999.0
-                    }]);
+            injectStats([
+                {
+                    "name": "controller_a.stats/execution_time/current_value",
+                    "value": 50.0
+                },
+                {
+                    "name": "controller_b.stats/execution_time/current_value",
+                    "value": 100.0
+                },
+                {
+                    "name": "some_other_stat/not_execution_time",
+                    "value": 999.0
+                }
+            ]);
             var listView = find("rsStatsListView");
             verify(listView !== null, "ListView should exist");
             tryCompare(listView.model, "count", 2, 2000, "Only execution_time entries should appear (2 of 3)");
@@ -336,8 +359,8 @@ Item {
 
             // Register a second controller manager
             Ros2.registerService("/other_cm/list_controllers", "controller_manager_msgs/srv/ListControllers", function (req) {
-                    return Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/ListControllers");
-                });
+                return Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/ListControllers");
+            });
 
             // Refresh to pick up the new CM
             mouseClick(find("rsRefreshButton"));
@@ -345,9 +368,9 @@ Item {
             // Select the other CM via ComboBox
             var combo = find("rsControllerManagerComboBox");
             tryVerify(function () {
-                    var m = combo.model || [];
-                    return m.indexOf("/other_cm") !== -1;
-                }, 2000, "New CM should appear");
+                var m = combo.model || [];
+                return m.indexOf("/other_cm") !== -1;
+            }, 2000, "New CM should appear");
 
             // Find the index of /other_cm and select it
             var idx = -1;
@@ -367,19 +390,24 @@ Item {
         }
         function test_nonfinite_values_filtered() {
             loadWithNamespace();
-            injectStats([{
-                        "name": "ok.stats/execution_time/current_value",
-                        "value": 42
-                    }, {
-                        "name": "nan.stats/execution_time/current_value",
-                        "value": NaN
-                    }, {
-                        "name": "inf.stats/execution_time/current_value",
-                        "value": Infinity
-                    }, {
-                        "name": "neginf.stats/execution_time/current_value",
-                        "value": -Infinity
-                    }]);
+            injectStats([
+                {
+                    "name": "ok.stats/execution_time/current_value",
+                    "value": 42
+                },
+                {
+                    "name": "nan.stats/execution_time/current_value",
+                    "value": NaN
+                },
+                {
+                    "name": "inf.stats/execution_time/current_value",
+                    "value": Infinity
+                },
+                {
+                    "name": "neginf.stats/execution_time/current_value",
+                    "value": -Infinity
+                }
+            ]);
             var listView = find("rsStatsListView");
             tryCompare(listView.model, "count", 1, 2000, "Only the finite-valued entry should appear");
             compare(listView.model.get(0).label, "ok", "Only the valid entry should be in the model");
@@ -428,11 +456,11 @@ Item {
             contextObj.max_samples = 100;
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             tryVerify(function () {
-                    return find("rsStatisticsSubscription") !== null;
-                }, 2000);
+                return find("rsStatisticsSubscription") !== null;
+            }, 2000);
 
             // Inject 150 values (exceeds max_samples of 100)
             var values = [];
@@ -452,8 +480,8 @@ Item {
             var label = find("rsSampleWindowLabel");
             verify(label !== null, "Sample window label should exist");
             tryVerify(function () {
-                    return label.text.indexOf("1000") !== -1;
-                }, 1000, "Default should be 1000 samples");
+                return label.text.indexOf("1000") !== -1;
+            }, 1000, "Default should be 1000 samples");
         }
         function test_set_max_samples_trims() {
             // setMaxSamples trims existing data when window shrinks
@@ -476,8 +504,8 @@ Item {
 
             // Model should update with trimmed data
             tryVerify(function () {
-                    return listView.model.get(0).count === 200;
-                }, 2000, "Samples should be trimmed to 200");
+                return listView.model.get(0).count === 200;
+            }, 2000, "Samples should be trimmed to 200");
 
             // Oldest 300 values removed, so min should now be 300
             compare(listView.model.get(0).min, 300, "Oldest samples should have been trimmed by setMaxSamples");

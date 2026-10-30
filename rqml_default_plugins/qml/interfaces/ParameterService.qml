@@ -164,85 +164,85 @@ QtObject {
         node.loading = true;
         root.parametersChanged(nodeName);
         node.listClient.sendRequestAsync({
-                "prefixes": [],
-                "depth": 0
-            }, function (listResponse) {
-                if (!listResponse || !listResponse.result) {
-                    Ros2.warn("ParameterService: Failed to list parameters for " + nodeName);
+            "prefixes": [],
+            "depth": 0
+        }, function (listResponse) {
+            if (!listResponse || !listResponse.result) {
+                Ros2.warn("ParameterService: Failed to list parameters for " + nodeName);
+                node.loading = false;
+                root.parametersChanged(nodeName);
+                return;
+            }
+            const names = [];
+            for (let i = 0; i < listResponse.result.names.length; i++)
+                names.push(listResponse.result.names.at(i));
+            if (names.length === 0) {
+                node.parameters = {};
+                node.loading = false;
+                node.loaded = true;
+                root.parametersChanged(nodeName);
+                return;
+            }
+            node.getClient.sendRequestAsync({
+                "names": names
+            }, function (getResponse) {
+                if (!getResponse || !getResponse.values) {
+                    Ros2.warn("ParameterService: Failed to get parameters for " + nodeName);
                     node.loading = false;
                     root.parametersChanged(nodeName);
                     return;
                 }
-                const names = [];
-                for (let i = 0; i < listResponse.result.names.length; i++)
-                    names.push(listResponse.result.names.at(i));
-                if (names.length === 0) {
-                    node.parameters = {};
+                const params = {};
+                for (let i = 0; i < names.length; i++) {
+                    const paramValue = getResponse.values.at(i);
+                    params[names[i]] = {
+                        "name": names[i],
+                        "type": paramValue.type,
+                        "value": _extractValue(paramValue),
+                        "descriptor": {
+                            "description": "",
+                            "readOnly": false,
+                            "floatingPointRange": null,
+                            "integerRange": null
+                        }
+                    };
+                }
+                node.describeClient.sendRequestAsync({
+                    "names": names
+                }, function (descResponse) {
+                    if (descResponse && descResponse.descriptors) {
+                        for (let i = 0; i < descResponse.descriptors.length; i++) {
+                            const desc = descResponse.descriptors.at(i);
+                            const paramInfo = params[desc.name];
+                            if (!paramInfo)
+                                continue;
+                            paramInfo.descriptor.description = desc.description || "";
+                            paramInfo.descriptor.readOnly = !!desc.read_only;
+                            if (desc.floating_point_range && desc.floating_point_range.length > 0) {
+                                const r = desc.floating_point_range.at(0);
+                                paramInfo.descriptor.floatingPointRange = {
+                                    "from": Number(r.from_value),
+                                    "to": Number(r.to_value),
+                                    "step": Number(r.step)
+                                };
+                            }
+                            if (desc.integer_range && desc.integer_range.length > 0) {
+                                const r = desc.integer_range.at(0);
+                                paramInfo.descriptor.integerRange = {
+                                    "from": Number(r.from_value),
+                                    "to": Number(r.to_value),
+                                    "step": Number(r.step)
+                                };
+                            }
+                        }
+                    }
+                    node.parameters = params;
                     node.loading = false;
                     node.loaded = true;
                     root.parametersChanged(nodeName);
-                    return;
-                }
-                node.getClient.sendRequestAsync({
-                        "names": names
-                    }, function (getResponse) {
-                        if (!getResponse || !getResponse.values) {
-                            Ros2.warn("ParameterService: Failed to get parameters for " + nodeName);
-                            node.loading = false;
-                            root.parametersChanged(nodeName);
-                            return;
-                        }
-                        const params = {};
-                        for (let i = 0; i < names.length; i++) {
-                            const paramValue = getResponse.values.at(i);
-                            params[names[i]] = {
-                                "name": names[i],
-                                "type": paramValue.type,
-                                "value": _extractValue(paramValue),
-                                "descriptor": {
-                                    "description": "",
-                                    "readOnly": false,
-                                    "floatingPointRange": null,
-                                    "integerRange": null
-                                }
-                            };
-                        }
-                        node.describeClient.sendRequestAsync({
-                                "names": names
-                            }, function (descResponse) {
-                                if (descResponse && descResponse.descriptors) {
-                                    for (let i = 0; i < descResponse.descriptors.length; i++) {
-                                        const desc = descResponse.descriptors.at(i);
-                                        const paramInfo = params[desc.name];
-                                        if (!paramInfo)
-                                            continue;
-                                        paramInfo.descriptor.description = desc.description || "";
-                                        paramInfo.descriptor.readOnly = !!desc.read_only;
-                                        if (desc.floating_point_range && desc.floating_point_range.length > 0) {
-                                            const r = desc.floating_point_range.at(0);
-                                            paramInfo.descriptor.floatingPointRange = {
-                                                "from": Number(r.from_value),
-                                                "to": Number(r.to_value),
-                                                "step": Number(r.step)
-                                            };
-                                        }
-                                        if (desc.integer_range && desc.integer_range.length > 0) {
-                                            const r = desc.integer_range.at(0);
-                                            paramInfo.descriptor.integerRange = {
-                                                "from": Number(r.from_value),
-                                                "to": Number(r.to_value),
-                                                "step": Number(r.step)
-                                            };
-                                        }
-                                    }
-                                }
-                                node.parameters = params;
-                                node.loading = false;
-                                node.loaded = true;
-                                root.parametersChanged(nodeName);
-                            });
-                    });
+                });
             });
+        });
     }
     function acquire(nodeName) {
         if (!nodeName)
@@ -336,23 +336,23 @@ QtObject {
         _pendingSets[key] = true;
         root.parametersChanged(nodeName);
         node.setClient.sendRequestAsync({
-                "parameters": [param]
-            }, function (response) {
-                delete _pendingSets[key];
-                if (!response || !response.results || response.results.length === 0) {
-                    root.parametersChanged(nodeName);
-                    if (callback)
-                        callback(false, "Service call failed");
-                    return;
-                }
-                const result = response.results.at(0);
-                if (result.successful) {
-                    if (node.loaded && node.parameters[paramName])
-                        node.parameters[paramName].value = value;
-                }
+            "parameters": [param]
+        }, function (response) {
+            delete _pendingSets[key];
+            if (!response || !response.results || response.results.length === 0) {
                 root.parametersChanged(nodeName);
                 if (callback)
-                    callback(result.successful, result.reason || "");
-            });
+                    callback(false, "Service call failed");
+                return;
+            }
+            const result = response.results.at(0);
+            if (result.successful) {
+                if (node.loaded && node.parameters[paramName])
+                    node.parameters[paramName].value = value;
+            }
+            root.parametersChanged(nodeName);
+            if (callback)
+                callback(result.successful, result.reason || "");
+        });
     }
 }

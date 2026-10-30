@@ -222,12 +222,12 @@ Item {
                 };
                 const frame = root.tfInterface.getFrame(frameId);
                 positions.push({
-                        "frameId": frameId,
-                        "x": x,
-                        "y": y,
-                        "isStatic": frame ? frame.isStatic : false,
-                        "age": root.buffer ? root.buffer.getTransformAge(frameId) : -1
-                    });
+                    "frameId": frameId,
+                    "x": x,
+                    "y": y,
+                    "isStatic": frame ? frame.isStatic : false,
+                    "age": root.buffer ? root.buffer.getTransformAge(frameId) : -1
+                });
                 const children = root.tfInterface.getChildren(frameId).slice().sort();
                 const childMain = mainPos + nodeMainSize + levelSpacing;
                 let childCross = crossPos;
@@ -265,23 +265,23 @@ Item {
                     if (horiz) {
                         // Right side of parent → left side of child
                         edgeList.push({
-                                "from": frame.parentId,
-                                "to": node.frameId,
-                                "fromX": pp.x + nodeWidth,
-                                "fromY": pp.y + nodeHeight / 2,
-                                "toX": node.x,
-                                "toY": node.y + nodeHeight / 2
-                            });
+                            "from": frame.parentId,
+                            "to": node.frameId,
+                            "fromX": pp.x + nodeWidth,
+                            "fromY": pp.y + nodeHeight / 2,
+                            "toX": node.x,
+                            "toY": node.y + nodeHeight / 2
+                        });
                     } else {
                         // Bottom of parent → top of child
                         edgeList.push({
-                                "from": frame.parentId,
-                                "to": node.frameId,
-                                "fromX": pp.x + nodeWidth / 2,
-                                "fromY": pp.y + nodeHeight,
-                                "toX": node.x + nodeWidth / 2,
-                                "toY": node.y
-                            });
+                            "from": frame.parentId,
+                            "to": node.frameId,
+                            "fromX": pp.x + nodeWidth / 2,
+                            "fromY": pp.y + nodeHeight,
+                            "toX": node.x + nodeWidth / 2,
+                            "toY": node.y
+                        });
                     }
                 }
             }
@@ -348,6 +348,7 @@ Item {
     // ========================================================================
     GraphCanvas {
         id: canvas
+
         anchors.fill: parent
 
         buttons: IconButton {
@@ -664,6 +665,7 @@ Item {
 
         Column {
             id: legendColumn
+
             anchors.centerIn: parent
             spacing: 8
 
@@ -720,6 +722,7 @@ Item {
     // ========================================================================
     TfTransformDisplay {
         id: transformPanel
+
         anchors.left: parent.left
         anchors.margins: 8
         anchors.top: parent.top
@@ -768,13 +771,13 @@ Item {
         width: searchExpanded ? 320 : searchToggle.width
         z: 2
 
-        Behavior on height  {
+        Behavior on height {
             NumberAnimation {
                 duration: 150
                 easing.type: Easing.InOutQuad
             }
         }
-        Behavior on width  {
+        Behavior on width {
             NumberAnimation {
                 duration: 150
                 easing.type: Easing.InOutQuad
@@ -783,6 +786,7 @@ Item {
 
         IconButton {
             id: searchToggle
+
             bottomInset: 0
             leftInset: 0
             objectName: "tfGraphSearchToggle"
@@ -799,6 +803,7 @@ Item {
         }
         SearchBar {
             id: graphSearchBar
+
             anchors.fill: parent
             anchors.margins: 6
             objectName: "tfGraphSearchBar"

@@ -8,6 +8,7 @@ Item {
 
     SpeedSlider {
         id: slider
+
         from: -5.0
         height: 400
         to: 5.0
@@ -17,13 +18,13 @@ Item {
     TestCase {
         function findDecimalFieldWith(item, minFrom, maxTo) {
             return findItemBy(item, function (c) {
-                    return c && c.hasOwnProperty("decimals") && c.hasOwnProperty("from") && c.hasOwnProperty("to") && c.hasOwnProperty("value") && c.from === minFrom && c.to === maxTo;
-                });
+                return c && c.hasOwnProperty("decimals") && c.hasOwnProperty("from") && c.hasOwnProperty("to") && c.hasOwnProperty("value") && c.from === minFrom && c.to === maxTo;
+            });
         }
         function findInnerSlider(item) {
             return findItemBy(item, function (c) {
-                    return c && c.hasOwnProperty("orientation") && c.hasOwnProperty("stepSize") && c.hasOwnProperty("from") && c.hasOwnProperty("to") && c.hasOwnProperty("value") && !c.hasOwnProperty("decimals");
-                });
+                return c && c.hasOwnProperty("orientation") && c.hasOwnProperty("stepSize") && c.hasOwnProperty("from") && c.hasOwnProperty("to") && c.hasOwnProperty("value") && !c.hasOwnProperty("decimals");
+            });
         }
 
         // Helpers to locate inner items by property signature.

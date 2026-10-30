@@ -25,38 +25,48 @@ Dialog {
         property var attributes: {
             if (!root.component)
                 return [];
-            return [{
+            return [
+                {
                     "name": "Name",
                     "data": root.component.name
-                }, {
+                },
+                {
                     "name": "State",
                     "data": root.component.state.label
-                }, {
+                },
+                {
                     "name": "Type",
                     "data": root.component.type
-                }, {
+                },
+                {
                     "name": "Is Async",
                     "data": root.component.is_async
-                }, {
+                },
+                {
                     "name": "R/W Rate",
                     "data": root.component.rw_rate
-                }, {
+                },
+                {
                     "name": "Class Type",
                     "data": root.component.class_type
-                }, {
+                },
+                {
                     "name": "Plugin Name",
                     "data": root.component.plugin_name
-                }];
+                }
+            ];
         }
     }
     ScrollView {
         id: scrollView
+
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
         ScrollBar.vertical.policy: ScrollBar.AsNeeded
         anchors.fill: parent
 
         GridLayout {
             id: mainLayout
+
             columns: 2
             rowSpacing: 8
             width: scrollView.availableWidth
@@ -111,6 +121,7 @@ Dialog {
             }
             Component {
                 id: interfaceDelegate
+
                 Rectangle {
                     color: index % 2 === 0 ? "transparent" : root.palette.alternateBase
                     height: 32

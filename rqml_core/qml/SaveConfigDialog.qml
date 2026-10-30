@@ -22,6 +22,7 @@ import QtQuick.Layouts
 
 Dialog {
     id: root
+
     function openAndFocus() {
         open();
         nameInput.forceActiveFocus();
@@ -38,6 +39,7 @@ Dialog {
 
     QtObject {
         id: d
+
         function save() {
             let name = nameInput.text.trim();
             if (name.length === 0 || name.indexOf("/") !== -1) {
@@ -49,13 +51,13 @@ Dialog {
             if (RQml.fileExists(path)) {
                 let overwrite = Qt.createQmlObject('import QtQuick.Dialogs; MessageDialog { title: "Overwrite Confirmation"; text: "A configuration named \\"' + name + '\\" already exists in the selected directory. Do you want to overwrite it?"; buttons: MessageDialog.Yes | MessageDialog.Cancel; }', root);
                 overwrite.buttonClicked.connect(function (button) {
-                        if (button === MessageDialog.Yes) {
-                            RQml.save(path);
-                            nameInput.text = "";
-                            root.close();
-                        }
-                        overwrite.destroy();
-                    });
+                    if (button === MessageDialog.Yes) {
+                        RQml.save(path);
+                        nameInput.text = "";
+                        root.close();
+                    }
+                    overwrite.destroy();
+                });
                 overwrite.open();
                 return;
             }
@@ -70,6 +72,7 @@ Dialog {
 
         TextField {
             id: nameInput
+
             Layout.fillWidth: true
             focus: true
             placeholderText: qsTr("Enter name for configuration")
@@ -96,6 +99,7 @@ Dialog {
         }
         ListView {
             id: configDirectoriesList
+
             function moveDown() {
                 let newCurrentIndex = currentIndex + 1;
                 if (newCurrentIndex >= model.count)

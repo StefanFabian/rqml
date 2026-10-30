@@ -75,6 +75,7 @@ Rectangle {
     // -------------------------------------------------------------------------
     IconTextButton {
         id: headerButton
+
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
@@ -95,13 +96,14 @@ Rectangle {
     // -------------------------------------------------------------------------
     Item {
         id: contentWrapper
+
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: headerButton.bottom
         clip: true
         height: root.expanded ? contentCol.implicitHeight : 0
 
-        Behavior on height  {
+        Behavior on height {
             NumberAnimation {
                 duration: 200
                 easing.type: Easing.InOutQuad
@@ -110,6 +112,7 @@ Rectangle {
 
         ColumnLayout {
             id: contentCol
+
             anchors.left: parent.left
             anchors.margins: 4
             anchors.right: parent.right

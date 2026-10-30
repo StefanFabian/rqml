@@ -22,6 +22,7 @@ KDDW.TitleBarBase {
 
     Label {
         id: titleLabel
+
         elide: Text.ElideRight
         text: root.title
 
@@ -34,6 +35,7 @@ KDDW.TitleBarBase {
     }
     Row {
         id: buttons
+
         spacing: 2
 
         anchors {

@@ -60,6 +60,7 @@ Dialog {
                     }
                     Button {
                         id: removeButton
+
                         enabled: RQml.configDirectories.length > 1
                         text: qsTr("Remove")
 
@@ -76,10 +77,10 @@ Dialog {
             onClicked: {
                 let dirDialog = Qt.createQmlObject('import QtQuick.Dialogs; FolderDialog { title: "Select Configuration Directory"; }', parent);
                 dirDialog.onAccepted.connect(function () {
-                        if (!dirDialog.selectedFolder)
-                            return;
-                        RQml.addConfigDirectory(dirDialog.selectedFolder);
-                    });
+                    if (!dirDialog.selectedFolder)
+                        return;
+                    RQml.addConfigDirectory(dirDialog.selectedFolder);
+                });
                 dirDialog.open();
             }
         }

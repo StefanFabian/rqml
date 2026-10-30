@@ -32,8 +32,7 @@ QtObject {
             }
         } catch (e)
         // Some objects might throw when accessing properties
-        {
-        }
+        {}
         for (var i = 0; i < foundChildren.length; i++) {
             var found = findChild(foundChildren[i], name);
             if (found)
@@ -72,8 +71,7 @@ QtObject {
                             return deep;
                     }
                 }
-            } catch (e2) {
-            }
+            } catch (e2) {}
 
             // Menu.actions exposes Action objects as a list - scan them too.
             try {
@@ -85,8 +83,7 @@ QtObject {
                             return act;
                     }
                 }
-            } catch (e3) {
-            }
+            } catch (e3) {}
         }
         return null;
     }

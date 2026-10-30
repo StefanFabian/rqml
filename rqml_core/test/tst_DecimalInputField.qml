@@ -8,6 +8,7 @@ Item {
 
     DecimalInputField {
         id: field
+
         decimals: 3
         from: 0.0
         to: 10.0

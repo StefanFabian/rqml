@@ -8,6 +8,7 @@ Item {
 
     ChangeSlider {
         id: slider
+
         currentValue: 50
         from: 0
         to: 100
@@ -52,6 +53,7 @@ Item {
     }
     ChangeSlider {
         id: mirroredSlider
+
         LayoutMirroring.enabled: true
         currentValue: 25
         from: 0

@@ -54,10 +54,12 @@ Rectangle {
 
     ToastManager {
         id: toastManager
+
         z: 100
     }
     ArrayEditDialog {
         id: arrayEditDialog
+
         onParameterSetFailed: function (paramName, reason) {
             toastManager.show(qsTr("Failed to set %1: %2").arg(paramName).arg(reason), "error");
         }
@@ -115,6 +117,7 @@ Rectangle {
 
             TextField {
                 id: filterTextField
+
                 Layout.fillWidth: true
                 objectName: "filterTextField"
                 padding: 8
@@ -281,6 +284,7 @@ Rectangle {
 
                 HoverHandler {
                     id: hoverHandler
+
                 }
                 TapHandler {
                     acceptedButtons: Qt.LeftButton
@@ -293,6 +297,7 @@ Rectangle {
                 }
                 RowLayout {
                     id: rowLayout
+
                     anchors.fill: parent
                     anchors.leftMargin: 8 + modelData.depth * 24
                     anchors.rightMargin: 8
@@ -324,6 +329,7 @@ Rectangle {
                     }
                     Loader {
                         id: editorLoader
+
                         Layout.alignment: Qt.AlignVCenter
                         Layout.fillWidth: true
                         enabled: !rowRect.isSetting && !modelData.readOnly
@@ -455,6 +461,7 @@ Rectangle {
     }
     Timer {
         id: searchDebounceTimer
+
         interval: 300
         repeat: false
 
@@ -537,10 +544,10 @@ Rectangle {
                 }
                 if (matchedName && !data.parameters[matchedName].descriptor.readOnly) {
                     ParameterService.setParameter(nodeName, matchedName, valToSet, data.parameters[matchedName].type, function (success, reason) {
-                            if (!success) {
-                                toastManager.show(qsTr("Failed to load %1: %2").arg(matchedName).arg(reason), "error");
-                            }
-                        });
+                        if (!success) {
+                            toastManager.show(qsTr("Failed to load %1: %2").arg(matchedName).arg(reason), "error");
+                        }
+                    });
                 }
             }
         }
@@ -597,15 +604,15 @@ Rectangle {
                 if (nodeVisible) {
                     let title = nodeName + (data && data.loaded ? " (" + paramCount + ")" : "");
                     newModel.push({
-                            "rowType": "node",
-                            "displayName": title,
-                            "fullPath": nodeName,
-                            "depth": 0,
-                            "expanded": isNodeExpanded,
-                            "starred": nodeIsStarred,
-                            "nodeName": nodeName,
-                            "paramName": ""
-                        });
+                        "rowType": "node",
+                        "displayName": title,
+                        "fullPath": nodeName,
+                        "depth": 0,
+                        "expanded": isNodeExpanded,
+                        "starred": nodeIsStarred,
+                        "nodeName": nodeName,
+                        "paramName": ""
+                    });
                     if (isNodeExpanded && data) {
                         if (data.loaded) {
                             for (let c = 0; c < nodeChildItems.length; c++) {
@@ -613,15 +620,15 @@ Rectangle {
                             }
                         } else if (data.loading) {
                             newModel.push({
-                                    "rowType": "loading",
-                                    "displayName": "Loading...",
-                                    "fullPath": nodeName + "/loading",
-                                    "depth": 1,
-                                    "expanded": false,
-                                    "starred": false,
-                                    "nodeName": nodeName,
-                                    "paramName": ""
-                                });
+                                "rowType": "loading",
+                                "displayName": "Loading...",
+                                "fullPath": nodeName + "/loading",
+                                "depth": 1,
+                                "expanded": false,
+                                "starred": false,
+                                "nodeName": nodeName,
+                                "paramName": ""
+                            });
                         }
                     }
                 }
@@ -633,12 +640,12 @@ Rectangle {
 
             // Restore scroll state securely by waiting for the view layout
             Qt.callLater(function () {
-                    if (currentScrollY > 0 && currentScrollY <= Math.max(0, treeView.contentHeight - treeView.height)) {
-                        treeView.contentY = currentScrollY;
-                    } else if (currentScrollY > 0) {
-                        treeView.positionViewAtEnd();
-                    }
-                });
+                if (currentScrollY > 0 && currentScrollY <= Math.max(0, treeView.contentHeight - treeView.height)) {
+                    treeView.contentY = currentScrollY;
+                } else if (currentScrollY > 0) {
+                    treeView.positionViewAtEnd();
+                }
+            });
         }
         function saveGroupParams(nodeName, fullPath, filePath) {
             let data = ParameterService.getNodeData(nodeName);
