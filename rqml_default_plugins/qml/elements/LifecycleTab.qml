@@ -31,6 +31,7 @@ ColumnLayout {
     }
     LifecycleInterface {
         id: iface
+
         onTransitionFailed: (node, label) => root.toasts.show(qsTr("Failed to %1 %2").arg(label).arg(node), "error")
     }
     QtObject {
@@ -84,6 +85,7 @@ ColumnLayout {
 
         SearchBar {
             id: searchBar
+
             Layout.fillWidth: true
             objectName: "nmLifecycleSearchBar"
             placeholderText: qsTr("Filter lifecycle nodes...")
@@ -113,6 +115,7 @@ ColumnLayout {
         }
         LoadingListView {
             id: nodeList
+
             model: iface.nodes
             objectName: "nmLifecycleList"
 
@@ -128,6 +131,7 @@ ColumnLayout {
 
                 ContextMenuArea {
                     id: contextMenu
+
                     objectName: "nmLifecycleContextMenu"
 
                     menu.onAboutToShow: iface.selectNode(row.model.name)
@@ -157,6 +161,7 @@ ColumnLayout {
                 }
                 RowLayout {
                     id: rowLayout
+
                     anchors.left: parent.left
                     anchors.leftMargin: 4
                     anchors.right: parent.right
@@ -184,6 +189,7 @@ ColumnLayout {
                     }
                     Button {
                         id: menuButton
+
                         Accessible.name: qsTr("Transitions of %1").arg(row.model.name)
                         Layout.preferredWidth: 40
                         objectName: "nmLifecycleMenuButton"

@@ -298,9 +298,9 @@ Item {
             const grouping = NamespaceBoxes.group(root.groupNamespaces ? shown : []);
             d.grouping = grouping;
             d.positions = GraphLayout.layout(shown, d.edges, Object.assign({
-                        "groupOf": root.groupNamespaces ? id => grouping.groups[id] : undefined,
-                        "groupGap": (above, below) => NamespaceBoxes.gap(grouping, above, below, d.layoutOpts)
-                    }, d.layoutOpts));
+                "groupOf": root.groupNamespaces ? id => grouping.groups[id] : undefined,
+                "groupGap": (above, below) => NamespaceBoxes.gap(grouping, above, below, d.layoutOpts)
+            }, d.layoutOpts));
             // The ignored nodes go in a grid one row below the graph and its boxes, leaving room for their own box.
             const bottoms = shown.map(id => d.positions[id].y + d.nodeHeight / 2).concat(Object.values(d.namespaceBoxes()).map(b => b.y + b.height));
             const top = (shown.length > 0 ? Math.max(...bottoms) + d.nodeHeight + d.rowGap : 0) + d.boxPadding + d.boxLabelHeight;
@@ -347,12 +347,14 @@ Item {
     }
     FontMetrics {
         id: labelMetrics
+
         font.bold: true
         font.family: "sans-serif"
         font.pixelSize: 11
     }
     GraphCanvas {
         id: canvas
+
         anchors.fill: parent
 
         onFitRequested: root.fitToView()
@@ -372,11 +374,11 @@ Item {
             const dimmed = edge => (selecting && !highlighted(edge)) || (searching && !d.isMatch(edge.from) && !d.isMatch(edge.to));
             const neighbors = {};
             edges.forEach(edge => {
-                    if (focused(edge.from))
-                        neighbors[edge.to] = true;
-                    if (focused(edge.to))
-                        neighbors[edge.from] = true;
-                });
+                if (focused(edge.from))
+                    neighbors[edge.to] = true;
+                if (focused(edge.to))
+                    neighbors[edge.from] = true;
+            });
             if (root.groupNamespaces) {
                 const boxes = d.namespaceBoxes();
                 ctx.textAlign = "left";
@@ -437,34 +439,34 @@ Item {
             }
             ctx.setLineDash([]);
             d.nodes.forEach(id => {
-                    const p = d.positions[id];
-                    const unrelated = selecting && !focused(id) && !neighbors[id];
-                    ctx.globalAlpha = unrelated || (searching && !d.isMatch(id)) ? 0.25 : 1;
-                    ctx.fillStyle = d.ignored[id] ? d.ignoredColor : d.nodeColor;
+                const p = d.positions[id];
+                const unrelated = selecting && !focused(id) && !neighbors[id];
+                ctx.globalAlpha = unrelated || (searching && !d.isMatch(id)) ? 0.25 : 1;
+                ctx.fillStyle = d.ignored[id] ? d.ignoredColor : d.nodeColor;
+                ctx.beginPath();
+                ctx.roundedRect(p.x - d.nodeWidth / 2, p.y - d.nodeHeight / 2, d.nodeWidth, d.nodeHeight, 5, 5);
+                ctx.fill();
+                if (focused(id) || neighbors[id] || d.isMatch(id)) {
+                    ctx.strokeStyle = palette.text;
+                    ctx.lineWidth = (id === d.selectedNode ? 3 : 2) / canvas.zoom;
+                    ctx.stroke();
+                }
+                if (showText) {
+                    ctx.fillStyle = "white";
+                    ctx.fillText(d.labels[id], p.x, p.y);
+                }
+                if (root.unconnected[id] > 0) {
+                    // Same orange "!" as the node list's warning icon, on the node's top right corner.
+                    const cx = p.x + d.nodeWidth / 2;
+                    const cy = p.y - d.nodeHeight / 2;
+                    ctx.fillStyle = d.warningColor;
                     ctx.beginPath();
-                    ctx.roundedRect(p.x - d.nodeWidth / 2, p.y - d.nodeHeight / 2, d.nodeWidth, d.nodeHeight, 5, 5);
+                    ctx.arc(cx, cy, d.warningRadius, 0, 2 * Math.PI);
                     ctx.fill();
-                    if (focused(id) || neighbors[id] || d.isMatch(id)) {
-                        ctx.strokeStyle = palette.text;
-                        ctx.lineWidth = (id === d.selectedNode ? 3 : 2) / canvas.zoom;
-                        ctx.stroke();
-                    }
-                    if (showText) {
-                        ctx.fillStyle = "white";
-                        ctx.fillText(d.labels[id], p.x, p.y);
-                    }
-                    if (root.unconnected[id] > 0) {
-                        // Same orange "!" as the node list's warning icon, on the node's top right corner.
-                        const cx = p.x + d.nodeWidth / 2;
-                        const cy = p.y - d.nodeHeight / 2;
-                        ctx.fillStyle = d.warningColor;
-                        ctx.beginPath();
-                        ctx.arc(cx, cy, d.warningRadius, 0, 2 * Math.PI);
-                        ctx.fill();
-                        ctx.fillStyle = "black";
-                        ctx.fillText("!", cx, cy);
-                    }
-                });
+                    ctx.fillStyle = "black";
+                    ctx.fillText("!", cx, cy);
+                }
+            });
             // Badges go on top because they are the hover and right-click targets of the edges.
             for (let i = 0; i < edges.length; ++i) {
                 const g = geometries[i];
@@ -482,6 +484,7 @@ Item {
 
         MouseArea {
             id: mouseArea
+
             acceptedButtons: Qt.LeftButton | Qt.RightButton
             anchors.fill: parent
             cursorShape: pressed ? Qt.ClosedHandCursor : d.hoveredNode !== "" || d.hoveredEdge ? Qt.PointingHandCursor : Qt.OpenHandCursor
@@ -561,6 +564,7 @@ Item {
     }
     Menu {
         id: nodeMenu
+
         objectName: "nmGraphNodeMenu"
 
         MenuItem {
@@ -585,6 +589,7 @@ Item {
     }
     Menu {
         id: badgeMenu
+
         objectName: "nmGraphBadgeMenu"
 
         Instantiator {

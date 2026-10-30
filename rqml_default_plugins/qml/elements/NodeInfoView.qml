@@ -53,34 +53,42 @@ ScrollView {
     }
     ColumnLayout {
         id: sections
+
         spacing: 0
         visible: !!root.info
         width: root.availableWidth
 
         Repeater {
-            model: [{
+            model: [
+                {
                     "key": "publishers",
                     "title": qsTr("Publishers"),
                     "peersTitle": qsTr("Subscribers of %1")
-                }, {
+                },
+                {
                     "key": "subscriptions",
                     "title": qsTr("Subscribers"),
                     "peersTitle": qsTr("Publishers of %1")
-                }, {
+                },
+                {
                     "key": "serviceServers",
                     "title": qsTr("Service Servers")
-                }, {
+                },
+                {
                     "key": "serviceClients",
                     "title": qsTr("Service Clients"),
                     "peersTitle": qsTr("Servers of %1")
-                }, {
+                },
+                {
                     "key": "actionServers",
                     "title": qsTr("Action Servers")
-                }, {
+                },
+                {
                     "key": "actionClients",
                     "title": qsTr("Action Clients"),
                     "peersTitle": qsTr("Servers of %1")
-                }]
+                }
+            ]
 
             delegate: ColumnLayout {
                 id: section
@@ -131,6 +139,7 @@ ScrollView {
                         }
                         RowLayout {
                             id: entryRow
+
                             anchors.left: parent.left
                             anchors.leftMargin: 8
                             anchors.right: parent.right
@@ -176,6 +185,7 @@ ScrollView {
 
                                 HoverHandler {
                                     id: errorHover
+
                                 }
                             }
                             Button {
@@ -227,9 +237,9 @@ ScrollView {
                     byNode[peer.node].push(peer.qos);
             }
             nodes = Object.keys(byNode).sort().map(node => ({
-                            "node": node,
-                            "qos": byNode[node]
-                        }));
+                        "node": node,
+                        "qos": byNode[node]
+                    }));
             peerPopup.title = title;
             const pos = button.mapToItem(parent, button.width, button.height);
             x = pos.x - width;

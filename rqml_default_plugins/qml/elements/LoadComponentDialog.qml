@@ -58,15 +58,15 @@ Dialog {
 
     Component.onCompleted: standardButton(Dialog.Ok).enabled = Qt.binding(() => d.valid)
     onAccepted: root.loadRequested(d.container, {
-            "packageName": packageSelector.text.trim(),
-            "pluginName": pluginSelector.text.trim(),
-            "nodeName": nodeNameField.text.trim(),
-            "nodeNamespace": namespaceField.text.trim(),
-            "remapRules": remapArea.text.split("\n").map(rule => rule.trim()).filter(rule => rule !== ""),
-            "logLevel": logLevelComboBox.currentValue,
-            "parameters": d.parsedParameters.parameters,
-            "useIntraProcessComms": intraProcessCheckBox.checked
-        })
+        "packageName": packageSelector.text.trim(),
+        "pluginName": pluginSelector.text.trim(),
+        "nodeName": nodeNameField.text.trim(),
+        "nodeNamespace": namespaceField.text.trim(),
+        "remapRules": remapArea.text.split("\n").map(rule => rule.trim()).filter(rule => rule !== ""),
+        "logLevel": logLevelComboBox.currentValue,
+        "parameters": d.parsedParameters.parameters,
+        "useIntraProcessComms": intraProcessCheckBox.checked
+    })
 
     QtObject {
         id: d
@@ -84,6 +84,7 @@ Dialog {
     }
     ScrollView {
         id: scrollView
+
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
         anchors.fill: parent
         contentWidth: availableWidth
@@ -97,6 +98,7 @@ Dialog {
             }
             FuzzySelector {
                 id: packageSelector
+
                 Layout.fillWidth: true
                 model: Object.keys(d.plugins ?? {})
                 objectName: "nmLoadPackageField"
@@ -109,6 +111,7 @@ Dialog {
             }
             FuzzySelector {
                 id: pluginSelector
+
                 Layout.fillWidth: true
                 model: (d.plugins ?? {})[packageSelector.text.trim()] ?? []
                 objectName: "nmLoadPluginField"
@@ -121,6 +124,7 @@ Dialog {
             }
             TextField {
                 id: nodeNameField
+
                 Layout.fillWidth: true
                 objectName: "nmLoadNodeNameField"
                 placeholderText: qsTr("optional")
@@ -132,6 +136,7 @@ Dialog {
             }
             TextField {
                 id: namespaceField
+
                 Layout.fillWidth: true
                 objectName: "nmLoadNamespaceField"
                 placeholderText: qsTr("optional")
@@ -144,6 +149,7 @@ Dialog {
             }
             TextArea {
                 id: remapArea
+
                 Layout.fillWidth: true
                 Layout.minimumHeight: 64
                 objectName: "nmLoadRemapArea"
@@ -156,6 +162,7 @@ Dialog {
             }
             TextArea {
                 id: parameterArea
+
                 Layout.fillWidth: true
                 Layout.minimumHeight: 64
                 objectName: "nmLoadParameterArea"
@@ -176,33 +183,42 @@ Dialog {
             }
             ComboBox {
                 id: logLevelComboBox
+
                 Layout.fillWidth: true
                 // rcl_interfaces/msg/Log levels.
-                model: [{
+                model: [
+                    {
                         "text": qsTr("Default"),
                         "value": 0
-                    }, {
+                    },
+                    {
                         "text": qsTr("Debug"),
                         "value": 10
-                    }, {
+                    },
+                    {
                         "text": qsTr("Info"),
                         "value": 20
-                    }, {
+                    },
+                    {
                         "text": qsTr("Warn"),
                         "value": 30
-                    }, {
+                    },
+                    {
                         "text": qsTr("Error"),
                         "value": 40
-                    }, {
+                    },
+                    {
                         "text": qsTr("Fatal"),
                         "value": 50
-                    }]
+                    }
+                ]
                 objectName: "nmLoadLogLevelComboBox"
                 textRole: "text"
                 valueRole: "value"
             }
             CheckBox {
                 id: intraProcessCheckBox
+
                 Layout.columnSpan: 2
                 objectName: "nmLoadIntraProcessCheckBox"
                 text: qsTr("Use intra-process communication")

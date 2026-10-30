@@ -94,6 +94,7 @@ Item {
     }
     Canvas {
         id: canvas
+
         anchors.fill: parent
 
         onPaint: {
@@ -108,6 +109,7 @@ Item {
     }
     Item {
         id: content
+
         anchors.fill: parent
     }
     WheelHandler {
@@ -120,6 +122,7 @@ Item {
     }
     Row {
         id: zoomRow
+
         anchors.bottom: parent.bottom
         anchors.margins: 4
         anchors.right: parent.right
@@ -145,6 +148,7 @@ Item {
         }
         Row {
             id: extraButtons
+
             spacing: 4
             visible: children.length > 0
         }

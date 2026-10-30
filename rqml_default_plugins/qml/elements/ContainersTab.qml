@@ -32,6 +32,7 @@ ColumnLayout {
     }
     ContainerInterface {
         id: iface
+
         onContainersChanged: {
             const persisted = context.selectedContainer;
             // Discovery is incremental, so the persisted container can appear after another one was picked.
@@ -53,7 +54,7 @@ ColumnLayout {
             objectName: "nmContainerComboBox"
 
             // Delayed so it applies after the ComboBox resets its index for a new model.
-            Binding on currentIndex  {
+            Binding on currentIndex {
                 delayed: true
                 value: iface.containers.indexOf(iface.selectedContainer)
             }
@@ -74,6 +75,7 @@ ColumnLayout {
     }
     SearchBar {
         id: searchBar
+
         Layout.fillWidth: true
         Layout.leftMargin: 4
         Layout.rightMargin: 4
@@ -83,6 +85,7 @@ ColumnLayout {
     }
     LoadingListView {
         id: componentList
+
         Layout.fillHeight: true
         Layout.fillWidth: true
         isLoading: iface.loading
@@ -165,6 +168,7 @@ ColumnLayout {
     }
     LoadComponentDialog {
         id: loadDialog
+
         objectName: "nmLoadComponentDialog"
 
         onLoadRequested: (container, params) => iface.loadComponent(container, params)

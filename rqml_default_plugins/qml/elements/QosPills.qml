@@ -86,9 +86,11 @@ ColumnLayout {
 
                     HoverHandler {
                         id: hover
+
                     }
                     Label {
                         id: label
+
                         anchors.centerIn: parent
                         // Perceived brightness: black reads better on all but the darkest pill colors.
                         color: 0.299 * parent.color.r + 0.587 * parent.color.g + 0.114 * parent.color.b > 0.4 ? "black" : "white"

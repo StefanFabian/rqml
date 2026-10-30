@@ -39,6 +39,7 @@ ColumnLayout {
     }
     NodeGraphInterface {
         id: iface
+
         hideCommon: hideCommonCheckBox.checked
         hideHidden: hideHiddenCheckBox.checked
         hideTf: hideTfCheckBox.checked
@@ -52,6 +53,7 @@ ColumnLayout {
 
         SearchBar {
             id: searchBar
+
             Layout.fillWidth: true
             objectName: "nmGraphSearchBar"
             placeholderText: qsTr("Search nodes...")
@@ -72,6 +74,7 @@ ColumnLayout {
 
         CheckBox {
             id: hideHiddenCheckBox
+
             checked: context.hideHiddenNodes ?? true
             objectName: "nmGraphHideHiddenCheckBox"
             text: qsTr("Hide hidden nodes")
@@ -80,6 +83,7 @@ ColumnLayout {
         }
         CheckBox {
             id: hideCommonCheckBox
+
             ToolTip.text: qsTr("Hides %1 and the parameter, logger and type description services").arg(GraphModel.COMMON_HUB_TOPICS.join(", "))
             ToolTip.visible: hovered
             checked: context.graphHideCommon ?? true
@@ -90,6 +94,7 @@ ColumnLayout {
         }
         CheckBox {
             id: hideTfCheckBox
+
             checked: context.graphHideTf ?? true
             objectName: "nmGraphHideTfCheckBox"
             text: qsTr("Hide TF")
@@ -98,6 +103,7 @@ ColumnLayout {
         }
         CheckBox {
             id: showTopicsCheckBox
+
             checked: context.graphShowTopics ?? true
             objectName: "nmGraphShowTopicsCheckBox"
             text: qsTr("Topics")
@@ -106,6 +112,7 @@ ColumnLayout {
         }
         CheckBox {
             id: showServicesCheckBox
+
             checked: context.graphShowServices ?? false
             objectName: "nmGraphShowServicesCheckBox"
             text: qsTr("Services")
@@ -114,6 +121,7 @@ ColumnLayout {
         }
         CheckBox {
             id: showActionsCheckBox
+
             checked: context.graphShowActions ?? false
             objectName: "nmGraphShowActionsCheckBox"
             text: qsTr("Actions")
@@ -122,6 +130,7 @@ ColumnLayout {
         }
         CheckBox {
             id: groupNamespacesCheckBox
+
             checked: context.graphGroupNamespaces ?? false
             objectName: "nmGraphGroupNamespacesCheckBox"
             text: qsTr("Group by namespace")
@@ -131,6 +140,7 @@ ColumnLayout {
     }
     NodeGraphView {
         id: view
+
         Layout.fillHeight: true
         Layout.fillWidth: true
         edges: iface.graph.edges

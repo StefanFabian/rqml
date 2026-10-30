@@ -35,10 +35,10 @@ Object {
                 root.nodes.remove(row);
             if (row === root.nodes.count || root.nodes.get(row).name !== name) {
                 root.nodes.insert(row, {
-                        "name": name,
-                        "state": "unknown",
-                        "pending": ""
-                    });
+                    "name": name,
+                    "state": "unknown",
+                    "pending": ""
+                });
             }
             ++row;
         }
@@ -75,49 +75,51 @@ Object {
     function triggerTransition(node, transition) {
         d.setNodeProperty(node, "pending", transition.label);
         clientCache.send(node, "/change_state", "lifecycle_msgs/srv/ChangeState", {
-                "transition": {
-                    "id": transition.id,
-                    "label": ""
-                }
-            }, response => {
-                d.setNodeProperty(node, "pending", "");
-                if (!response || !response.success)
-                    root.transitionFailed(node, transition.label);
-                // Without a response the node may be gone, the next refresh() queries the state.
-                if (response)
-                    d.queryState(node);
-            });
+            "transition": {
+                "id": transition.id,
+                "label": ""
+            }
+        }, response => {
+            d.setNodeProperty(node, "pending", "");
+            if (!response || !response.success)
+                root.transitionFailed(node, transition.label);
+            // Without a response the node may be gone, the next refresh() queries the state.
+            if (response)
+                d.queryState(node);
+        });
     }
 
     ServiceClientCache {
         id: clientCache
+
     }
     QtObject {
         id: d
+
         function queryState(node) {
             if (clientCache.isPending(node, "/get_state"))
                 return;
             clientCache.send(node, "/get_state", "lifecycle_msgs/srv/GetState", {}, response => {
-                    if (response)
-                        d.setNodeState(node, response.current_state.label);
-                });
+                if (response)
+                    d.setNodeState(node, response.current_state.label);
+            });
         }
         function queryTransitions(node) {
             clientCache.send(node, "/get_available_transitions", "lifecycle_msgs/srv/GetAvailableTransitions", {}, response => {
-                    if (!response || node !== root.selectedNode)
-                        return;
-                    const transitions = [];
-                    for (let i = 0; i < response.available_transitions.length; ++i) {
-                        const t = response.available_transitions.at(i).transition;
-                        // Ids from 10 up are the state machine's internal callback transitions, e.g. on_configure_success.
-                        if (t.id >= 1 && t.id <= 8)
-                            transitions.push({
-                                    "id": t.id,
-                                    "label": t.label
-                                });
-                    }
-                    root.availableTransitions = transitions;
-                });
+                if (!response || node !== root.selectedNode)
+                    return;
+                const transitions = [];
+                for (let i = 0; i < response.available_transitions.length; ++i) {
+                    const t = response.available_transitions.at(i).transition;
+                    // Ids from 10 up are the state machine's internal callback transitions, e.g. on_configure_success.
+                    if (t.id >= 1 && t.id <= 8)
+                        transitions.push({
+                            "id": t.id,
+                            "label": t.label
+                        });
+                }
+                root.availableTransitions = transitions;
+            });
         }
         // Sets the role of the node's row; returns whether the value changed.
         function setNodeProperty(node, role, value) {

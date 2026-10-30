@@ -9,13 +9,13 @@ import "GraphModel.js" as GraphModel
 Object {
     //! Graph {nodes, edges} of the last refresh() with the current filters applied.
     readonly property var graph: GraphModel.buildGraph(d.infos, {
-            "hideHidden": hideHidden,
-            "hideCommon": hideCommon,
-            "hideTf": hideTf,
-            "showTopics": showTopics,
-            "showServices": showServices,
-            "showActions": showActions
-        })
+        "hideHidden": hideHidden,
+        "hideCommon": hideCommon,
+        "hideTf": hideTf,
+        "showTopics": showTopics,
+        "showServices": showServices,
+        "showActions": showActions
+    })
 
     //! Whether the last refresh() found any nodes, including those the filters hide.
     readonly property bool hasNodes: d.infos.length > 0
@@ -61,6 +61,7 @@ Object {
     // The queries block the UI thread, so they wait until the busy indicator is painted.
     Timer {
         id: buildTimer
+
         interval: 50
 
         onTriggered: {

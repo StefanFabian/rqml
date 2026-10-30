@@ -44,14 +44,14 @@ Item {
     // A node as returned by Ros2.getAllNodeInfo(); extra: {role: [name]} for the service and action roles.
     function info(fullName, publishers, subscribers, extra) {
         return Object.assign(nodeInfo(publishers, subscribers, extra), {
-                "fullName": fullName,
-                "name": fullName.slice(fullName.lastIndexOf("/") + 1)
-            });
+            "fullName": fullName,
+            "name": fullName.slice(fullName.lastIndexOf("/") + 1)
+        });
     }
     function link(kind, name) {
         return Object.assign({
-                "kind": kind
-            }, topic(name));
+            "kind": kind
+        }, topic(name));
     }
     function nodeInfo(publishers, subscribers, extra) {
         const result = {
@@ -86,14 +86,17 @@ Item {
     }
     Utils {
         id: helpers
+
     }
     Component {
         id: interfaceComponent
+
         NodeGraphInterface {
         }
     }
     Component {
         id: viewComponent
+
         NodeGraphView {
             height: 600
             width: 1000
@@ -101,6 +104,7 @@ Item {
     }
     Component {
         id: tabComponent
+
         NodeGraphTab {
             anchors.fill: parent
         }
@@ -120,28 +124,38 @@ Item {
             compare(g.edges.map(e => e.from + " " + e.to), ["/dup /x", "/x /dup"]);
         }
         function test_empty_datatypes_do_not_hide_type() {
-            const g = GraphModel.buildGraph([{
-                        "fullName": "/a",
-                        "name": "a",
-                        "publishers": [{
-                                "name": "/t",
-                                "datatypes": []
-                            }]
-                    }, {
-                        "fullName": "/b",
-                        "name": "b",
-                        "publishers": [{
-                                "name": "/t",
-                                "datatypes": ["pkg/msg/First"]
-                            }]
-                    }, {
-                        "fullName": "/c",
-                        "name": "c",
-                        "subscriptions": [{
-                                "name": "/t",
-                                "datatypes": []
-                            }]
-                    }], {});
+            const g = GraphModel.buildGraph([
+                {
+                    "fullName": "/a",
+                    "name": "a",
+                    "publishers": [
+                        {
+                            "name": "/t",
+                            "datatypes": []
+                        }
+                    ]
+                },
+                {
+                    "fullName": "/b",
+                    "name": "b",
+                    "publishers": [
+                        {
+                            "name": "/t",
+                            "datatypes": ["pkg/msg/First"]
+                        }
+                    ]
+                },
+                {
+                    "fullName": "/c",
+                    "name": "c",
+                    "subscriptions": [
+                        {
+                            "name": "/t",
+                            "datatypes": []
+                        }
+                    ]
+                }
+            ], {});
             compare(g.edges.map(e => e.interfaces[0].datatypes), [["pkg/msg/First"], ["pkg/msg/First"]]);
         }
         function test_fan_in() {
@@ -152,106 +166,112 @@ Item {
             const topics = ["/rosout", "/parameter_events", "/clock", "/tf", "/data"];
             const infos = [info("/a", topics, []), info("/b", [], topics)];
             compare(GraphModel.buildGraph(infos, {
-                        "hideCommon": true
-                    }).edges[0].interfaces.map(t => t.name), ["/data", "/tf"]);
+                "hideCommon": true
+            }).edges[0].interfaces.map(t => t.name), ["/data", "/tf"]);
             compare(GraphModel.buildGraph(infos, {}).edges[0].interfaces.length, 5);
         }
         function test_hide_hidden() {
             const infos = [info("/a", ["/t"], []), info("/ns/_hidden", [], ["/t"])];
             compare(GraphModel.buildGraph(infos, {
-                        "hideHidden": true
-                    }), {
-                    "nodes": ["/a"],
-                    "edges": []
-                });
+                "hideHidden": true
+            }), {
+                "nodes": ["/a"],
+                "edges": []
+            });
             compare(GraphModel.buildGraph(infos, {}).nodes, ["/a", "/ns/_hidden"]);
         }
         function test_hide_tf_including_namespaced() {
             const topics = ["/tf", "/tf_static", "/robot/tf", "/robot/tf_static", "/tf_relay", "/robot/tfx"];
             const infos = [info("/a", topics, []), info("/b", [], topics)];
             compare(GraphModel.buildGraph(infos, {
-                        "hideTf": true
-                    }).edges[0].interfaces.map(t => t.name), ["/robot/tfx", "/tf_relay"]);
+                "hideTf": true
+            }).edges[0].interfaces.map(t => t.name), ["/robot/tfx", "/tf_relay"]);
         }
         function test_missing_lists_count_as_empty() {
-            const g = GraphModel.buildGraph([{
-                        "fullName": "/vanished",
-                        "name": "vanished"
-                    }, info("/a", ["/t"], [])], {});
+            const g = GraphModel.buildGraph([
+                {
+                    "fullName": "/vanished",
+                    "name": "vanished"
+                },
+                info("/a", ["/t"], [])], {});
             compare(g, {
-                    "nodes": ["/a", "/vanished"],
-                    "edges": []
-                });
+                "nodes": ["/a", "/vanished"],
+                "edges": []
+            });
         }
         function test_no_self_edge() {
             compare(GraphModel.buildGraph([info("/a", ["/t"], ["/t"])], {}), {
-                    "nodes": ["/a"],
-                    "edges": []
-                });
+                "nodes": ["/a"],
+                "edges": []
+            });
         }
         function test_service_self_connection_left_out() {
             const g = GraphModel.buildGraph([info("/a", [], [], {
-                            "serviceClients": ["/a/srv"],
-                            "serviceServers": ["/a/srv"]
-                        })], {
-                    "showServices": true
-                });
+                    "serviceClients": ["/a/srv"],
+                    "serviceServers": ["/a/srv"]
+                })], {
+                "showServices": true
+            });
             compare(g.edges, []);
         }
         function test_services_and_actions() {
             const infos = [info("/client", ["/t"], [], {
-                        "serviceClients": ["/add", "/server/get_parameters"],
-                        "actionClients": ["/nav"]
-                    }), info("/server", [], ["/t"], {
-                        "serviceServers": ["/add", "/server/get_parameters"],
-                        "actionServers": ["/nav"]
-                    })];
+                    "serviceClients": ["/add", "/server/get_parameters"],
+                    "actionClients": ["/nav"]
+                }), info("/server", [], ["/t"], {
+                    "serviceServers": ["/add", "/server/get_parameters"],
+                    "actionServers": ["/nav"]
+                })];
             compare(GraphModel.buildGraph(infos, {}), {
-                    "nodes": ["/client", "/server"],
-                    "edges": [edge("/client", "/server", ["/t"])]
-                }, "only topics by default");
+                "nodes": ["/client", "/server"],
+                "edges": [edge("/client", "/server", ["/t"])]
+            }, "only topics by default");
             compare(GraphModel.buildGraph(infos, {
-                        "showServices": true,
-                        "showActions": true,
-                        "hideCommon": true
-                    }).edges, [{
-                        "from": "/client",
-                        "to": "/server",
-                        "interfaces": [link("action", "/nav"), link("service", "/add"), link("topic", "/t")]
-                    }]);
+                "showServices": true,
+                "showActions": true,
+                "hideCommon": true
+            }).edges, [
+                {
+                    "from": "/client",
+                    "to": "/server",
+                    "interfaces": [link("action", "/nav"), link("service", "/add"), link("topic", "/t")]
+                }
+            ]);
             compare(GraphModel.buildGraph(infos, {
-                        "showServices": true
-                    }).edges[0].interfaces.map(i => i.kind + " " + i.name), ["service /add", "service /server/get_parameters", "topic /t"]);
+                "showServices": true
+            }).edges[0].interfaces.map(i => i.kind + " " + i.name), ["service /add", "service /server/get_parameters", "topic /t"]);
             compare(GraphModel.buildGraph(infos, {
-                        "showTopics": false,
-                        "showActions": true
-                    }).edges[0].interfaces, [link("action", "/nav")], "topics can be hidden");
+                "showTopics": false,
+                "showActions": true
+            }).edges[0].interfaces, [link("action", "/nav")], "topics can be hidden");
         }
         function test_simple_edge() {
             const g = GraphModel.buildGraph([info("/b", [], ["/t"]), info("/a", ["/t"], [])], {});
             compare(g, {
-                    "nodes": ["/a", "/b"],
-                    "edges": [edge("/a", "/b", ["/t"])]
-                });
+                "nodes": ["/a", "/b"],
+                "edges": [edge("/a", "/b", ["/t"])]
+            });
         }
         function test_unconnected_counts_missing_counterparts_across_nodes() {
             const infos = [info("/talker", ["/chatter"], [], {
-                        "serviceServers": ["/served"],
-                        "actionServers": ["/move"]
-                    }), info("/listener", [], ["/chatter", "/silent"], {
-                        "serviceClients": ["/served", "/unserved", "/gone/get_parameters"],
-                        "actionClients": ["/move", "/unserved_action"]
-                    })];
+                    "serviceServers": ["/served"],
+                    "actionServers": ["/move"]
+                }), info("/listener", [], ["/chatter", "/silent"], {
+                    "serviceClients": ["/served", "/unserved", "/gone/get_parameters"],
+                    "actionClients": ["/move", "/unserved_action"]
+                })];
             // /silent, /unserved and /unserved_action; default services don't count.
             compare(GraphModel.countUnconnected(infos), {
-                    "/listener": 3
-                });
+                "/listener": 3
+            });
         }
         function test_unconnected_counts_only_nodes_with_problems() {
-            compare(GraphModel.countUnconnected([info("/a", ["/t"], ["/t"]), {
-                            "fullName": "/empty",
-                            "name": "empty"
-                        }]), {});
+            compare(GraphModel.countUnconnected([info("/a", ["/t"], ["/t"]),
+                {
+                    "fullName": "/empty",
+                    "name": "empty"
+                }
+            ]), {});
         }
 
         name: "GraphModel"
@@ -283,9 +303,9 @@ Item {
                 const b = Math.floor(random() * nodeCount);
                 if (a !== b)
                     edges.push({
-                            "from": nodes[acyclic ? Math.min(a, b) : a],
-                            "to": nodes[acyclic ? Math.max(a, b) : b]
-                        });
+                        "from": nodes[acyclic ? Math.min(a, b) : a],
+                        "to": nodes[acyclic ? Math.max(a, b) : b]
+                    });
             }
             return {
                 "nodes": nodes,
@@ -332,11 +352,11 @@ Item {
         function test_empty_and_single_node() {
             compare(GraphLayout.layout([], [], layoutOpts), {});
             compare(GraphLayout.layout(["/a"], [], layoutOpts), {
-                    "/a": {
-                        "x": layoutOpts.nodeWidth / 2,
-                        "y": layoutOpts.nodeHeight / 2
-                    }
-                });
+                "/a": {
+                    "x": layoutOpts.nodeWidth / 2,
+                    "y": layoutOpts.nodeHeight / 2
+                }
+            });
         }
         function test_feedback_loop_points_back() {
             const p = GraphLayout.layout(["/driver", "/planner", "/tracker"], [edge("/driver", "/tracker"), edge("/tracker", "/planner"), edge("/planner", "/tracker")], layoutOpts);
@@ -347,8 +367,8 @@ Item {
             const edges = [edge("/root", "/a/x"), edge("/a/x", "/a/y"), edge("/a/x", "/a/z"), edge("/a/y", "/b/x"), edge("/b/x", "/b/y"), edge("/b/y", "/a/sub/x")];
             const groupOf = id => id.slice(0, id.lastIndexOf("/")) || "/";
             const opts = Object.assign({
-                    "groupOf": groupOf
-                }, layoutOpts);
+                "groupOf": groupOf
+            }, layoutOpts);
             const p = GraphLayout.layout(nodes, edges, opts);
             verifyLayout(nodes, p);
             const ungrouped = GraphLayout.layout(nodes, edges, layoutOpts);
@@ -356,9 +376,9 @@ Item {
                 compare(p[e.from].x, ungrouped[e.from].x, e.from + " keeps its layer");
             const groups = ["/", "/a", "/a/sub", "/a-b", "/b"];
             const ranges = groups.map(group => {
-                    const ys = nodes.filter(id => groupOf(id) === group).map(id => p[id].y);
-                    return [Math.min(...ys), Math.max(...ys)];
-                });
+                const ys = nodes.filter(id => groupOf(id) === group).map(id => p[id].y);
+                return [Math.min(...ys), Math.max(...ys)];
+            });
             for (let i = 1; i < ranges.length; ++i)
                 verify(ranges[i][0] - ranges[i - 1][1] >= 2 * (layoutOpts.nodeHeight + layoutOpts.rowGap), groups[i] + " band below " + groups[i - 1] + " with an empty row in between");
             verify(p["/a/lone"].y > Math.max(p["/a/x"].y, p["/a/y"].y, p["/a/z"].y), "isolated nodes at the bottom of their band");
@@ -399,8 +419,8 @@ Item {
         function test_timing_grouped() {
             const g = randomGraph(300, 650, 11, false);
             const opts = Object.assign({
-                    "groupOf": id => "/g" + (Number(id.slice(2)) % 10)
-                }, layoutOpts);
+                "groupOf": id => "/g" + (Number(id.slice(2)) % 10)
+            }, layoutOpts);
             verifyLayout(g.nodes, GraphLayout.layout(g.nodes, g.edges, opts));
             const ungrouped = layoutMs(g);
             const ms = layoutMs(g, opts);
@@ -451,14 +471,14 @@ Item {
             Ros2.registerNode("/listener", nodeInfo([], ["/chatter"]));
             const iface = createTemporaryObject(interfaceComponent, root);
             compare(iface.graph, {
-                    "nodes": [],
-                    "edges": []
-                });
+                "nodes": [],
+                "edges": []
+            });
             refreshed(iface);
             compare(iface.graph, {
-                    "nodes": ["/listener", "/talker"],
-                    "edges": [edge("/talker", "/listener", ["/chatter"])]
-                });
+                "nodes": ["/listener", "/talker"],
+                "edges": [edge("/talker", "/listener", ["/chatter"])]
+            });
         }
         function test_filter_toggle_rebuilds_without_query() {
             Ros2.registerNode("/a", nodeInfo(["/rosout", "/data"], []));
@@ -476,9 +496,9 @@ Item {
             Ros2.registerNode("/_hidden_listener", nodeInfo([], ["/chatter"]));
             const iface = refreshed(createTemporaryObject(interfaceComponent, root));
             compare(iface.graph, {
-                    "nodes": ["/talker"],
-                    "edges": []
-                });
+                "nodes": ["/talker"],
+                "edges": []
+            });
             iface.hideHidden = false;
             compare(iface.graph.nodes, ["/_hidden_listener", "/talker"]);
             compare(iface.graph.edges.length, 1);
@@ -498,8 +518,8 @@ Item {
             Ros2.registerNode("/rqml", nodeInfo(["/status"], []));
             const iface = refreshed(createTemporaryObject(interfaceComponent, root));
             compare(iface.unconnected, {
-                    "/listener": 1
-                });
+                "/listener": 1
+            });
             // Like the rest of the graph, the counts only change on refresh().
             Ros2.registerNode("/other_listener", nodeInfo([], ["/chatter"]));
             compare(Object.keys(iface.unconnected), ["/listener"]);
@@ -510,9 +530,9 @@ Item {
     TestCase {
         function createView(nodes, edges) {
             const view = createTemporaryObject(viewComponent, root, {
-                    "nodes": nodes,
-                    "edges": edges
-                });
+                "nodes": nodes,
+                "edges": edges
+            });
             tryVerify(() => view._testNodeRect(nodes[0]) !== null);
             return view;
         }
@@ -580,9 +600,9 @@ Item {
         function test_double_click_node_requests_inspect() {
             const view = createView(demoNodes, []);
             const spy = createTemporaryObject(signalSpyComponent, root, {
-                    "target": view,
-                    "signalName": "inspectNodeRequested"
-                });
+                "target": view,
+                "signalName": "inspectNodeRequested"
+            });
             const center = rectCenter(view._testNodeRect("/robot/talker2"));
             mouseDoubleClickSequence(view, center.x, center.y);
             compare(spy.count, 1);
@@ -608,15 +628,18 @@ Item {
             tryVerify(() => view._testNodeRect("/talker").y === before.y, 1000, "relayout discards the dragged position");
         }
         function test_edge_kinds_in_tooltip_menu_and_legend() {
-            const view = createView(["/client", "/server", "/talker"], [{
-                        "from": "/client",
-                        "to": "/server",
-                        "interfaces": [link("action", "/nav"), link("service", "/add")]
-                    }, {
-                        "from": "/client",
-                        "to": "/talker",
-                        "interfaces": [link("service", "/talker/reset")]
-                    }, edge("/talker", "/server", ["/t"])]);
+            const view = createView(["/client", "/server", "/talker"], [
+                {
+                    "from": "/client",
+                    "to": "/server",
+                    "interfaces": [link("action", "/nav"), link("service", "/add")]
+                },
+                {
+                    "from": "/client",
+                    "to": "/talker",
+                    "interfaces": [link("service", "/talker/reset")]
+                },
+                edge("/talker", "/server", ["/t"])]);
             const legend = helpers.findChild(view, "nmGraphLegend");
             const legendLabels = () => Array.from(legend.children).filter(c => c.children.length === 2).map(row => row.children[1].text);
             verify(legend.visible);
@@ -666,10 +689,10 @@ Item {
         }
         function test_fit_waits_for_size() {
             const view = createTemporaryObject(viewComponent, root, {
-                    "width": 0,
-                    "height": 0,
-                    "nodes": demoNodes
-                });
+                "width": 0,
+                "height": 0,
+                "nodes": demoNodes
+            });
             tryVerify(() => view._testNodeRect("/talker") !== null);
             view.width = 1000;
             view.height = 600;
@@ -769,9 +792,9 @@ Item {
         function test_node_menu_actions() {
             const view = createView(demoNodes, []);
             const spy = createTemporaryObject(signalSpyComponent, root, {
-                    "target": view,
-                    "signalName": "inspectNodeRequested"
-                });
+                "target": view,
+                "signalName": "inspectNodeRequested"
+            });
             const center = rectCenter(view._testNodeRect("/robot/talker2"));
             const menu = helpers.findChild(view, "nmGraphNodeMenu");
             mouseClick(view, center.x, center.y, Qt.RightButton);
@@ -803,9 +826,9 @@ Item {
             const nodes = ["/camera/driver", "/camera/rectify", "/front_camera", "/lidar", "/planner"];
             const view = createView(nodes, [edge("/camera/driver", "/camera/rectify", ["/image"])]);
             const centered = () => nodes.find(id => {
-                        const c = rectCenter(view._testNodeRect(id));
-                        return Math.abs(c.x - view.width / 2) < 0.5 && Math.abs(c.y - view.height / 2) < 0.5;
-                    });
+                    const c = rectCenter(view._testNodeRect(id));
+                    return Math.abs(c.x - view.width / 2) < 0.5 && Math.abs(c.y - view.height / 2) < 0.5;
+                });
             view.searchText = "camera";
             const visited = [];
             for (let i = 0; i < 4; ++i) {
@@ -881,6 +904,7 @@ Item {
     }
     Component {
         id: signalSpyComponent
+
         SignalSpy {
         }
     }
@@ -901,8 +925,8 @@ Item {
         }
         function test_builds_when_first_shown_and_on_refresh() {
             const tab = createTemporaryObject(tabComponent, root, {
-                    "visible": false
-                });
+                "visible": false
+            });
             const view = helpers.findChild(tab, "nmGraphView");
             wait(100);
             compare(view.nodes, [], "a hidden tab does not query ROS");
@@ -918,8 +942,8 @@ Item {
         }
         function test_checkboxes_write_context() {
             const tab = createTemporaryObject(tabComponent, root, {
-                    "visible": false
-                });
+                "visible": false
+            });
             tab.visible = true;
             const view = helpers.findChild(tab, "nmGraphView");
             const topics = () => view.edges[0].interfaces.map(t => t.name);
@@ -945,8 +969,8 @@ Item {
             Ros2.reset();
             Ros2.registerNode("/_hidden", nodeInfo([], []));
             const tab = createTemporaryObject(tabComponent, root, {
-                    "visible": false
-                });
+                "visible": false
+            });
             tab.visible = true;
             const hint = helpers.findChild(tab, "nmGraphHint");
             tryVerify(() => hint.visible);
@@ -957,16 +981,16 @@ Item {
         }
         function test_group_and_interface_checkboxes() {
             Ros2.registerNode("/robot/server", nodeInfo([], [], {
-                        "serviceServers": ["/robot/server/get_parameters", "/add"],
-                        "actionServers": ["/nav"]
-                    }));
+                "serviceServers": ["/robot/server/get_parameters", "/add"],
+                "actionServers": ["/nav"]
+            }));
             Ros2.registerNode("/robot/client", nodeInfo([], [], {
-                        "serviceClients": ["/robot/server/get_parameters", "/add"],
-                        "actionClients": ["/nav"]
-                    }));
+                "serviceClients": ["/robot/server/get_parameters", "/add"],
+                "actionClients": ["/nav"]
+            }));
             const tab = createTemporaryObject(tabComponent, root, {
-                    "visible": false
-                });
+                "visible": false
+            });
             tab.visible = true;
             const view = helpers.findChild(tab, "nmGraphView");
             tryCompare(view, "nodes", ["/robot/client", "/robot/server", "/talker"]);
@@ -974,11 +998,13 @@ Item {
             mouseClick(helpers.findChild(tab, "nmGraphShowServicesCheckBox"));
             compare(contextObj.graphShowServices, true);
             verify(!view.loading, "toggling does not query ROS");
-            compare(view.edges, [{
-                        "from": "/robot/client",
-                        "to": "/robot/server",
-                        "interfaces": [link("service", "/add")]
-                    }], "default services hidden with the common topics");
+            compare(view.edges, [
+                {
+                    "from": "/robot/client",
+                    "to": "/robot/server",
+                    "interfaces": [link("service", "/add")]
+                }
+            ], "default services hidden with the common topics");
             mouseClick(helpers.findChild(tab, "nmGraphShowActionsCheckBox"));
             compare(contextObj.graphShowActions, true);
             compare(view.edges[0].interfaces.map(i => i.kind + " " + i.name), ["action /nav", "service /add"]);
@@ -993,8 +1019,8 @@ Item {
         function test_ignored_nodes_written_to_context() {
             contextObj.graphIgnoredNodes = ["/gone"];
             const tab = createTemporaryObject(tabComponent, root, {
-                    "visible": false
-                });
+                "visible": false
+            });
             tab.visible = true;
             const view = helpers.findChild(tab, "nmGraphView");
             tryCompare(view, "nodes", ["/talker"]);

@@ -32,8 +32,8 @@ Item {
             "name": name,
             "datatypes": ["std_srvs/srv/Empty"],
             "peers": servers.map(node => ({
-                            "node": node
-                        }))
+                        "node": node
+                    }))
         };
     }
 
@@ -52,13 +52,13 @@ Item {
     }
     function nodeInfo(fields) {
         return Object.assign({
-                "publishers": [],
-                "subscriptions": [],
-                "serviceServers": [],
-                "serviceClients": [],
-                "actionServers": [],
-                "actionClients": []
-            }, fields);
+            "publishers": [],
+            "subscriptions": [],
+            "serviceServers": [],
+            "serviceClients": [],
+            "actionServers": [],
+            "actionClients": []
+        }, fields);
     }
     function qos(reliability, durability, history, depth) {
         return {
@@ -89,17 +89,20 @@ Item {
     }
     Component {
         id: pillsComponent
+
         QosPills {
             width: 300
         }
     }
     Component {
         id: windowComponent
+
         Window {
         }
     }
     Component {
         id: infoViewComponent
+
         NodeInfoView {
             height: 200
             width: 400
@@ -107,6 +110,7 @@ Item {
     }
     Component {
         id: tabComponent
+
         NodesTab {
             anchors.fill: parent
         }
@@ -118,29 +122,29 @@ Item {
         // Returns the pill rows of @p pills as lists of {text, color}.
         function rows(pills) {
             return findAll(pills, o => o.flow !== undefined).map(row => findAll(row, o => o.radius !== undefined).map(pill => ({
-                                    "text": pill.children[0].text,
-                                    "color": pill.color
-                                })));
+                            "text": pill.children[0].text,
+                            "color": pill.color
+                        })));
         }
         function test_duplicate_endpoints_collapsed() {
             const a = qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10);
             const b = qos(ReliabilityPolicy.BestAvailable, DurabilityPolicy.BestAvailable, HistoryPolicy.SystemDefault, 0);
             const pills = createTemporaryObject(pillsComponent, root, {
-                    "qos": [a, b, qos(a.reliability, a.durability, a.history, a.depth), b]
-                });
+                "qos": [a, b, qos(a.reliability, a.durability, a.history, a.depth), b]
+            });
             compare(rows(pills).map(row => row.map(p => p.text)), [["Reliable", "Volatile", "Keep last 10"], ["Best available", "Best available", "System default"]]);
         }
         function test_empty_list_renders_nothing() {
             const pills = createTemporaryObject(pillsComponent, root, {
-                    "qos": []
-                });
+                "qos": []
+            });
             compare(rows(pills).length, 0);
             compare(pills.implicitHeight, 0);
         }
         function test_two_profiles() {
             const pills = createTemporaryObject(pillsComponent, root, {
-                    "qos": [qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10), qos(ReliabilityPolicy.BestEffort, DurabilityPolicy.TransientLocal, HistoryPolicy.KeepAll, 1000)]
-                });
+                "qos": [qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10), qos(ReliabilityPolicy.BestEffort, DurabilityPolicy.TransientLocal, HistoryPolicy.KeepAll, 1000)]
+            });
             const result = rows(pills);
             compare(result.map(row => row.map(p => p.text)), [["Reliable", "Volatile", "Keep last 10"], ["Best effort", "Transient local", "Keep all"]]);
             const expectedColors = [[Material.Green, Material.Grey, Material.Cyan], [Material.Orange, Material.Blue, Material.Purple]];
@@ -152,14 +156,14 @@ Item {
         function test_unknown_history_omitted() {
             // Fast DDS reports graph endpoints with unknown history and depth 0.
             const pills = createTemporaryObject(pillsComponent, root, {
-                    "qos": [qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Unknown, HistoryPolicy.Unknown, 0)]
-                });
+                "qos": [qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Unknown, HistoryPolicy.Unknown, 0)]
+            });
             compare(rows(pills).map(row => row.map(p => p.text)), [["Reliable", "Unknown"]]);
         }
         function test_wraps_at_narrow_width() {
             const pills = createTemporaryObject(pillsComponent, root, {
-                    "qos": [qos(ReliabilityPolicy.Reliable, DurabilityPolicy.TransientLocal, HistoryPolicy.KeepLast, 10)]
-                });
+                "qos": [qos(ReliabilityPolicy.Reliable, DurabilityPolicy.TransientLocal, HistoryPolicy.KeepLast, 10)]
+            });
             const items = findAll(pills, o => o.radius !== undefined);
             tryVerify(() => items.every(p => p.y === items[0].y), 1000, "Pills should share a line when they fit");
             pills.width = 100;
@@ -177,10 +181,10 @@ Item {
         }
         function test_copy_name_and_type() {
             const view = createTemporaryObject(infoViewComponent, root, {
-                    "info": nodeInfo({
-                            "publishers": [topic("/chatter")]
-                        })
-                });
+                "info": nodeInfo({
+                    "publishers": [topic("/chatter")]
+                })
+            });
             const menu = findAll(view, o => o.menu !== undefined)[0].menu;
             menu.itemAt(0).triggered();
             compare(RQml.clipboard, "/chatter");
@@ -193,13 +197,13 @@ Item {
                         "datatypes": ["rcl_interfaces/srv/GetParameters"]
                     });
             const view = createTemporaryObject(infoViewComponent, root, {
-                    "info": nodeInfo({
-                            "publishers": [topic("/rosout", undefined, []), topic("/chatter", undefined, [])],
-                            "subscriptions": [topic("/parameter_events", undefined, [])],
-                            "serviceServers": [service("/talker/get_parameters"), service("/talker/set_parameters_atomically"), service("/talker/reset")],
-                            "serviceClients": [service("/talker/describe_parameters")]
-                        })
-                });
+                "info": nodeInfo({
+                    "publishers": [topic("/rosout", undefined, []), topic("/chatter", undefined, [])],
+                    "subscriptions": [topic("/parameter_events", undefined, [])],
+                    "serviceServers": [service("/talker/get_parameters"), service("/talker/set_parameters_atomically"), service("/talker/reset")],
+                    "serviceClients": [service("/talker/describe_parameters")]
+                })
+            });
             compare(headers(view), ["Publishers (1)", "Service Servers (1)"]);
             verify(findText(view, "/chatter"));
             verify(findText(view, "/talker/reset"));
@@ -208,32 +212,37 @@ Item {
         }
         function test_multiple_servers_error_only_on_clients() {
             const view = createTemporaryObject(infoViewComponent, root, {
-                    "info": nodeInfo({
-                            "serviceServers": [{
-                                    "name": "/reset",
-                                    "datatypes": ["std_srvs/srv/Empty"]
-                                }],
-                            "publishers": [topic("/chatter", null, [{
-                                            "node": "/a",
-                                            "qos": qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10)
-                                        }, {
-                                            "node": "/b",
-                                            "qos": qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10)
-                                        }])]
-                        })
-                });
+                "info": nodeInfo({
+                    "serviceServers": [
+                        {
+                            "name": "/reset",
+                            "datatypes": ["std_srvs/srv/Empty"]
+                        }
+                    ],
+                    "publishers": [topic("/chatter", null, [
+                            {
+                                "node": "/a",
+                                "qos": qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10)
+                            },
+                            {
+                                "node": "/b",
+                                "qos": qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10)
+                            }
+                        ])]
+                })
+            });
             compare(findAll(view, o => o.objectName === "nmMultipleServersError").length, 0);
             compare(findAll(view, o => o.objectName === "nmUnconnectedMarker").length, 0);
         }
         function test_null_info_shows_empty_text() {
             const view = createTemporaryObject(infoViewComponent, root, {
-                    "emptyText": "Nothing here."
-                });
+                "emptyText": "Nothing here."
+            });
             verify(findText(view, "Nothing here."), "Hint should show the empty text");
             compare(headers(view), []);
             view.info = nodeInfo({
-                    "publishers": [topic("/chatter")]
-                });
+                "publishers": [topic("/chatter")]
+            });
             verify(!findText(view, "Nothing here."), "Hint should hide once there is info");
         }
         function test_peer_counts_and_unconnected_highlight() {
@@ -242,17 +251,19 @@ Item {
                         "qos": qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10)
                     });
             const view = createTemporaryObject(infoViewComponent, root, {
-                    "info": nodeInfo({
-                            "publishers": [topic("/connected", null, [peer("/a"), peer("/b"), peer("/b")]), topic("/lonely", null, [])],
-                            "subscriptions": [topic("/input", null, [peer("/a")])],
-                            "serviceServers": [{
-                                    "name": "/reset",
-                                    "datatypes": ["std_srvs/srv/Empty"]
-                                }],
-                            "serviceClients": [client("/served", ["/server"]), client("/missing", [])],
-                            "actionClients": [client("/move", ["/mover", "/mover_copy"])]
-                        })
-                });
+                "info": nodeInfo({
+                    "publishers": [topic("/connected", null, [peer("/a"), peer("/b"), peer("/b")]), topic("/lonely", null, [])],
+                    "subscriptions": [topic("/input", null, [peer("/a")])],
+                    "serviceServers": [
+                        {
+                            "name": "/reset",
+                            "datatypes": ["std_srvs/srv/Empty"]
+                        }
+                    ],
+                    "serviceClients": [client("/served", ["/server"]), client("/missing", [])],
+                    "actionClients": [client("/move", ["/mover", "/mover_copy"])]
+                })
+            });
             compare(findAll(view, o => o.objectName === "nmPeersButton").map(o => o.text), ["3 subscribers", "1 publisher", "1 server", "2 servers"]);
             compare(findAll(view, o => o.objectName === "nmNoPeersLabel").map(o => o.text), ["No subscribers", "No server"]);
             const markers = findAll(view, o => o.objectName === "nmUnconnectedMarker");
@@ -263,19 +274,23 @@ Item {
         }
         function test_peer_popup_lists_nodes() {
             const view = createTemporaryObject(infoViewComponent, root, {
-                    "info": nodeInfo({
-                            "publishers": [topic("/chatter", null, [{
-                                            "node": "/z",
-                                            "qos": qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10)
-                                        }, {
-                                            "node": "/a",
-                                            "qos": qos(ReliabilityPolicy.BestEffort, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10)
-                                        }, {
-                                            "node": "/a",
-                                            "qos": qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10)
-                                        }])]
-                        })
-                });
+                "info": nodeInfo({
+                    "publishers": [topic("/chatter", null, [
+                            {
+                                "node": "/z",
+                                "qos": qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10)
+                            },
+                            {
+                                "node": "/a",
+                                "qos": qos(ReliabilityPolicy.BestEffort, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10)
+                            },
+                            {
+                                "node": "/a",
+                                "qos": qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10)
+                            }
+                        ])]
+                })
+            });
             const popup = findChild(view, "nmPeerPopup");
             mouseClick(findAll(view, o => o.objectName === "nmPeersButton")[0]);
             tryVerify(() => popup.opened);
@@ -291,13 +306,15 @@ Item {
             // Dock widgets create their guest in a temporary window and move it into the dock's window.
             const tempWindow = createTemporaryObject(windowComponent, root);
             const view = createTemporaryObject(infoViewComponent, null, {
-                    "info": nodeInfo({
-                            "publishers": [topic("/chatter", null, [{
-                                            "node": "/a",
-                                            "qos": qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10)
-                                        }])]
-                        })
-                });
+                "info": nodeInfo({
+                    "publishers": [topic("/chatter", null, [
+                            {
+                                "node": "/a",
+                                "qos": qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10)
+                            }
+                        ])]
+                })
+            });
             view.parent = tempWindow.contentItem;
             view.parent = root;
             tempWindow.destroy();
@@ -312,35 +329,37 @@ Item {
             for (let i = 0; i < 30; ++i)
                 publishers.push(topic("/topic_" + i));
             const view = createTemporaryObject(infoViewComponent, root, {
-                    "info": nodeInfo({
-                            "publishers": publishers
-                        })
-                });
+                "info": nodeInfo({
+                    "publishers": publishers
+                })
+            });
             verify(view.contentHeight > view.height, "Content should be taller than the view");
             mouseWheel(view, view.width / 2, view.height / 2, 0, -360);
             tryVerify(() => view.contentItem.contentY > 0, 2000, "Wheel should scroll the content");
         }
         function test_sections_and_counts() {
             const view = createTemporaryObject(infoViewComponent, root, {
-                    "info": nodeInfo({
-                            "publishers": [topic("/a"), topic("/b")],
-                            "subscriptions": [topic("/c")],
-                            "actionServers": [{
-                                    "name": "/fibonacci",
-                                    "datatypes": ["example_interfaces/action/Fibonacci"]
-                                }]
-                        })
-                });
+                "info": nodeInfo({
+                    "publishers": [topic("/a"), topic("/b")],
+                    "subscriptions": [topic("/c")],
+                    "actionServers": [
+                        {
+                            "name": "/fibonacci",
+                            "datatypes": ["example_interfaces/action/Fibonacci"]
+                        }
+                    ]
+                })
+            });
             compare(headers(view), ["Publishers (2)", "Subscribers (1)", "Action Servers (1)"]);
             verify(findText(view, "example_interfaces/action/Fibonacci"), "Entries should show their types");
             compare(findAll(view, o => o.text === "Reliable").length, 3, "Topics should show their QoS");
         }
         function test_server_popup_lists_nodes() {
             const view = createTemporaryObject(infoViewComponent, root, {
-                    "info": nodeInfo({
-                            "serviceClients": [client("/add", ["/z_server", "/a_server"])]
-                        })
-                });
+                "info": nodeInfo({
+                    "serviceClients": [client("/add", ["/z_server", "/a_server"])]
+                })
+            });
             const popup = findChild(view, "nmPeerPopup");
             mouseClick(findAll(view, o => o.objectName === "nmPeersButton")[0]);
             tryVerify(() => popup.opened);
@@ -462,29 +481,29 @@ Item {
             compare(contextObj.selectedNodeFullName, "/node_69");
             const list = find(tab, "nmNodeList");
             tryVerify(() => {
-                    const item = list.itemAtIndex(59);
-                    return item && item.y >= list.contentY && item.y + item.height <= list.contentY + list.height;
-                }, 1000, "Selected row should scroll into view");
+                const item = list.itemAtIndex(59);
+                return item && item.y >= list.contentY && item.y + item.height <= list.contentY + list.height;
+            }, 1000, "Selected row should scroll into view");
         }
         function test_peers_and_qos_from_graph() {
             const reliable = qos(ReliabilityPolicy.Reliable, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10);
             const bestEffort = qos(ReliabilityPolicy.BestEffort, DurabilityPolicy.Volatile, HistoryPolicy.KeepLast, 10);
             const named = names => names.map(name => topic(name, []));
             Ros2.registerNode("/talker", nodeInfo({
-                        "publishers": [topic("/chatter", [bestEffort])]
-                    }));
+                "publishers": [topic("/chatter", [bestEffort])]
+            }));
             Ros2.registerNode("/ns/listener", nodeInfo({
-                        "subscriptions": [topic("/chatter", [reliable, reliable])],
-                        "serviceClients": named(["/reset"]),
-                        "actionClients": named(["/move"])
-                    }));
+                "subscriptions": [topic("/chatter", [reliable, reliable])],
+                "serviceClients": named(["/reset"]),
+                "actionClients": named(["/move"])
+            }));
             Ros2.registerNode("/server_a", nodeInfo({
-                        "serviceServers": named(["/reset"])
-                    }));
+                "serviceServers": named(["/reset"])
+            }));
             Ros2.registerNode("/server_b", nodeInfo({
-                        "serviceServers": named(["/reset"]),
-                        "actionServers": named(["/move"])
-                    }));
+                "serviceServers": named(["/reset"]),
+                "actionServers": named(["/move"])
+            }));
             const tab = createTab();
             const infoView = find(tab, "nmNodeInfoView");
             const buttons = () => findAll(infoView, o => o.objectName === "nmPeersButton").map(o => o.text);
@@ -523,8 +542,8 @@ Item {
         function test_selection_shows_info() {
             Ros2.registerNode("/listener");
             Ros2.registerNode("/talker", nodeInfo({
-                        "publishers": [topic("/chatter")]
-                    }));
+                "publishers": [topic("/chatter")]
+            }));
             const tab = createTab();
             const row = nodeList(tab).itemAtIndex(1);
             mouseClick(row);
@@ -548,8 +567,8 @@ Item {
             const registerTalker = endpointQos => {
                 Ros2.reset();
                 Ros2.registerNode("/talker", nodeInfo({
-                            "publishers": [topic("/chatter", endpointQos)]
-                        }));
+                    "publishers": [topic("/chatter", endpointQos)]
+                }));
             };
             registerTalker([Ros2.QoS()]);
             const tab = createTab();
@@ -569,18 +588,18 @@ Item {
         function test_unconnected_warning() {
             const named = names => names.map(name => topic(name));
             Ros2.registerNode("/a", nodeInfo({
-                        "subscriptions": named(["/missing"]),
-                        "serviceClients": named(["/gone/get_parameters"])
-                    }));
+                "subscriptions": named(["/missing"]),
+                "serviceClients": named(["/gone/get_parameters"])
+            }));
             Ros2.registerNode("/b", nodeInfo({
-                        "publishers": named(["/data"]),
-                        "serviceServers": named(["/reset"])
-                    }));
+                "publishers": named(["/data"]),
+                "serviceServers": named(["/reset"])
+            }));
             Ros2.registerNode("/c", nodeInfo({
-                        "subscriptions": named(["/data", "/other_missing"]),
-                        "serviceClients": named(["/reset", "/unserved"]),
-                        "actionClients": named(["/move"])
-                    }));
+                "subscriptions": named(["/data", "/other_missing"]),
+                "serviceClients": named(["/reset", "/unserved"]),
+                "actionClients": named(["/move"])
+            }));
             const tab = createTab();
             const list = nodeList(tab);
             const warning = i => findAll(list.itemAtIndex(i), o => o.objectName === "nmUnconnectedWarning")[0];
@@ -588,15 +607,15 @@ Item {
             verify(!warning(1));
             compare(warning(2).ToolTip.text, "3 subscriptions or clients have no publisher or server");
             Ros2.registerNode("/d", nodeInfo({
-                        "publishers": named(["/missing"])
-                    }));
+                "publishers": named(["/missing"])
+            }));
             tab.refresh();
             verify(!warning(0), "A new publisher should clear the warning");
         }
         function test_vanished_node_shows_hint() {
             Ros2.registerNode("/talker", nodeInfo({
-                        "publishers": [topic("/chatter")]
-                    }));
+                "publishers": [topic("/chatter")]
+            }));
             const tab = createTab();
             tab.showNode("/talker");
             const infoView = find(tab, "nmNodeInfoView");

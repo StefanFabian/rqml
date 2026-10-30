@@ -53,35 +53,35 @@ Item {
     function addContainer(name, components) {
         Ros2.registerNode(name);
         Ros2.registerService(name + "/_container/load_node", "composition_interfaces/srv/LoadNode", request => {
-                record(name + "/_container/load_node", request);
-                components.push({
-                        "fullName": "/" + request.node_name,
-                        "uniqueId": 100
-                    });
-                return {
-                    "success": true
-                };
+            record(name + "/_container/load_node", request);
+            components.push({
+                "fullName": "/" + request.node_name,
+                "uniqueId": 100
             });
+            return {
+                "success": true
+            };
+        });
         Ros2.registerService(name + "/_container/list_nodes", "composition_interfaces/srv/ListNodes", request => {
-                record(name + "/_container/list_nodes", request);
-                return {
-                    "full_node_names": components.map(c => c.fullName),
-                    "unique_ids": components.map(c => c.uniqueId)
-                };
-            });
+            record(name + "/_container/list_nodes", request);
+            return {
+                "full_node_names": components.map(c => c.fullName),
+                "unique_ids": components.map(c => c.uniqueId)
+            };
+        });
         Ros2.registerService(name + "/_container/unload_node", "composition_interfaces/srv/UnloadNode", request => {
-                record(name + "/_container/unload_node", request);
-                const index = components.findIndex(c => c.uniqueId === request.unique_id);
-                if (index === -1)
-                    return {
-                        "success": false,
-                        "error_message": "No node found with unique_id: " + request.unique_id
-                    };
-                components.splice(index, 1);
+            record(name + "/_container/unload_node", request);
+            const index = components.findIndex(c => c.uniqueId === request.unique_id);
+            if (index === -1)
                 return {
-                    "success": true
+                    "success": false,
+                    "error_message": "No node found with unique_id: " + request.unique_id
                 };
-            });
+            components.splice(index, 1);
+            return {
+                "success": true
+            };
+        });
     }
     function find(item, name) {
         return helpers.findChild(item, name);
@@ -89,11 +89,11 @@ Item {
     // Registers a service that records its requests and never answers them.
     function hang(service, type) {
         Ros2.registerService(service, type, request => {
-                record(service, request);
-                return {
-                    "#hang": true
-                };
-            });
+            record(service, request);
+            return {
+                "#hang": true
+            };
+        });
     }
     function record(service, request) {
         requests[service] = (requests[service] || []).concat([request]);
@@ -135,14 +135,17 @@ Item {
     }
     Utils {
         id: helpers
+
     }
     Component {
         id: interfaceComponent
+
         ContainerInterface {
         }
     }
     Component {
         id: tabComponent
+
         ContainersTab {
             anchors.fill: parent
             toasts: toastsMock
@@ -150,20 +153,24 @@ Item {
     }
     Component {
         id: dialogComponent
+
         LoadComponentDialog {
         }
     }
     SignalSpy {
         id: failedSpy
+
         signalName: "operationFailed"
     }
     Component {
         id: spyComponent
+
         SignalSpy {
         }
     }
     TestCase {
         id: interfaceTest
+
         function createInterface() {
             const iface = createTemporaryObject(interfaceComponent, root);
             failedSpy.target = iface;
@@ -241,30 +248,36 @@ Item {
             compare(failedSpy.count, 1);
         }
         function test_list_maps_and_sorts_components() {
-            root.addContainer("/a", [{
-                        "fullName": "/zeta",
-                        "uniqueId": 2
-                    }, {
-                        "fullName": "/alpha",
-                        "uniqueId": 7
-                    }]);
+            root.addContainer("/a", [
+                {
+                    "fullName": "/zeta",
+                    "uniqueId": 2
+                },
+                {
+                    "fullName": "/alpha",
+                    "uniqueId": 7
+                }
+            ]);
             const iface = createInterface();
             iface.refresh();
             selectAndWait(iface, "/a");
-            compare(iface.components, [{
-                        "fullName": "/alpha",
-                        "uniqueId": 7
-                    }, {
-                        "fullName": "/zeta",
-                        "uniqueId": 2
-                    }]);
+            compare(iface.components, [
+                {
+                    "fullName": "/alpha",
+                    "uniqueId": 7
+                },
+                {
+                    "fullName": "/zeta",
+                    "uniqueId": 2
+                }
+            ]);
             compare(typeof iface.components[0].uniqueId, "number");
         }
         function test_load_failure_paths() {
             Ros2.registerService("/a/_container/load_node", "composition_interfaces/srv/LoadNode", () => ({
-                            "success": false,
-                            "error_message": "Failed to find class"
-                        }));
+                        "success": false,
+                        "error_message": "Failed to find class"
+                    }));
             Ros2.registerService("/b/_container/load_node", "composition_interfaces/srv/LoadNode");
             const iface = createInterface();
             iface.refresh();
@@ -287,27 +300,30 @@ Item {
             iface.refresh();
             selectAndWait(iface, "/a");
             iface.loadComponent("/a", {
-                    "packageName": "composition",
-                    "pluginName": "composition::Talker",
-                    "nodeName": "talker",
-                    "nodeNamespace": "/ns",
-                    "remapRules": ["chatter:=/talk"],
-                    "logLevel": 30,
-                    "parameters": [{
-                            "name": "rate",
-                            "value": {
-                                "type": 3,
-                                "double_value": 2.5
-                            }
-                        }, {
-                            "name": "topics",
-                            "value": {
-                                "type": 9,
-                                "string_array_value": ["a", "b"]
-                            }
-                        }],
-                    "useIntraProcessComms": true
-                });
+                "packageName": "composition",
+                "pluginName": "composition::Talker",
+                "nodeName": "talker",
+                "nodeNamespace": "/ns",
+                "remapRules": ["chatter:=/talk"],
+                "logLevel": 30,
+                "parameters": [
+                    {
+                        "name": "rate",
+                        "value": {
+                            "type": 3,
+                            "double_value": 2.5
+                        }
+                    },
+                    {
+                        "name": "topics",
+                        "value": {
+                            "type": 9,
+                            "string_array_value": ["a", "b"]
+                        }
+                    }
+                ],
+                "useIntraProcessComms": true
+            });
             verify(iface.loadingComponent);
             tryVerify(() => !iface.loadingComponent);
             compare(root.requestCount("/a/_container/load_node"), 1);
@@ -344,12 +360,12 @@ Item {
             tryVerify(() => root.requestCount("/a/_container/list_nodes") === 1);
             // The restarted container answers again.
             Ros2.registerService("/a/_container/list_nodes", "composition_interfaces/srv/ListNodes", request => {
-                    root.record("/a/_container/list_nodes", request);
-                    return {
-                        "full_node_names": ["/talker"],
-                        "unique_ids": [1]
-                    };
-                });
+                root.record("/a/_container/list_nodes", request);
+                return {
+                    "full_node_names": ["/talker"],
+                    "unique_ids": [1]
+                };
+            });
             iface.refresh();
             wait(20);
             compare(root.requestCount("/a/_container/list_nodes"), 1, "No new list request while one is pending");
@@ -365,11 +381,11 @@ Item {
             // Requests sent while the container restarts never get an answer, and the container stays listed.
             root.addContainer("/a", [root.talker]);
             Ros2.registerService("/a/_container/load_node", "composition_interfaces/srv/LoadNode", () => ({
-                            "#hang": true
-                        }));
+                        "#hang": true
+                    }));
             Ros2.registerService("/a/_container/unload_node", "composition_interfaces/srv/UnloadNode", () => ({
-                            "#hang": true
-                        }));
+                        "#hang": true
+                    }));
             const iface = createInterface();
             iface.responseTimeout = 100;
             iface.refresh();
@@ -448,9 +464,9 @@ Item {
             selectAndWait(iface, "/a");
             compare(iface.components.length, 1);
             const loadingSpy = createTemporaryObject(spyComponent, root, {
-                    "target": iface,
-                    "signalName": "loadingChanged"
-                });
+                "target": iface,
+                "signalName": "loadingChanged"
+            });
             iface.refresh();
             tryVerify(() => root.requestCount("/a/_container/list_nodes") === 3);
             compare(loadingSpy.count, 0, "Periodic refreshes do not toggle loading");
@@ -466,18 +482,18 @@ Item {
             selectAndWait(iface, "/a");
             const before = iface.components;
             const componentsSpy = createTemporaryObject(spyComponent, root, {
-                    "target": iface,
-                    "signalName": "componentsChanged"
-                });
+                "target": iface,
+                "signalName": "componentsChanged"
+            });
             iface.refresh();
             tryVerify(() => root.requestCount("/a/_container/list_nodes") === 2);
             verify(iface.components === before);
             verify(iface.containers === containers);
             compare(componentsSpy.count, 0);
             components.push({
-                    "fullName": "/listener",
-                    "uniqueId": 2
-                });
+                "fullName": "/listener",
+                "uniqueId": 2
+            });
             iface.refresh();
             tryVerify(() => iface.components.length === 2);
             compare(componentsSpy.count, 1);
@@ -485,12 +501,12 @@ Item {
         function test_unload_failure() {
             root.addContainer("/a", [root.talker]);
             Ros2.registerService("/a/_container/unload_node", "composition_interfaces/srv/UnloadNode", request => {
-                    root.record("/a/_container/unload_node", request);
-                    return {
-                        "success": false,
-                        "error_message": "boom"
-                    };
-                });
+                root.record("/a/_container/unload_node", request);
+                return {
+                    "success": false,
+                    "error_message": "boom"
+                };
+            });
             const iface = createInterface();
             iface.refresh();
             selectAndWait(iface, "/a");
@@ -515,14 +531,18 @@ Item {
             compare(failedSpy.count, 1, "No retry");
         }
         function test_unload_success() {
-            root.addContainer("/a", [root.talker, {
-                        "fullName": "/listener",
-                        "uniqueId": 2
-                    }]);
-            root.addContainer("/b", [{
-                        "fullName": "/other",
-                        "uniqueId": 1
-                    }]);
+            root.addContainer("/a", [root.talker,
+                {
+                    "fullName": "/listener",
+                    "uniqueId": 2
+                }
+            ]);
+            root.addContainer("/b", [
+                {
+                    "fullName": "/other",
+                    "uniqueId": 1
+                }
+            ]);
             const iface = createInterface();
             iface.refresh();
             selectAndWait(iface, "/a");
@@ -542,6 +562,7 @@ Item {
     }
     TestCase {
         id: tabTest
+
         function componentRow(list, fullName) {
             const rows = list.contentItem.children;
             for (let i = 0; i < rows.length; ++i) {
@@ -629,12 +650,12 @@ Item {
             tryVerify(() => hint.visible);
             compare(hint.text, "No components loaded.");
             components.push({
-                    "fullName": "/robot/Talker",
-                    "uniqueId": 1
-                }, {
-                    "fullName": "/listener",
-                    "uniqueId": 2
-                });
+                "fullName": "/robot/Talker",
+                "uniqueId": 1
+            }, {
+                "fullName": "/listener",
+                "uniqueId": 2
+            });
             tab.refresh();
             tryCompare(list, "count", 2);
             verify(!hint.visible);
@@ -699,8 +720,8 @@ Item {
         function test_unload_button_hidden_while_unloading() {
             root.addContainer("/a", [root.talker]);
             Ros2.registerService("/a/_container/unload_node", "composition_interfaces/srv/UnloadNode", () => ({
-                            "#hang": true
-                        }));
+                        "#hang": true
+                    }));
             const tab = createTab();
             const list = find(tab, "nmComponentList");
             tryCompare(list, "count", 1);
@@ -713,10 +734,12 @@ Item {
         }
         function test_unload_requires_confirmation_and_targets_captured_container() {
             root.addContainer("/a", [root.talker]);
-            root.addContainer("/b", [{
-                        "fullName": "/other",
-                        "uniqueId": 1
-                    }]);
+            root.addContainer("/b", [
+                {
+                    "fullName": "/other",
+                    "uniqueId": 1
+                }
+            ]);
             const tab = createTab();
             const list = find(tab, "nmComponentList");
             tryCompare(list, "count", 1);
@@ -732,17 +755,19 @@ Item {
             tryVerify(() => dialog.opened);
             // The selection moves while the dialog is open: /a vanishes, but its unload service still answers.
             Ros2.reset();
-            root.addContainer("/b", [{
-                        "fullName": "/other",
-                        "uniqueId": 1
-                    }]);
+            root.addContainer("/b", [
+                {
+                    "fullName": "/other",
+                    "uniqueId": 1
+                }
+            ]);
             Ros2.registerService("/a/_container/unload_node", "composition_interfaces/srv/UnloadNode", request => {
-                    root.record("/a/_container/unload_node", request);
-                    return {
-                        "success": false,
-                        "error_message": "boom"
-                    };
-                });
+                root.record("/a/_container/unload_node", request);
+                return {
+                    "success": false,
+                    "error_message": "boom"
+                };
+            });
             tab.refresh();
             compare(find(tab, "nmContainerComboBox").displayText, "/b");
             mouseClick(dialog.standardButton(Dialog.Yes));
@@ -763,9 +788,9 @@ Item {
         function createDialog() {
             const dialog = createTemporaryObject(dialogComponent, root);
             requestedSpy = createTemporaryObject(spyComponent, root, {
-                    "target": dialog,
-                    "signalName": "loadRequested"
-                });
+                "target": dialog,
+                "signalName": "loadRequested"
+            });
             return dialog;
         }
         function init() {
@@ -858,139 +883,160 @@ Item {
         function test_parse(data) {
             const result = ParameterParser.parseParameters(" name := " + data.value + " ");
             compare(result.invalidLine, 0);
-            compare(result.parameters, [{
-                        "name": "name",
-                        "value": data.expected
-                    }]);
+            compare(result.parameters, [
+                {
+                    "name": "name",
+                    "value": data.expected
+                }
+            ]);
         }
         function test_parse_data() {
-            return [{
+            return [
+                {
                     "tag": "bool",
                     "value": "true",
                     "expected": {
                         "type": 1,
                         "bool_value": true
                     }
-                }, {
+                },
+                {
                     "tag": "bool capitalized false",
                     "value": "False",
                     "expected": {
                         "type": 1,
                         "bool_value": false
                     }
-                }, {
+                },
+                {
                     "tag": "integer",
                     "value": "-42",
                     "expected": {
                         "type": 2,
                         "integer_value": -42
                     }
-                }, {
+                },
+                {
                     "tag": "double",
                     "value": "2.5",
                     "expected": {
                         "type": 3,
                         "double_value": 2.5
                     }
-                }, {
+                },
+                {
                     "tag": "double exponent",
                     "value": "1e-3",
                     "expected": {
                         "type": 3,
                         "double_value": 0.001
                     }
-                }, {
+                },
+                {
                     "tag": "double leading dot",
                     "value": ".5",
                     "expected": {
                         "type": 3,
                         "double_value": 0.5
                     }
-                }, {
+                },
+                {
                     "tag": "string",
                     "value": "hello world",
                     "expected": {
                         "type": 4,
                         "string_value": "hello world"
                     }
-                }, {
+                },
+                {
                     "tag": "quoted number is a string",
                     "value": "\"42\"",
                     "expected": {
                         "type": 4,
                         "string_value": "42"
                     }
-                }, {
+                },
+                {
                     "tag": "single quoted bool is a string",
                     "value": "'true'",
                     "expected": {
                         "type": 4,
                         "string_value": "true"
                     }
-                }, {
+                },
+                {
                     "tag": "empty value is an empty string",
                     "value": "",
                     "expected": {
                         "type": 4,
                         "string_value": ""
                     }
-                }, {
+                },
+                {
                     "tag": "value containing :=",
                     "value": "a:=b",
                     "expected": {
                         "type": 4,
                         "string_value": "a:=b"
                     }
-                }, {
+                },
+                {
                     "tag": "bool array",
                     "value": "[true, false]",
                     "expected": {
                         "type": 6,
                         "bool_array_value": [true, false]
                     }
-                }, {
+                },
+                {
                     "tag": "integer array",
                     "value": "[1, -2, 3]",
                     "expected": {
                         "type": 7,
                         "integer_array_value": [1, -2, 3]
                     }
-                }, {
+                },
+                {
                     "tag": "double array",
                     "value": "[1.5,2.5]",
                     "expected": {
                         "type": 8,
                         "double_array_value": [1.5, 2.5]
                     }
-                }, {
+                },
+                {
                     "tag": "integers promote to doubles",
                     "value": "[1, 2.5, 3]",
                     "expected": {
                         "type": 8,
                         "double_array_value": [1, 2.5, 3]
                     }
-                }, {
+                },
+                {
                     "tag": "string array",
                     "value": "[a, 'b, c', \"1\"]",
                     "expected": {
                         "type": 9,
                         "string_array_value": ["a", "b, c", "1"]
                     }
-                }, {
+                },
+                {
                     "tag": "empty array is a bool array",
                     "value": "[ ]",
                     "expected": {
                         "type": 6,
                         "bool_array_value": []
                     }
-                }, {
+                },
+                {
                     "tag": "mixed array is a string",
                     "value": "[1, a]",
                     "expected": {
                         "type": 4,
                         "string_value": "[1, a]"
                     }
-                }];
+                }
+            ];
         }
         function test_payload() {
             const dialog = createDialog();
@@ -1008,27 +1054,30 @@ Item {
             compare(requestedSpy.count, 1);
             compare(requestedSpy.signalArguments[0][0], "/container");
             compare(requestedSpy.signalArguments[0][1], {
-                    "packageName": "composition",
-                    "pluginName": "composition::Talker",
-                    "nodeName": "talker",
-                    "nodeNamespace": "/ns",
-                    "remapRules": ["a:=b", "c:=d"],
-                    "logLevel": 10,
-                    "parameters": [{
-                            "name": "rate",
-                            "value": {
-                                "type": 2,
-                                "integer_value": 10
-                            }
-                        }, {
-                            "name": "frame",
-                            "value": {
-                                "type": 4,
-                                "string_value": "map"
-                            }
-                        }],
-                    "useIntraProcessComms": true
-                });
+                "packageName": "composition",
+                "pluginName": "composition::Talker",
+                "nodeName": "talker",
+                "nodeNamespace": "/ns",
+                "remapRules": ["a:=b", "c:=d"],
+                "logLevel": 10,
+                "parameters": [
+                    {
+                        "name": "rate",
+                        "value": {
+                            "type": 2,
+                            "integer_value": 10
+                        }
+                    },
+                    {
+                        "name": "frame",
+                        "value": {
+                            "type": 4,
+                            "string_value": "map"
+                        }
+                    }
+                ],
+                "useIntraProcessComms": true
+            });
         }
         function test_plugin_suggestions_from_resource() {
             const dialog = createDialog();

@@ -18,9 +18,9 @@ Object {
 
     // Deferred, as a StackLayout settles the visibility of its pages after creation.
     Component.onCompleted: Qt.callLater(() => {
-            if (root.active)
-                root.triggered();
-        })
+        if (root.active)
+            root.triggered();
+    })
     // A tab hidden for a while is stale.
     onActiveChanged: {
         if (active)
@@ -38,6 +38,7 @@ Object {
     }
     Timer {
         id: throttle
+
         onTriggered: root.triggered()
     }
 }

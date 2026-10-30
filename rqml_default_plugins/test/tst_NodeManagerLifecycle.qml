@@ -32,9 +32,11 @@ Item {
     // The lifecycle tab persists no context keys.
     QtObject {
         id: contextObj
+
     }
     Utils {
         id: helpers
+
     }
 
     // Lifecycle nodes served through the Ros2 mock, following the standard lifecycle state machine.
@@ -53,37 +55,47 @@ Item {
         //! State label per node name.
         property var states: ({})
         readonly property var transitions: ({
-                "unconfigured": [{
+                "unconfigured": [
+                    {
                         "id": 1,
                         "label": "configure",
                         "goal": "inactive"
-                    }, {
+                    },
+                    {
                         "id": 5,
                         "label": "shutdown",
                         "goal": "finalized"
-                    }],
-                "inactive": [{
+                    }
+                ],
+                "inactive": [
+                    {
                         "id": 2,
                         "label": "cleanup",
                         "goal": "unconfigured"
-                    }, {
+                    },
+                    {
                         "id": 3,
                         "label": "activate",
                         "goal": "active"
-                    }, {
+                    },
+                    {
                         "id": 6,
                         "label": "shutdown",
                         "goal": "finalized"
-                    }],
-                "active": [{
+                    }
+                ],
+                "active": [
+                    {
                         "id": 4,
                         "label": "deactivate",
                         "goal": "inactive"
-                    }, {
+                    },
+                    {
                         "id": 7,
                         "label": "shutdown",
                         "goal": "finalized"
-                    }],
+                    }
+                ],
                 "finalized": []
             })
 
@@ -91,29 +103,29 @@ Item {
             fake.states[node] = state;
             Ros2.registerNode(node);
             serve(node + "/get_state", "lifecycle_msgs/srv/GetState", () => ({
-                            "current_state": {
-                                "label": fake.states[node]
-                            }
-                        }));
+                        "current_state": {
+                            "label": fake.states[node]
+                        }
+                    }));
             serve(node + "/get_available_transitions", "lifecycle_msgs/srv/GetAvailableTransitions", () => ({
-                            "available_transitions": fake.transitions[fake.states[node]].map(t => ({
-                                            "transition": {
-                                                "id": t.id,
-                                                "label": t.label
-                                            }
-                                        }))
-                        }));
+                        "available_transitions": fake.transitions[fake.states[node]].map(t => ({
+                                    "transition": {
+                                        "id": t.id,
+                                        "label": t.label
+                                    }
+                                }))
+                    }));
             serve(node + "/change_state", "lifecycle_msgs/srv/ChangeState", request => {
-                    const transition = fake.transitions[fake.states[node]].find(t => t.id === request.transition.id);
-                    if (fake.reject || !transition)
-                        return {
-                            "success": false
-                        };
-                    fake.states[node] = transition.goal;
+                const transition = fake.transitions[fake.states[node]].find(t => t.id === request.transition.id);
+                if (fake.reject || !transition)
                     return {
-                        "success": true
+                        "success": false
                     };
-                });
+                fake.states[node] = transition.goal;
+                return {
+                    "success": true
+                };
+            });
         }
         function count(service) {
             return (fake.requests[service] || []).length;
@@ -135,20 +147,22 @@ Item {
         }
         function serve(service, type, respond) {
             Ros2.registerService(service, type, fake.missing.includes(service) ? null : request => {
-                    (fake.requests[service] = fake.requests[service] || []).push(request);
-                    return fake.hanging.includes(service) ? {
-                        "#hang": true
-                    } : respond(request);
-                });
+                (fake.requests[service] = fake.requests[service] || []).push(request);
+                return fake.hanging.includes(service) ? {
+                    "#hang": true
+                } : respond(request);
+            });
         }
     }
     Component {
         id: ifaceComponent
+
         LifecycleInterface {
         }
     }
     SignalSpy {
         id: failedSpy
+
         signalName: "transitionFailed"
     }
     TestCase {
@@ -185,26 +199,28 @@ Item {
             fake.add("/a", "inactive");
             // Ids from 10 up are internal callback transitions, offered e.g. while the node is configuring.
             Ros2.registerService("/a/get_available_transitions", "lifecycle_msgs/srv/GetAvailableTransitions", () => ({
-                            "available_transitions": [10, 3, 12].map(id => ({
-                                            "transition": {
-                                                "id": id,
-                                                "label": id === 3 ? "activate" : "transition_success"
-                                            }
-                                        }))
-                        }));
+                        "available_transitions": [10, 3, 12].map(id => ({
+                                    "transition": {
+                                        "id": id,
+                                        "label": id === 3 ? "activate" : "transition_success"
+                                    }
+                                }))
+                    }));
             iface.refresh();
             iface.selectNode("/a");
-            tryCompare(iface, "availableTransitions", [{
-                        "id": 3,
-                        "label": "activate"
-                    }]);
+            tryCompare(iface, "availableTransitions", [
+                {
+                    "id": 3,
+                    "label": "activate"
+                }
+            ]);
         }
         function test_ignores_node_with_only_a_client_of_its_service() {
             fake.add("/b", "inactive");
             // E.g. our client of a lifecycle node that restarted without lifecycle under the same name.
             Ros2.registerNode("/a", {
-                    "serviceServers": []
-                });
+                "serviceServers": []
+            });
             Ros2.registerService("/a/change_state", "lifecycle_msgs/srv/ChangeState");
             iface.refresh();
             compare(rows().map(row => row.split(" ")[0]), ["/b"]);
@@ -314,10 +330,10 @@ Item {
             compare(iface.nodes.get(0).state, "unknown");
             fake.missing = [];
             fake.serve("/a/get_state", "lifecycle_msgs/srv/GetState", () => ({
-                            "current_state": {
-                                "label": fake.states["/a"]
-                            }
-                        }));
+                        "current_state": {
+                            "label": fake.states["/a"]
+                        }
+                    }));
             iface.refresh();
             tryCompare(iface.nodes.get(0), "state", "active");
         }
@@ -352,12 +368,12 @@ Item {
             iface.refresh();
             // The node vanishes while handling the request, so refresh() reports the failure before the reply arrives.
             Ros2.registerService("/a/change_state", "lifecycle_msgs/srv/ChangeState", () => {
-                    fake.remove("/a");
-                    iface.refresh();
-                    return {
-                        "success": false
-                    };
-                });
+                fake.remove("/a");
+                iface.refresh();
+                return {
+                    "success": false
+                };
+            });
             iface.triggerTransition("/a", fake.transitions.unconfigured[0]);
             tryCompare(failedSpy, "count", 1);
             wait(20);
@@ -383,13 +399,16 @@ Item {
             iface.refresh();
             iface.selectNode("/a");
             compare(iface.availableTransitions, []);
-            tryCompare(iface, "availableTransitions", [{
-                        "id": 1,
-                        "label": "configure"
-                    }, {
-                        "id": 5,
-                        "label": "shutdown"
-                    }]);
+            tryCompare(iface, "availableTransitions", [
+                {
+                    "id": 1,
+                    "label": "configure"
+                },
+                {
+                    "id": 5,
+                    "label": "shutdown"
+                }
+            ]);
         }
         function test_skips_state_query_while_pending_until_lost() {
             fake.add("/a", "active");
@@ -427,17 +446,17 @@ Item {
             tryVerify(() => iface.availableTransitions.length === 2);
             const transitionQueries = fake.count("/a/get_available_transitions");
             Ros2.findSubscription("/b/transition_event").injectMessage({
-                    "goal_state": {
-                        "label": "active"
-                    }
-                });
+                "goal_state": {
+                    "label": "active"
+                }
+            });
             compare(rows(), ["/a unconfigured", "/b active"]);
             fake.states["/a"] = "inactive";
             Ros2.findSubscription("/a/transition_event").injectMessage({
-                    "goal_state": {
-                        "label": "inactive"
-                    }
-                });
+                "goal_state": {
+                    "label": "inactive"
+                }
+            });
             compare(rows(), ["/a inactive", "/b active"]);
             tryVerify(() => iface.availableTransitions.length === 3);
             compare(fake.count("/a/get_available_transitions"), transitionQueries + 1);
@@ -472,12 +491,14 @@ Item {
             iface.triggerTransition("/a", iface.availableTransitions[0]);
             compare(iface.nodes.get(0).pending, "configure");
             tryCompare(iface.nodes.get(0), "pending", "");
-            compare(fake.requests["/a/change_state"], [{
-                        "transition": {
-                            "id": 1,
-                            "label": ""
-                        }
-                    }]);
+            compare(fake.requests["/a/change_state"], [
+                {
+                    "transition": {
+                        "id": 1,
+                        "label": ""
+                    }
+                }
+            ]);
             tryCompare(iface.nodes.get(0), "state", "inactive");
             verify(fake.count("/a/get_state") > stateQueries, "state re-queried");
             tryVerify(() => iface.availableTransitions.length === 3);
@@ -503,6 +524,7 @@ Item {
     }
     Component {
         id: tabComponent
+
         LifecycleTab {
             anchors.fill: parent
             toasts: toastStub

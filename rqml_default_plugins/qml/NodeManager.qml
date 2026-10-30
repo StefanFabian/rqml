@@ -19,6 +19,7 @@ Rectangle {
 
         TabBar {
             id: tabBar
+
             Layout.fillWidth: true
             objectName: "nmTabBar"
 
@@ -45,6 +46,7 @@ Rectangle {
 
             NodesTab {
                 id: nodesTab
+
             }
             LifecycleTab {
                 toasts: toastManager
@@ -62,6 +64,7 @@ Rectangle {
     }
     ToastManager {
         id: toastManager
+
         z: 100
     }
 }

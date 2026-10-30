@@ -46,9 +46,11 @@ Item {
     }
     Utils {
         id: helpers
+
     }
     Loader {
         id: pluginLoader
+
         function reload() {
             source = "";
             source = "../qml/NodeManager.qml";
@@ -58,6 +60,7 @@ Item {
     }
     Component {
         id: detachedPlugin
+
         Loader {
             source: "../qml/NodeManager.qml"
         }
@@ -66,13 +69,13 @@ Item {
         function addLifecycleNode(node) {
             Ros2.registerNode(node);
             Ros2.registerService(node + "/change_state", "lifecycle_msgs/srv/ChangeState", () => ({
-                            "success": true
-                        }));
+                        "success": true
+                    }));
             Ros2.registerService(node + "/get_state", "lifecycle_msgs/srv/GetState", () => ({
-                            "current_state": {
-                                "label": "unconfigured"
-                            }
-                        }));
+                        "current_state": {
+                            "label": "unconfigured"
+                        }
+                    }));
         }
         function addNode(fullName, publishers, subscribers) {
             const endpoint = name => ({
@@ -81,13 +84,13 @@ Item {
                         "qos": []
                     });
             Ros2.registerNode(fullName, {
-                    "publishers": publishers.map(endpoint),
-                    "subscriptions": subscribers.map(endpoint),
-                    "serviceServers": [],
-                    "serviceClients": [],
-                    "actionServers": [],
-                    "actionClients": []
-                });
+                "publishers": publishers.map(endpoint),
+                "subscriptions": subscribers.map(endpoint),
+                "serviceServers": [],
+                "serviceClients": [],
+                "actionServers": [],
+                "actionClients": []
+            });
         }
         function init() {
             failOnWarning(/Binding loop|TypeError|ReferenceError|Could not convert/);
@@ -195,13 +198,16 @@ Item {
             verify(row && row.y >= list.contentY && row.y + row.height <= list.contentY + list.height, "row in view, contentY " + list.contentY);
         }
         function test_inspect_scrolls_the_node_into_view_data() {
-            return [{
+            return [
+                {
                     "tag": "from the Nodes tab",
                     "tab": 0
-                }, {
+                },
+                {
                     "tag": "from a restored Graph tab",
                     "tab": 3
-                }];
+                }
+            ];
         }
         function test_loads_and_refreshes_the_visible_tab() {
             load();

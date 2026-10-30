@@ -23,10 +23,10 @@ SplitView {
         // Only the names, so the list keeps its delegates when just the interfaces of a node change.
         // ROS 2 allows duplicate node names.
         d.nodes = d.all.map(n => ({
-                        "name": n.name,
-                        "namespace": n.namespace,
-                        "fullName": n.fullName
-                    })).sort((a, b) => (a.fullName > b.fullName) - (a.fullName < b.fullName)).filter((n, i, all) => i === 0 || n.fullName !== all[i - 1].fullName);
+                    "name": n.name,
+                    "namespace": n.namespace,
+                    "fullName": n.fullName
+                })).sort((a, b) => (a.fullName > b.fullName) - (a.fullName < b.fullName)).filter((n, i, all) => i === 0 || n.fullName !== all[i - 1].fullName);
         // A changed node set resets the list to the top; writing an unchanged position would stop a running flick.
         if (nodeList.contentY !== contentY)
             nodeList.contentY = contentY;
@@ -73,26 +73,26 @@ SplitView {
         function details(node) {
             const ownQos = endpoints => endpoints.filter(e => e.nodeName === node.name && e.nodeNamespace === node.namespace).map(e => e.qos);
             const peers = endpoints => endpoints.map(e => ({
-                                "node": (e.nodeNamespace === "/" ? "/" : e.nodeNamespace + "/") + e.nodeName,
-                                "qos": e.qos
-                            }));
+                            "node": (e.nodeNamespace === "/" ? "/" : e.nodeNamespace + "/") + e.nodeName,
+                            "qos": e.qos
+                        }));
             const servers = (clients, serverRole) => clients.map(c => Object.assign({}, c, {
-                                "peers": all.filter(n => n[serverRole].some(s => s.name === c.name)).map(n => ({
-                                                "node": n.fullName
-                                            }))
-                            }));
+                        "peers": all.filter(n => n[serverRole].some(s => s.name === c.name)).map(n => ({
+                                    "node": n.fullName
+                                }))
+                    }));
             return Object.assign({}, node, {
-                    "publishers": node.publishers.map(t => Object.assign({}, t, {
-                                    "qos": ownQos(Ros2.getPublishersInfoByTopic(t.name)),
-                                    "peers": peers(Ros2.getSubscriptionsInfoByTopic(t.name))
-                                })),
-                    "subscriptions": node.subscriptions.map(t => Object.assign({}, t, {
-                                    "qos": ownQos(Ros2.getSubscriptionsInfoByTopic(t.name)),
-                                    "peers": peers(Ros2.getPublishersInfoByTopic(t.name))
-                                })),
-                    "serviceClients": servers(node.serviceClients, "serviceServers"),
-                    "actionClients": servers(node.actionClients, "actionServers")
-                });
+                "publishers": node.publishers.map(t => Object.assign({}, t, {
+                        "qos": ownQos(Ros2.getPublishersInfoByTopic(t.name)),
+                        "peers": peers(Ros2.getSubscriptionsInfoByTopic(t.name))
+                    })),
+                "subscriptions": node.subscriptions.map(t => Object.assign({}, t, {
+                        "qos": ownQos(Ros2.getSubscriptionsInfoByTopic(t.name)),
+                        "peers": peers(Ros2.getPublishersInfoByTopic(t.name))
+                    })),
+                "serviceClients": servers(node.serviceClients, "serviceServers"),
+                "actionClients": servers(node.actionClients, "actionServers")
+            });
         }
         function select(fullName) {
             context.selectedNodeFullName = fullName;
@@ -119,6 +119,7 @@ SplitView {
 
         SearchBar {
             id: searchBar
+
             Layout.fillWidth: true
             Layout.margins: 4
             objectName: "nmNodeSearchBar"
@@ -160,6 +161,7 @@ SplitView {
             }
             LoadingListView {
                 id: nodeList
+
                 model: d.shownNodes
                 objectName: "nmNodeList"
                 spacing: 2
@@ -192,6 +194,7 @@ SplitView {
 
                             HoverHandler {
                                 id: warningHover
+
                             }
                         }
                     }

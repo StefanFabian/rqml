@@ -45,28 +45,30 @@ Object {
     function loadComponent(container, params) {
         d.loadPending = true;
         clientCache.send(container, "/_container/load_node", "composition_interfaces/srv/LoadNode", {
-                "package_name": params.packageName,
-                "plugin_name": params.pluginName,
-                "node_name": params.nodeName,
-                "node_namespace": params.nodeNamespace,
-                "log_level": params.logLevel,
-                "remap_rules": params.remapRules,
-                "parameters": params.parameters,
-                "extra_arguments": params.useIntraProcessComms ? [{
-                        "name": "use_intra_process_comms",
-                        "value": {
-                            "type": 1,
-                            "bool_value": true
-                        }
-                    }] : []
-            }, response => {
-                d.loadPending = false;
-                if (!response || !response.success)
-                    root.operationFailed(qsTr("Failed to load %1: %2").arg(params.pluginName).arg(response ? response.error_message : qsTr("no response")));
-                // Without a response the container may be gone, the next refresh() lists again.
-                if (response && container === root.selectedContainer)
-                    d.list(container);
-            });
+            "package_name": params.packageName,
+            "plugin_name": params.pluginName,
+            "node_name": params.nodeName,
+            "node_namespace": params.nodeNamespace,
+            "log_level": params.logLevel,
+            "remap_rules": params.remapRules,
+            "parameters": params.parameters,
+            "extra_arguments": params.useIntraProcessComms ? [
+                {
+                    "name": "use_intra_process_comms",
+                    "value": {
+                        "type": 1,
+                        "bool_value": true
+                    }
+                }
+            ] : []
+        }, response => {
+            d.loadPending = false;
+            if (!response || !response.success)
+                root.operationFailed(qsTr("Failed to load %1: %2").arg(params.pluginName).arg(response ? response.error_message : qsTr("no response")));
+            // Without a response the container may be gone, the next refresh() lists again.
+            if (response && container === root.selectedContainer)
+                d.list(container);
+        });
     }
 
     /**
@@ -104,14 +106,14 @@ Object {
         };
         d.unloads = d.unloads.concat(unload);
         clientCache.send(container, "/_container/unload_node", "composition_interfaces/srv/UnloadNode", {
-                "unique_id": component.uniqueId
-            }, response => {
-                d.unloads = d.unloads.filter(other => other !== unload);
-                if (!response || !response.success)
-                    root.operationFailed(qsTr("Failed to unload %1: %2").arg(component.fullName).arg(response ? response.error_message : qsTr("no response")));
-                if (response && container === root.selectedContainer)
-                    d.list(container);
-            });
+            "unique_id": component.uniqueId
+        }, response => {
+            d.unloads = d.unloads.filter(other => other !== unload);
+            if (!response || !response.success)
+                root.operationFailed(qsTr("Failed to unload %1: %2").arg(component.fullName).arg(response ? response.error_message : qsTr("no response")));
+            if (response && container === root.selectedContainer)
+                d.list(container);
+        });
     }
 
     QtObject {
@@ -125,28 +127,29 @@ Object {
 
         function list(container) {
             clientCache.send(container, "/_container/list_nodes", "composition_interfaces/srv/ListNodes", {}, response => {
-                    if (container !== root.selectedContainer)
-                        return;
-                    if (response) {
-                        const components = [];
-                        for (let i = 0; i < response.full_node_names.length; ++i) {
-                            // uint64 array elements reach QML as opaque values, not numbers.
-                            components.push({
-                                    "fullName": response.full_node_names.at(i),
-                                    "uniqueId": Number(response.unique_ids.at(i))
-                                });
-                        }
-                        components.sort((a, b) => (a.fullName > b.fullName) - (a.fullName < b.fullName));
-                        if (JSON.stringify(components) !== JSON.stringify(root.components))
-                            root.components = components;
-                    } else if (root.loading) {
-                        root.operationFailed(qsTr("Failed to list the components of %1: %2").arg(container).arg(qsTr("no response")));
+                if (container !== root.selectedContainer)
+                    return;
+                if (response) {
+                    const components = [];
+                    for (let i = 0; i < response.full_node_names.length; ++i) {
+                        // uint64 array elements reach QML as opaque values, not numbers.
+                        components.push({
+                            "fullName": response.full_node_names.at(i),
+                            "uniqueId": Number(response.unique_ids.at(i))
+                        });
                     }
-                    root.loading = false;
-                });
+                    components.sort((a, b) => (a.fullName > b.fullName) - (a.fullName < b.fullName));
+                    if (JSON.stringify(components) !== JSON.stringify(root.components))
+                        root.components = components;
+                } else if (root.loading) {
+                    root.operationFailed(qsTr("Failed to list the components of %1: %2").arg(container).arg(qsTr("no response")));
+                }
+                root.loading = false;
+            });
         }
     }
     ServiceClientCache {
         id: clientCache
+
     }
 }

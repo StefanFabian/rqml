@@ -16,5 +16,6 @@ MouseArea {
 
     Menu {
         id: menu
+
     }
 }
