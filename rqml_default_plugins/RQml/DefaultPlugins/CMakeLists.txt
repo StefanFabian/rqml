@@ -1,3 +1,4 @@
+qt_policy(SET QTP0001 NEW)
 qt_add_qml_module(rqml_default_plugins_cpp
     URI RQml.DefaultPlugins
     VERSION 1.0
