@@ -42,6 +42,7 @@ ColumnLayout {
 
     SpinBox {
         id: spinBox
+
         editable: true
         from: decimalToInt(root.from)
         height: parent.height

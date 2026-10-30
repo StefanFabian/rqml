@@ -39,9 +39,11 @@ Item {
     }
     Utils {
         id: helpers
+
     }
     Loader {
         id: pluginLoader
+
         function reload() {
             source = "";
             source = "../qml/ControllerManager.qml";
@@ -51,6 +53,7 @@ Item {
     }
     TestCase {
         id: testCase
+
         function init() {
             Ros2.reset();
             contextObj.controller_manager_namespace = "";
@@ -68,51 +71,51 @@ Item {
             Ros2.registerService("/mock_cm/list_controllers", "controller_manager_msgs/srv/ListControllers", handler);
             Ros2.registerService("/another_mock/list_controllers", "controller_manager_msgs/srv/ListControllers", handler);
             Ros2.registerService("/mock_cm/list_parameters", "rcl_interfaces/srv/ListParameters", function (req) {
-                    var resp = Ros2.createEmptyServiceResponse("rcl_interfaces/srv/ListParameters");
-                    resp.result = Ros2.createEmptyMessage("rcl_interfaces/msg/ListParametersResult");
-                    resp.result.names = ["joint_state_broadcaster.type"];
-                    return resp;
-                });
+                var resp = Ros2.createEmptyServiceResponse("rcl_interfaces/srv/ListParameters");
+                resp.result = Ros2.createEmptyMessage("rcl_interfaces/msg/ListParametersResult");
+                resp.result.names = ["joint_state_broadcaster.type"];
+                return resp;
+            });
             Ros2.registerService("/mock_cm/list_hardware_components", "controller_manager_msgs/srv/ListHardwareComponents", function (req) {
-                    var resp = Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/ListHardwareComponents");
-                    var comp = Ros2.createEmptyMessage("controller_manager_msgs/msg/HardwareComponentState");
-                    comp.name = "mock_robot";
-                    comp.type = "system";
-                    comp.state = {
-                        "id": 3,
-                        "label": "active"
-                    };
-                    resp.component = [comp];
-                    return resp;
-                });
+                var resp = Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/ListHardwareComponents");
+                var comp = Ros2.createEmptyMessage("controller_manager_msgs/msg/HardwareComponentState");
+                comp.name = "mock_robot";
+                comp.type = "system";
+                comp.state = {
+                    "id": 3,
+                    "label": "active"
+                };
+                resp.component = [comp];
+                return resp;
+            });
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                });
+                return pluginLoader.status === Loader.Ready;
+            });
         }
         function test_controller_transitions() {
             // Record the requests hitting switch_controller so we can assert
             // on the exact payload sent.
             var switchRequests = [];
             Ros2.registerService("/mock_cm/switch_controller", "controller_manager_msgs/srv/SwitchController", function (req) {
-                    switchRequests.push(req);
-                    var resp = Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/SwitchController");
-                    resp.ok = true;
-                    return resp;
-                });
+                switchRequests.push(req);
+                var resp = Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/SwitchController");
+                resp.ok = true;
+                return resp;
+            });
             contextObj.controller_manager_namespace = "/mock_cm";
             var list = find("cmControllerList");
             tryVerify(function () {
-                    return list.count >= 1;
-                }, 5000);
+                return list.count >= 1;
+            }, 5000);
 
             // Drive transitionController via the interface exposed as a test
             // hook - the context menu builds the same call.
             verify(plugin.controllerManagerInterface);
             plugin.controllerManagerInterface.transitionController("joint_state_broadcaster", ["deactivate"]);
             tryVerify(function () {
-                    return switchRequests.length === 1;
-                }, 2000, "Deactivate must send one switch_controller request");
+                return switchRequests.length === 1;
+            }, 2000, "Deactivate must send one switch_controller request");
             var req = switchRequests[0];
             compare(req.deactivate_controllers, ["joint_state_broadcaster"]);
             compare(req.activate_controllers, []);
@@ -122,8 +125,8 @@ Item {
             // name and a second request should be recorded.
             plugin.controllerManagerInterface.transitionController("joint_state_broadcaster", ["activate"]);
             tryVerify(function () {
-                    return switchRequests.length === 2;
-                }, 2000);
+                return switchRequests.length === 2;
+            }, 2000);
             compare(switchRequests[1].activate_controllers, ["joint_state_broadcaster"]);
             compare(switchRequests[1].deactivate_controllers, []);
         }
@@ -132,8 +135,8 @@ Item {
             var list = find("cmControllerList");
             verify(list !== null, "Controller list should be found");
             tryVerify(function () {
-                    return list.count >= 1;
-                }, 5000, "Should find at least 1 controller");
+                return list.count >= 1;
+            }, 5000, "Should find at least 1 controller");
             compare(list.model.get(0).name, "joint_state_broadcaster");
         }
         function test_hardware_components() {
@@ -141,34 +144,34 @@ Item {
             var list = find("cmHardwareList");
             verify(list !== null, "Hardware components list should be found");
             tryVerify(function () {
-                    return list.count === 1;
-                }, 5000, "Should find 1 hardware component");
+                return list.count === 1;
+            }, 5000, "Should find 1 hardware component");
             compare(list.model.get(0).name, "mock_robot");
         }
         function test_hardware_transitions() {
             var setStateRequests = [];
             Ros2.registerService("/mock_cm/set_hardware_component_state", "controller_manager_msgs/srv/SetHardwareComponentState", function (req) {
-                    setStateRequests.push(req);
-                    var resp = Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/SetHardwareComponentState");
-                    resp.ok = true;
-                    resp.state = {
-                        "id": 2,
-                        "label": "inactive"
-                    };
-                    return resp;
-                });
+                setStateRequests.push(req);
+                var resp = Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/SetHardwareComponentState");
+                resp.ok = true;
+                resp.state = {
+                    "id": 2,
+                    "label": "inactive"
+                };
+                return resp;
+            });
             contextObj.controller_manager_namespace = "/mock_cm";
             var list = find("cmHardwareList");
             tryVerify(function () {
-                    return list.count === 1;
-                }, 5000);
+                return list.count === 1;
+            }, 5000);
             plugin.controllerManagerInterface.transitionHardwareComponent("mock_robot", {
-                    "id": 2,
-                    "label": "inactive"
-                });
+                "id": 2,
+                "label": "inactive"
+            });
             tryVerify(function () {
-                    return setStateRequests.length === 1;
-                }, 2000);
+                return setStateRequests.length === 1;
+            }, 2000);
             compare(setStateRequests[0].name, "mock_robot");
             compare(setStateRequests[0].target_state.label, "inactive");
             compare(setStateRequests[0].target_state.id, 2);
@@ -177,8 +180,8 @@ Item {
             contextObj.controller_manager_namespace = "/mock_cm";
             var list = find("cmControllerList");
             tryVerify(function () {
-                    return list.count >= 1;
-                }, 5000);
+                return list.count >= 1;
+            }, 5000);
 
             // Controller info dialog opens with the given controller.
             var controllerDialog = find("cmControllerInfoDialog");
@@ -186,24 +189,24 @@ Item {
             verify(!controllerDialog.visible, "Dialog starts hidden");
             controllerDialog.openControllerInfo(list.model.get(0));
             tryVerify(function () {
-                    return controllerDialog.visible;
-                }, 2000);
+                return controllerDialog.visible;
+            }, 2000);
             compare(controllerDialog.controller.name, "joint_state_broadcaster");
             controllerDialog.close();
             tryVerify(function () {
-                    return !controllerDialog.visible;
-                }, 2000);
+                return !controllerDialog.visible;
+            }, 2000);
             var hwList = find("cmHardwareList");
             tryVerify(function () {
-                    return hwList.count >= 1;
-                }, 5000);
+                return hwList.count >= 1;
+            }, 5000);
             var hwDialog = find("cmHardwareComponentInfoDialog");
             verify(hwDialog, "Hardware component info dialog found");
             verify(!hwDialog.visible);
             hwDialog.openHardwareComponentInfo(hwList.model.get(0));
             tryVerify(function () {
-                    return hwDialog.visible;
-                }, 2000);
+                return hwDialog.visible;
+            }, 2000);
             hwDialog.close();
         }
         function test_namespace_selection() {
@@ -212,8 +215,8 @@ Item {
 
             // Wait for both namespaces to be discovered
             tryVerify(function () {
-                    return nsCombo.count >= 2;
-                }, 5000);
+                return nsCombo.count >= 2;
+            }, 5000);
 
             // Select "/another_mock"
             var targetIndex = -1;
@@ -235,31 +238,31 @@ Item {
             contextObj.controller_manager_namespace = "/mock_cm";
             var list = find("cmControllerList");
             tryVerify(function () {
-                    return list.count >= 1;
-                }, 5000);
+                return list.count >= 1;
+            }, 5000);
             compare(list.count, 1);
 
             // Re-register with a handler returning a different set. The plugin
             // must only pick up the change after an explicit refresh.
             Ros2.registerService("/mock_cm/list_controllers", "controller_manager_msgs/srv/ListControllers", function (req) {
-                    var resp = Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/ListControllers");
-                    var c1 = Ros2.createEmptyMessage("controller_manager_msgs/msg/ControllerState");
-                    c1.name = "joint_state_broadcaster";
-                    c1.state = "active";
-                    c1.type = "joint_state_broadcaster/JointStateBroadcaster";
-                    var c2 = Ros2.createEmptyMessage("controller_manager_msgs/msg/ControllerState");
-                    c2.name = "arm_controller";
-                    c2.state = "inactive";
-                    c2.type = "joint_trajectory_controller/JointTrajectoryController";
-                    resp.controller = [c1, c2];
-                    return resp;
-                });
+                var resp = Ros2.createEmptyServiceResponse("controller_manager_msgs/srv/ListControllers");
+                var c1 = Ros2.createEmptyMessage("controller_manager_msgs/msg/ControllerState");
+                c1.name = "joint_state_broadcaster";
+                c1.state = "active";
+                c1.type = "joint_state_broadcaster/JointStateBroadcaster";
+                var c2 = Ros2.createEmptyMessage("controller_manager_msgs/msg/ControllerState");
+                c2.name = "arm_controller";
+                c2.state = "inactive";
+                c2.type = "joint_trajectory_controller/JointTrajectoryController";
+                resp.controller = [c1, c2];
+                return resp;
+            });
             var refreshBtn = find("cmRefreshButton");
             verify(refreshBtn);
             mouseClick(refreshBtn);
             tryVerify(function () {
-                    return list.count >= 2;
-                }, 5000, "Refresh should pick up the updated controller list");
+                return list.count >= 2;
+            }, 5000, "Refresh should pick up the updated controller list");
 
             // Both controllers must be present (order from the service).
             var names = [list.model.get(0).name, list.model.get(1).name];

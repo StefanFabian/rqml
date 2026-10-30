@@ -31,6 +31,7 @@ RoundButton {
 
     contentItem: Label {
         id: reloadIcon
+
         anchors.centerIn: control
         font: control.font
         height: width
@@ -41,6 +42,7 @@ RoundButton {
 
         SequentialAnimation {
             id: reloadRotationAnimator
+
             loops: Animation.Infinite
             running: false
 

@@ -28,6 +28,7 @@ Rectangle {
 
     Label {
         id: label
+
         anchors.centerIn: parent
         color: root.textColor
         font.bold: true
@@ -36,6 +37,7 @@ Rectangle {
     }
     MouseArea {
         id: mouseArea
+
         anchors.fill: parent
         enabled: tooltipText !== ""
         hoverEnabled: true

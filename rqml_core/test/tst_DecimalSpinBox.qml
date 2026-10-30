@@ -8,6 +8,7 @@ Item {
 
     DecimalSpinBox {
         id: spinbox
+
         decimals: 1
         from: 0.0
         stepSize: 0.1

@@ -8,6 +8,7 @@ import "interfaces"
 
 Rectangle {
     id: root
+
     enum State {
         Unknown,
         Unconfigured,
@@ -40,6 +41,7 @@ Rectangle {
         }
         ComboBox {
             id: controllerManagerComboBox
+
             Layout.fillWidth: true
             model: d.controllerManagers
             objectName: "cmComboBox"
@@ -61,6 +63,7 @@ Rectangle {
         }
         LoadingListView {
             id: controllerListView
+
             Layout.columnSpan: 3
             Layout.fillHeight: true
             Layout.fillWidth: true
@@ -91,6 +94,7 @@ Rectangle {
 
                 Menu {
                     id: contextMenu
+
                     width: {
                         let result = 0;
                         let padding = 0;
@@ -159,6 +163,7 @@ Rectangle {
         }
         LoadingListView {
             id: hardwareComponentsListView
+
             Layout.columnSpan: 3
             Layout.fillHeight: true
             Layout.fillWidth: true
@@ -190,6 +195,7 @@ Rectangle {
 
                 Menu {
                     id: contextMenu
+
                     width: {
                         let result = 0;
                         let padding = 0;
@@ -260,10 +266,12 @@ Rectangle {
     }
     ControllerInfoDialog {
         id: controllerInfoDialog
+
         objectName: "cmControllerInfoDialog"
     }
     HardwareComponentInfoDialog {
         id: hardwareComponentInfoDialog
+
         objectName: "cmHardwareComponentInfoDialog"
     }
     QtObject {
@@ -277,81 +285,103 @@ Rectangle {
 
         function getTransitionsForControllerState(state) {
             const transitions = {
-                "active": [{
+                "active": [
+                    {
                         "name": "Deactivate (inactive)",
                         "actions": ["deactivate"]
-                    }, {
+                    },
+                    {
                         "name": "Deactivate and Unload (unloaded)",
                         "actions": ["deactivate", "unload"]
-                    }],
-                "inactive": [{
+                    }
+                ],
+                "inactive": [
+                    {
                         "name": "Activate (active)",
                         "actions": ["activate"]
-                    }, {
+                    },
+                    {
                         "name": "Unload and Load (unconfigured)",
                         "actions": ["unload", "load"]
-                    }, {
+                    },
+                    {
                         "name": "Unload (unloaded)",
                         "actions": ["unload"]
-                    }],
-                "unconfigured": [{
+                    }
+                ],
+                "unconfigured": [
+                    {
                         "name": "Configure and Activate (active)",
                         "actions": ["configure", "activate"]
-                    }, {
+                    },
+                    {
                         "name": "Configure (inactive)",
                         "actions": ["configure"]
-                    }, {
+                    },
+                    {
                         "name": "Unload (unloaded)",
                         "actions": ["unload"]
-                    }],
-                "unloaded": [{
+                    }
+                ],
+                "unloaded": [
+                    {
                         "name": "Load (unconfigured)",
                         "actions": ["load"]
-                    }]
+                    }
+                ]
             };
             return transitions[state] || [];
         }
         function getTransitionsForHardwareComponentState(state) {
             const transitions = {
-                "active": [{
+                "active": [
+                    {
                         "name": "Deactivate (inactive)",
                         "target_state": {
                             "id": State.Inactive,
                             "label": "inactive"
                         }
-                    }, {
+                    },
+                    {
                         "name": "Deactivate and Cleanup (unconfigured)",
                         "target_state": {
                             "id": State.Unconfigured,
                             "label": "unconfigured"
                         }
-                    },],
-                "inactive": [{
+                    },
+                ],
+                "inactive": [
+                    {
                         "name": "Activate (active)",
                         "target_state": {
                             "id": State.Active,
                             "label": "active"
                         }
-                    }, {
+                    },
+                    {
                         "name": "Cleanup (unconfigured)",
                         "target_state": {
                             "id": State.Unconfigured,
                             "label": "unconfigured"
                         }
-                    },],
-                "unconfigured": [{
+                    },
+                ],
+                "unconfigured": [
+                    {
                         "name": "Configure and Activate (active)",
                         "target_state": {
                             "id": State.Active,
                             "label": "active"
                         }
-                    }, {
+                    },
+                    {
                         "name": "Configure (inactive)",
                         "target_state": {
                             "id": State.Inactive,
                             "label": "inactive"
                         }
-                    },]
+                    },
+                ]
             };
             return transitions[state] || [];
         }
@@ -369,8 +399,8 @@ Rectangle {
             }
             // Remove empty entries
             controllerManagers = controllerManagers.filter(function (e) {
-                    return e;
-                });
+                return e;
+            });
             controllerManagers.sort();
             d.controllerManagers = [];
             d.controllerManagers = controllerManagers;

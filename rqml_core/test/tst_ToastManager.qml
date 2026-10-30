@@ -10,6 +10,7 @@ Item {
 
     ToastManager {
         id: toastManager
+
         dismissDuration: 500
         maxToasts: 3
     }
@@ -63,8 +64,8 @@ Item {
             if (!delegate)
                 return null;
             var found = walkAll(delegate, function (c) {
-                    return c && c.hasOwnProperty("paused") && c.hasOwnProperty("duration") && c.toString().indexOf("NumberAnimation") !== -1;
-                });
+                return c && c.hasOwnProperty("paused") && c.hasOwnProperty("duration") && c.toString().indexOf("NumberAnimation") !== -1;
+            });
             return found.length > 0 ? found[0] : null;
         }
         function init() {
@@ -82,8 +83,8 @@ Item {
 
             // Wait for the dismiss animation to complete (500ms duration + 200ms remove animation)
             tryVerify(function () {
-                    return toastManager.count === 0;
-                }, 2000, "Toast should be auto-dismissed after dismissDuration");
+                return toastManager.count === 0;
+            }, 2000, "Toast should be auto-dismissed after dismissDuration");
         }
         function test_defaultLevelIsInfo() {
             toastManager.show("No level specified");
@@ -103,8 +104,8 @@ Item {
             toastManager.dismissDuration = 5000;
             toastManager.show("hover me", "info");
             tryVerify(function () {
-                    return findDelegate(toastManager) !== null;
-                }, 1000);
+                return findDelegate(toastManager) !== null;
+            }, 1000);
             var delegate = findDelegate(toastManager);
 
             // The HoverHandler is stored on the delegate's `data` list.
@@ -135,8 +136,8 @@ Item {
 
             // Allow the delegate to instantiate.
             tryVerify(function () {
-                    return findDelegateCloseButton(toastManager) !== null;
-                }, 2000, "close button delegate should be found");
+                return findDelegateCloseButton(toastManager) !== null;
+            }, 2000, "close button delegate should be found");
             var btn = findDelegateCloseButton(toastManager);
             btn.clicked();
             wait(50);

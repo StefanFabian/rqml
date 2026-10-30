@@ -8,6 +8,7 @@ Item {
 
     KeyActivationGuard {
         id: guard
+
         duration: 100
     }
     TestCase {

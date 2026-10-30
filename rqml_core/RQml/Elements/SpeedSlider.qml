@@ -31,6 +31,7 @@ Item {
 
     GridLayout {
         id: layout
+
         anchors.fill: parent
         columns: 3
         flow: direction == Qt.Vertical ? GridLayout.LeftToRight : GridLayout.TopToBottom
@@ -38,6 +39,7 @@ Item {
 
         DecimalInputField {
             id: maxField
+
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             Layout.column: direction == Qt.Vertical ? 0 : 2
             Layout.columnSpan: direction == Qt.Vertical ? 3 : 1
@@ -63,6 +65,7 @@ Item {
         }
         Slider {
             id: slider
+
             Layout.column: 1
             Layout.fillHeight: direction == Qt.Vertical
             Layout.fillWidth: direction == Qt.Horizontal
@@ -75,6 +78,7 @@ Item {
         }
         DecimalInputField {
             id: valueField
+
             Layout.alignment: direction == Qt.Vertical ? Qt.AlignLeft | Qt.AlignVCenter : Qt.AlignTop | Qt.AlignHCenter
             Layout.column: direction == Qt.Vertical ? 2 : 1
             Layout.fillWidth: direction == Qt.Vertical
@@ -89,6 +93,7 @@ Item {
         }
         DecimalInputField {
             id: minField
+
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             Layout.column: 0
             Layout.columnSpan: direction == Qt.Vertical ? 3 : 1

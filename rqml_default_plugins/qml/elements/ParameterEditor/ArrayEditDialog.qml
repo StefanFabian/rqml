@@ -26,8 +26,8 @@ Dialog {
         arrayListModel.clear();
         for (let i = 0; i < tempArray.length; i++) {
             arrayListModel.append({
-                    "value": tempArray[i]
-                });
+                "value": tempArray[i]
+            });
         }
         open();
     }
@@ -56,10 +56,10 @@ Dialog {
                 finalArray.push(String(itemValue));
         }
         ParameterService.setParameter(paramModel.nodeName, paramModel.paramName, finalArray, paramModel.paramType, function (success, reason) {
-                if (!success) {
-                    arrayEditDialog.parameterSetFailed(paramModel.paramName, reason);
-                }
-            });
+            if (!success) {
+                arrayEditDialog.parameterSetFailed(paramModel.paramName, reason);
+            }
+        });
     }
 
     ColumnLayout {
@@ -78,9 +78,11 @@ Dialog {
         }
         ListModel {
             id: arrayListModel
+
         }
         ListView {
             id: arrayListView
+
             Layout.fillHeight: true
             Layout.fillWidth: true
             clip: true
@@ -132,8 +134,8 @@ Dialog {
 
                 onClicked: {
                     arrayListModel.append({
-                            "value": ""
-                        });
+                        "value": ""
+                    });
                     arrayListView.positionViewAtEnd();
                 }
             }

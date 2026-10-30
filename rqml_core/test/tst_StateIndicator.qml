@@ -9,6 +9,7 @@ Item {
 
     StateIndicator {
         id: indicator
+
         state: "active"
     }
     TestCase {

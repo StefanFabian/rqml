@@ -8,15 +8,18 @@ Item {
 
     HoldButton {
         id: holdBtn
+
         holdDuration: 120
         text: "Hold"
     }
     Item {
         id: focusSink
+
         y: 100
     }
     SignalSpy {
         id: activatedSpy
+
         signalName: "activated"
         target: holdBtn
     }

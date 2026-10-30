@@ -48,6 +48,7 @@ RowLayout {
     }
     TextField {
         id: textField
+
         Layout.fillWidth: true
         leftPadding: searchIcon.width + 12
         objectName: "searchBarTextField"
@@ -67,6 +68,7 @@ RowLayout {
 
         Label {
             id: searchIcon
+
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 8
             anchors.left: parent.left
@@ -80,6 +82,7 @@ RowLayout {
         }
         Label {
             id: clearButton
+
             anchors.right: parent.right
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
@@ -91,6 +94,7 @@ RowLayout {
 
             MouseArea {
                 id: clearArea
+
                 anchors.fill: parent
                 anchors.margins: -4
                 cursorShape: Qt.PointingHandCursor
@@ -101,6 +105,7 @@ RowLayout {
         }
         Timer {
             id: debounceTimer
+
             interval: root.debounceInterval
 
             onTriggered: internal.debouncedText = textField.text.toLowerCase()

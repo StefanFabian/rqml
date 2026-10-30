@@ -44,6 +44,7 @@ RowLayout {
 
     TruncatedLabel {
         id: arrayValueLabel
+
         Layout.fillWidth: true
         color: palette.text
         font.family: "Monospace"

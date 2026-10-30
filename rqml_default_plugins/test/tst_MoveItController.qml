@@ -44,9 +44,11 @@ Item {
     }
     Utils {
         id: helpers
+
     }
     Loader {
         id: pluginLoader
+
         function reload() {
             source = "";
             source = "../qml/MoveItController.qml";
@@ -56,16 +58,19 @@ Item {
     }
     Publisher {
         id: urdfPublisher
+
         topic: "/robot_description"
         type: "std_msgs/msg/String"
     }
     Publisher {
         id: srdfPublisher
+
         topic: "/robot_description_semantic"
         type: "std_msgs/msg/String"
     }
     Publisher {
         id: jointStatePublisher
+
         topic: "/joint_states"
         type: "sensor_msgs/msg/JointState"
     }
@@ -87,9 +92,9 @@ Item {
 
             // Register mock action server
             Ros2.registerAction("/move_group", "moveit_msgs/action/MoveGroup", function (goal, callbacks) {
-                    lastCallbacks = callbacks;
-                    lastGoalMessage = goal;
-                });
+                lastCallbacks = callbacks;
+                lastGoalMessage = goal;
+            });
 
             // Register topics for discovery
             Ros2.registerTopic("/joint_states", "sensor_msgs/msg/JointState");
@@ -107,8 +112,8 @@ Item {
             lastGoalMessage = null;
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
         }
         function injectJointStates(names, positions) {
             var msg = Ros2.createEmptyMessage("sensor_msgs/msg/JointState");
@@ -140,27 +145,27 @@ Item {
             contextObj.moveGroup = "arm";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
             injectUrdf();
             // URDF parsing is async via XMLHttpRequest — wait for status label
             var urdfLabel = find("moveitUrdfStatusLabel");
             tryVerify(function () {
-                    return urdfLabel && urdfLabel.text === "URDF: Loaded";
-                }, 3000, "setupFullState: URDF should be loaded");
+                return urdfLabel && urdfLabel.text === "URDF: Loaded";
+            }, 3000, "setupFullState: URDF should be loaded");
             injectSrdf();
             // SRDF parsing is async via XMLHttpRequest — wait for status label
             var srdfLabel = find("moveitSrdfStatusLabel");
             tryVerify(function () {
-                    return srdfLabel && srdfLabel.text === "SRDF: Loaded";
-                }, 3000, "setupFullState: SRDF should be loaded");
+                return srdfLabel && srdfLabel.text === "SRDF: Loaded";
+            }, 3000, "setupFullState: SRDF should be loaded");
 
             // Wait for joints to appear from chain resolution
             var jointList = find("moveitJointListView");
             tryVerify(function () {
-                    return jointList && jointList.count === 3;
-                }, 5000, "setupFullState: joints should be populated");
+                return jointList && jointList.count === 3;
+            }, 5000, "setupFullState: joints should be populated");
         }
         function test_action_server_change_clears_state() {
             // Set up full state with the first action server
@@ -169,8 +174,8 @@ Item {
             wait(50);
             var jl = find("moveitJointListView");
             tryVerify(function () {
-                    return jl.model.get(0).initialized;
-                }, 3000);
+                return jl.model.get(0).initialized;
+            }, 3000);
 
             // Verify we have data
             var urdfLabel = find("moveitUrdfStatusLabel");
@@ -184,8 +189,8 @@ Item {
             contextObj.actionServer = "/other_move_group";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
 
             // All state should be cleared
@@ -195,8 +200,8 @@ Item {
             tryCompare(srdfLabelAfter, "text", "SRDF: Waiting...", 3000, "SRDF should reset when action server changes");
             var jointListAfter = find("moveitJointListView");
             tryVerify(function () {
-                    return jointListAfter.count === 0;
-                }, 3000, "Joints should be cleared when action server changes");
+                return jointListAfter.count === 0;
+            }, 3000, "Joints should be cleared when action server changes");
         }
         function test_action_server_discovery() {
             var comboBox = find("moveitActionServerComboBox");
@@ -206,21 +211,21 @@ Item {
             contextObj.actionServer = "/move_group";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
 
             // Wait for discovery timer (500ms interval)
             tryVerify(function () {
-                    var cb = find("moveitActionServerComboBox");
-                    return cb && cb.count > 0;
-                }, 3000, "Action server should be discovered");
+                var cb = find("moveitActionServerComboBox");
+                return cb && cb.count > 0;
+            }, 3000, "Action server should be discovered");
         }
         function test_action_server_refresh() {
             contextObj.actionServer = "/move_group";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
 
             // Register a second action server after load
@@ -243,13 +248,13 @@ Item {
             verify(refreshBtn !== null, "Refresh button should exist");
             mouseClick(refreshBtn);
             tryVerify(function () {
-                    var cb = find("moveitActionServerComboBox");
-                    for (var i = 0; i < cb.count; i++) {
-                        if (cb.model.get(i).name === "/second_move_group")
-                            return true;
-                    }
-                    return false;
-                }, 3000, "Second action server should appear after refresh");
+                var cb = find("moveitActionServerComboBox");
+                for (var i = 0; i < cb.count; i++) {
+                    if (cb.model.get(i).name === "/second_move_group")
+                        return true;
+                }
+                return false;
+            }, 3000, "Second action server should appear after refresh");
         }
         function test_apply_named_pose() {
             setupFullState();
@@ -259,14 +264,14 @@ Item {
             injectJointStates(["joint1", "joint2", "joint3"], [0.1, -0.1, 0.1]);
             wait(50);
             tryVerify(function () {
-                    return jointList.model.get(0).initialized;
-                }, 3000, "Joints should be initialized");
+                return jointList.model.get(0).initialized;
+            }, 3000, "Joints should be initialized");
 
             // Find and click the "ready" pose button
             var posesFlow = find("moveitNamedPosesFlow");
             tryVerify(function () {
-                    return posesFlow.visible;
-                }, 3000);
+                return posesFlow.visible;
+            }, 3000);
             var readyButton = null;
             for (var i = 0; i < posesFlow.children.length; i++) {
                 if (posesFlow.children[i].text === "ready") {
@@ -279,11 +284,11 @@ Item {
 
             // Verify goals updated to ready pose values
             tryVerify(function () {
-                    var j1 = jointList.model.get(0); // joint1
-                    var j2 = jointList.model.get(1); // joint2
-                    var j3 = jointList.model.get(2); // joint3
-                    return Math.abs(j1.goal - 1.0) < 0.02 && Math.abs(j2.goal - (-0.5)) < 0.02 && Math.abs(j3.goal - 0.5) < 0.02;
-                }, 3000, "Joint goals should match 'ready' pose values");
+                var j1 = jointList.model.get(0); // joint1
+                var j2 = jointList.model.get(1); // joint2
+                var j3 = jointList.model.get(2); // joint3
+                return Math.abs(j1.goal - 1.0) < 0.02 && Math.abs(j2.goal - (-0.5)) < 0.02 && Math.abs(j3.goal - 0.5) < 0.02;
+            }, 3000, "Joint goals should match 'ready' pose values");
         }
 
         // ================================================================
@@ -295,8 +300,8 @@ Item {
             var comboBox = find("moveitActionServerComboBox");
             verify(comboBox !== null);
             tryVerify(function () {
-                    return contextObj.actionServer === "/move_group";
-                }, 3000, "First discovered action server should auto-populate context");
+                return contextObj.actionServer === "/move_group";
+            }, 3000, "First discovered action server should auto-populate context");
             tryCompare(comboBox, "currentText", "/move_group", 3000);
         }
         function test_auto_select_first_move_group() {
@@ -308,8 +313,8 @@ Item {
             var srdfLabel = find("moveitSrdfStatusLabel");
             tryCompare(srdfLabel, "text", "SRDF: Loaded", 3000);
             tryVerify(function () {
-                    return contextObj.moveGroup === "arm";
-                }, 3000, "First available move group should auto-populate context");
+                return contextObj.moveGroup === "arm";
+            }, 3000, "First available move group should auto-populate context");
             var groupCombo = find("moveitMoveGroupComboBox");
             tryCompare(groupCombo, "currentText", "arm", 3000);
         }
@@ -322,8 +327,8 @@ Item {
             contextObj.moveGroup = "partial";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
             injectSrdf();
             tryCompare(find("moveitSrdfStatusLabel"), "text", "SRDF: Loaded", 3000);
@@ -336,8 +341,8 @@ Item {
             var jointList = find("moveitJointListView");
             verify(jointList !== null, "Joint list should exist");
             tryVerify(function () {
-                    return jointList.count === 3;
-                }, 3000, "arm group should have 3 joints (chain-resolved)");
+                return jointList.count === 3;
+            }, 3000, "arm group should have 3 joints (chain-resolved)");
 
             // Joints should be sorted alphabetically
             compare(jointList.model.get(0).name, "joint1", "First joint");
@@ -359,8 +364,8 @@ Item {
             contextObj.moveGroup = "a";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
             injectUrdf();
             tryCompare(find("moveitUrdfStatusLabel"), "text", "URDF: Loaded", 3000);
@@ -373,8 +378,8 @@ Item {
             // tryVerify caps the wait so we surface the regression instead.
             var jointList = find("moveitJointListView");
             tryVerify(function () {
-                    return jointList.count === 2;
-                }, 5000, "Group 'a' should resolve joint1 + joint2 via subgroup without cycling");
+                return jointList.count === 2;
+            }, 5000, "Group 'a' should resolve joint1 + joint2 via subgroup without cycling");
             var names = [jointList.model.get(0).name, jointList.model.get(1).name].sort();
             compare(names[0], "joint1");
             compare(names[1], "joint2");
@@ -393,8 +398,8 @@ Item {
             contextObj.planningAttempts = 8;
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
             injectSrdf();
             var srdfLabel = find("moveitSrdfStatusLabel");
@@ -404,44 +409,44 @@ Item {
             var headerButton = find("moveitPlanningConfigButton");
             mouseClick(headerButton);
             tryVerify(function () {
-                    var vs = find("moveitVelocitySlider");
-                    return vs !== null && vs.visible;
-                }, 3000, "Planning config should expand");
+                var vs = find("moveitVelocitySlider");
+                return vs !== null && vs.visible;
+            }, 3000, "Planning config should expand");
 
             // Verify sliders read from context (UI bindings, not just contextObj values)
             var velSlider = find("moveitVelocitySlider");
             tryVerify(function () {
-                    return Math.abs(velSlider.value - 0.5) < 0.02;
-                }, 3000, "Velocity slider should reflect context value 0.5");
+                return Math.abs(velSlider.value - 0.5) < 0.02;
+            }, 3000, "Velocity slider should reflect context value 0.5");
             var accSlider = find("moveitAccelerationSlider");
             tryVerify(function () {
-                    return Math.abs(accSlider.value - 0.3) < 0.02;
-                }, 3000, "Acceleration slider should reflect context value 0.3");
+                return Math.abs(accSlider.value - 0.3) < 0.02;
+            }, 3000, "Acceleration slider should reflect context value 0.3");
             var timeSlider = find("moveitPlanningTimeSlider");
             tryVerify(function () {
-                    return Math.abs(timeSlider.value - 10.0) < 0.1;
-                }, 3000, "Planning time slider should reflect context value 10.0");
+                return Math.abs(timeSlider.value - 10.0) < 0.1;
+            }, 3000, "Planning time slider should reflect context value 10.0");
             var attemptsSlider = find("moveitPlanningAttemptsSlider");
             tryVerify(function () {
-                    return Math.abs(attemptsSlider.value - 8) < 0.5;
-                }, 3000, "Planning attempts slider should reflect context value 8");
+                return Math.abs(attemptsSlider.value - 8) < 0.5;
+            }, 3000, "Planning attempts slider should reflect context value 8");
         }
         function test_continuous_joint_wrapping() {
             setupFullState();
             var jointList = find("moveitJointListView");
             tryVerify(function () {
-                    return jointList.count === 3;
-                }, 3000);
+                return jointList.count === 3;
+            }, 3000);
 
             // joint3 is continuous — inject a position > pi that should be wrapped
             // 4.0 rad → (4.0 + pi) % (2*pi) - pi ≈ -2.28 rad
             injectJointStates(["joint3"], [4.0]);
             wait(50);
             tryVerify(function () {
-                    var j3 = jointList.model.get(2); // joint3
-                    // Wrapped value should be in [-pi, pi]
-                    return j3.position >= -Math.PI && j3.position <= Math.PI;
-                }, 3000, "Continuous joint position should be wrapped to [-pi, pi]");
+                var j3 = jointList.model.get(2); // joint3
+                // Wrapped value should be in [-pi, pi]
+                return j3.position >= -Math.PI && j3.position <= Math.PI;
+            }, 3000, "Continuous joint position should be wrapped to [-pi, pi]");
 
             // Verify the exact wrapped value
             var j3 = jointList.model.get(2);
@@ -455,11 +460,11 @@ Item {
             // joint1 is revolute — should be clamped by limits (-1.57, 1.57)
             // but not wrapped. The subscription stores the raw position.
             tryVerify(function () {
-                    var j1 = jointList.model.get(0);
-                    // Revolute joints don't get wrapped — position is stored as-is
-                    // (limits are enforced by the slider, not the subscription)
-                    return Math.abs(j1.position - 4.0) < 0.02 || Math.abs(j1.position) < 0.02; // rounded to 0 if || 0.0 kicks in
-                }, 3000, "Revolute joint should not be wrapped");
+                var j1 = jointList.model.get(0);
+                // Revolute joints don't get wrapped — position is stored as-is
+                // (limits are enforced by the slider, not the subscription)
+                return Math.abs(j1.position - 4.0) < 0.02 || Math.abs(j1.position) < 0.02; // rounded to 0 if || 0.0 kicks in
+            }, 3000, "Revolute joint should not be wrapped");
         }
         function test_empty_state_hidden_when_configured() {
             setupFullState();
@@ -473,8 +478,8 @@ Item {
             contextObj.moveGroup = "";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             // Let the discovery timer fire at least once.
             wait(700);
             var emptyLabel = find("moveitEmptyStateLabel");
@@ -493,13 +498,13 @@ Item {
             contextObj.actionServer = "/move_group";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
             var emptyLabel = find("moveitEmptyStateLabel");
             tryVerify(function () {
-                    return emptyLabel && emptyLabel.visible && emptyLabel.text === "No MoveGroups found.";
-                }, 3000, "Empty label should report missing move groups");
+                return emptyLabel && emptyLabel.visible && emptyLabel.text === "No MoveGroups found.";
+            }, 3000, "Empty label should report missing move groups");
         }
 
         // ================================================================
@@ -514,31 +519,31 @@ Item {
             wait(50);
             var jl = find("moveitJointListView");
             tryVerify(function () {
-                    return jl.model.get(0).initialized;
-                }, 3000);
+                return jl.model.get(0).initialized;
+            }, 3000);
             var executeBtn = find("moveitExecuteButton");
             tryVerify(function () {
-                    return executeBtn.enabled;
-                }, 5000);
+                return executeBtn.enabled;
+            }, 5000);
             mouseClick(executeBtn);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 3000);
+                return lastCallbacks !== null;
+            }, 3000);
             var handle = Ros2.createGoalHandle("banner_hide_goal");
             handle.setStatus(1);
             lastCallbacks.onGoalResponse(handle);
             lastCallbacks.onResult({
-                    "status": 4,
-                    "result": {
-                        "error_code": {
-                            "val": -1
-                        }
+                "status": 4,
+                "result": {
+                    "error_code": {
+                        "val": -1
                     }
-                });
+                }
+            });
             var errorBanner = find("moveitErrorBannerRect");
             tryVerify(function () {
-                    return errorBanner.visible;
-                }, 3000, "Error banner should be visible after failure");
+                return errorBanner.visible;
+            }, 3000, "Error banner should be visible after failure");
 
             // Find the close ('x') button inside the banner and click it.
             var closeBtn = null;
@@ -560,8 +565,8 @@ Item {
             verify(closeBtn !== null, "Close button should exist in error banner");
             mouseClick(closeBtn);
             tryVerify(function () {
-                    return !errorBanner.visible;
-                }, 3000, "Error banner should hide when close button clicked");
+                return !errorBanner.visible;
+            }, 3000, "Error banner should hide when close button clicked");
         }
         function test_error_banner_dismissed_on_new_goal() {
             setupFullState();
@@ -569,46 +574,46 @@ Item {
             wait(50);
             var jl = find("moveitJointListView");
             tryVerify(function () {
-                    return jl.model.get(0).initialized;
-                }, 3000);
+                return jl.model.get(0).initialized;
+            }, 3000);
             var executeBtn = find("moveitExecuteButton");
             tryVerify(function () {
-                    return executeBtn.enabled;
-                }, 5000);
+                return executeBtn.enabled;
+            }, 5000);
 
             // First goal: trigger a failure
             mouseClick(executeBtn);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 3000);
+                return lastCallbacks !== null;
+            }, 3000);
             var handle1 = Ros2.createGoalHandle("fail_goal");
             handle1.setStatus(1);
             lastCallbacks.onGoalResponse(handle1);
             lastCallbacks.onResult({
-                    "status": 4,
-                    "result": {
-                        "error_code": {
-                            "val": -1
-                        }
+                "status": 4,
+                "result": {
+                    "error_code": {
+                        "val": -1
                     }
-                });
+                }
+            });
             var errorBanner = find("moveitErrorBannerRect");
             tryVerify(function () {
-                    return errorBanner.visible;
-                }, 3000, "Error banner should be visible after failure");
+                return errorBanner.visible;
+            }, 3000, "Error banner should be visible after failure");
 
             // Second goal: accept it - error should be dismissed
             lastCallbacks = null;
             mouseClick(executeBtn);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 3000);
+                return lastCallbacks !== null;
+            }, 3000);
             var handle2 = Ros2.createGoalHandle("success_goal");
             handle2.setStatus(1);
             lastCallbacks.onGoalResponse(handle2);
             tryVerify(function () {
-                    return !errorBanner.visible;
-                }, 3000, "Error banner should be dismissed when new goal is accepted");
+                return !errorBanner.visible;
+            }, 3000, "Error banner should be dismissed when new goal is accepted");
         }
 
         // ================================================================
@@ -622,19 +627,19 @@ Item {
             wait(50);
             var jointList = find("moveitJointListView");
             tryVerify(function () {
-                    return jointList.model.get(0).initialized;
-                }, 3000, "Joints should be initialized");
+                return jointList.model.get(0).initialized;
+            }, 3000, "Joints should be initialized");
             var executeBtn = find("moveitExecuteButton");
             verify(executeBtn !== null, "Execute button should exist");
             tryVerify(function () {
-                    return executeBtn.enabled;
-                }, 5000, "Execute button should be enabled when action is ready");
+                return executeBtn.enabled;
+            }, 5000, "Execute button should be enabled when action is ready");
             mouseClick(executeBtn);
 
             // Verify the action handler received the goal
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 3000, "Action handler should receive goal");
+                return lastCallbacks !== null;
+            }, 3000, "Action handler should receive goal");
 
             // Verify goal message structure
             verify(lastGoalMessage !== null, "Goal message should be captured");
@@ -645,16 +650,16 @@ Item {
             wait(50);
             var jl = find("moveitJointListView");
             tryVerify(function () {
-                    return jl.model.get(0).initialized;
-                }, 3000);
+                return jl.model.get(0).initialized;
+            }, 3000);
             var executeBtn = find("moveitExecuteButton");
             tryVerify(function () {
-                    return executeBtn.enabled;
-                }, 5000);
+                return executeBtn.enabled;
+            }, 5000);
             mouseClick(executeBtn);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 3000);
+                return lastCallbacks !== null;
+            }, 3000);
 
             // Accept the goal
             var handle = Ros2.createGoalHandle("moveit_goal_1");
@@ -670,16 +675,16 @@ Item {
             wait(50);
             var jl = find("moveitJointListView");
             tryVerify(function () {
-                    return jl.model.get(0).initialized;
-                }, 3000);
+                return jl.model.get(0).initialized;
+            }, 3000);
             var executeBtn = find("moveitExecuteButton");
             tryVerify(function () {
-                    return executeBtn.enabled;
-                }, 5000);
+                return executeBtn.enabled;
+            }, 5000);
             mouseClick(executeBtn);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 3000);
+                return lastCallbacks !== null;
+            }, 3000);
 
             // Accept the goal
             var handle = Ros2.createGoalHandle("moveit_goal_cancel");
@@ -691,8 +696,8 @@ Item {
             // Click cancel
             mouseClick(executeBtn);
             tryVerify(function () {
-                    return Ros2._lastActionCancelled === true;
-                }, 3000, "Action should be cancelled");
+                return Ros2._lastActionCancelled === true;
+            }, 3000, "Action should be cancelled");
         }
         function test_goal_rejected() {
             setupFullState();
@@ -700,16 +705,16 @@ Item {
             wait(50);
             var jl = find("moveitJointListView");
             tryVerify(function () {
-                    return jl.model.get(0).initialized;
-                }, 3000);
+                return jl.model.get(0).initialized;
+            }, 3000);
             var executeBtn = find("moveitExecuteButton");
             tryVerify(function () {
-                    return executeBtn.enabled;
-                }, 5000);
+                return executeBtn.enabled;
+            }, 5000);
             mouseClick(executeBtn);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 3000);
+                return lastCallbacks !== null;
+            }, 3000);
 
             // Reject goal by passing null handle
             lastCallbacks.onGoalResponse(null);
@@ -720,8 +725,8 @@ Item {
             // Error banner should show rejection message
             var errorBanner = find("moveitErrorBannerRect");
             tryVerify(function () {
-                    return errorBanner.visible;
-                }, 3000, "Error banner should show on goal rejection");
+                return errorBanner.visible;
+            }, 3000, "Error banner should show on goal rejection");
             var errorTitle = find("moveitErrorTitle");
             tryCompare(errorTitle, "text", "Goal Rejected", 3000);
         }
@@ -731,39 +736,39 @@ Item {
             wait(50);
             var jl = find("moveitJointListView");
             tryVerify(function () {
-                    return jl.model.get(0).initialized;
-                }, 3000);
+                return jl.model.get(0).initialized;
+            }, 3000);
             var executeBtn = find("moveitExecuteButton");
             tryVerify(function () {
-                    return executeBtn.enabled;
-                }, 5000);
+                return executeBtn.enabled;
+            }, 5000);
             mouseClick(executeBtn);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 3000);
+                return lastCallbacks !== null;
+            }, 3000);
             var handle = Ros2.createGoalHandle("moveit_goal_4");
             handle.setStatus(1);
             lastCallbacks.onGoalResponse(handle);
 
             // Send control failure (error_code.val = -4, special handling)
             lastCallbacks.onResult({
-                    "status": 4,
-                    "result": {
-                        "error_code": {
-                            "val": -4
-                        }
+                "status": 4,
+                "result": {
+                    "error_code": {
+                        "val": -4
                     }
-                });
+                }
+            });
             var errorBanner = find("moveitErrorBannerRect");
             tryVerify(function () {
-                    return errorBanner.visible;
-                }, 3000, "Error banner should be visible on control failure");
+                return errorBanner.visible;
+            }, 3000, "Error banner should be visible on control failure");
             var errorTitle = find("moveitErrorTitle");
             tryCompare(errorTitle, "text", "Controller Error", 3000, "Control failure should show 'Controller Error' title");
             var errorDetails = find("moveitErrorDetails");
             tryVerify(function () {
-                    return errorDetails.text.indexOf("Motion execution failed") !== -1;
-                }, 3000, "Should show motion execution failed details");
+                return errorDetails.text.indexOf("Motion execution failed") !== -1;
+            }, 3000, "Should show motion execution failed details");
         }
         function test_goal_result_planning_failed() {
             setupFullState();
@@ -771,39 +776,39 @@ Item {
             wait(50);
             var jl = find("moveitJointListView");
             tryVerify(function () {
-                    return jl.model.get(0).initialized;
-                }, 3000);
+                return jl.model.get(0).initialized;
+            }, 3000);
             var executeBtn = find("moveitExecuteButton");
             tryVerify(function () {
-                    return executeBtn.enabled;
-                }, 5000);
+                return executeBtn.enabled;
+            }, 5000);
             mouseClick(executeBtn);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 3000);
+                return lastCallbacks !== null;
+            }, 3000);
             var handle = Ros2.createGoalHandle("moveit_goal_3");
             handle.setStatus(1);
             lastCallbacks.onGoalResponse(handle);
 
             // Send planning failure (error_code.val = -1)
             lastCallbacks.onResult({
-                    "status": 4,
-                    "result": {
-                        "error_code": {
-                            "val": -1
-                        }
+                "status": 4,
+                "result": {
+                    "error_code": {
+                        "val": -1
                     }
-                });
+                }
+            });
 
             // Error banner should be visible with planning failed message
             var errorBanner = find("moveitErrorBannerRect");
             tryVerify(function () {
-                    return errorBanner.visible;
-                }, 3000, "Error banner should be visible on planning failure");
+                return errorBanner.visible;
+            }, 3000, "Error banner should be visible on planning failure");
             var errorTitle = find("moveitErrorTitle");
             tryVerify(function () {
-                    return errorTitle.text.indexOf("PLANNING_FAILED") !== -1;
-                }, 3000, "Error title should contain PLANNING_FAILED");
+                return errorTitle.text.indexOf("PLANNING_FAILED") !== -1;
+            }, 3000, "Error title should contain PLANNING_FAILED");
         }
         function test_goal_result_success() {
             setupFullState();
@@ -811,16 +816,16 @@ Item {
             wait(50);
             var jl = find("moveitJointListView");
             tryVerify(function () {
-                    return jl.model.get(0).initialized;
-                }, 3000);
+                return jl.model.get(0).initialized;
+            }, 3000);
             var executeBtn = find("moveitExecuteButton");
             tryVerify(function () {
-                    return executeBtn.enabled;
-                }, 5000);
+                return executeBtn.enabled;
+            }, 5000);
             mouseClick(executeBtn);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 3000);
+                return lastCallbacks !== null;
+            }, 3000);
 
             // Accept goal
             var handle = Ros2.createGoalHandle("moveit_goal_2");
@@ -831,13 +836,13 @@ Item {
             // Send success result (error_code.val = 1)
             handle.setStatus(4); // Succeeded
             lastCallbacks.onResult({
-                    "status": 4,
-                    "result": {
-                        "error_code": {
-                            "val": 1
-                        }
+                "status": 4,
+                "result": {
+                    "error_code": {
+                        "val": 1
                     }
-                });
+                }
+            });
 
             // Button should return to "Execute"
             tryCompare(executeBtn, "text", "Execute", 3000, "Button should return to 'Execute' after success");
@@ -855,27 +860,27 @@ Item {
             setupFullState();
             var jointList = find("moveitJointListView");
             tryVerify(function () {
-                    return jointList.count === 3;
-                }, 3000);
+                return jointList.count === 3;
+            }, 3000);
 
             // Inject joint states
             injectJointStates(["joint1", "joint2", "joint3"], [0.5, -1.0, 0.25]);
 
             // Verify positions update
             tryVerify(function () {
-                    var j1 = jointList.model.get(0);
-                    return Math.abs(j1.position - 0.5) < 0.02;
-                }, 3000, "joint1 position should update to 0.5");
+                var j1 = jointList.model.get(0);
+                return Math.abs(j1.position - 0.5) < 0.02;
+            }, 3000, "joint1 position should update to 0.5");
             tryVerify(function () {
-                    var j2 = jointList.model.get(1);
-                    return Math.abs(j2.position - (-1.0)) < 0.02;
-                }, 3000, "joint2 position should update to -1.0");
+                var j2 = jointList.model.get(1);
+                return Math.abs(j2.position - (-1.0)) < 0.02;
+            }, 3000, "joint2 position should update to -1.0");
 
             // For uninitialized joints, goal should be set to position
             tryVerify(function () {
-                    var j1 = jointList.model.get(0);
-                    return j1.initialized && Math.abs(j1.goal - 0.5) < 0.02;
-                }, 3000, "Uninitialized joint1 goal should match position");
+                var j1 = jointList.model.get(0);
+                return j1.initialized && Math.abs(j1.goal - 0.5) < 0.02;
+            }, 3000, "Uninitialized joint1 goal should match position");
         }
 
         // ================================================================
@@ -887,8 +892,8 @@ Item {
             wait(50);
             var jl = find("moveitJointListView");
             tryVerify(function () {
-                    return jl.model.get(0).initialized;
-                }, 3000);
+                return jl.model.get(0).initialized;
+            }, 3000);
 
             // Locate the TextField inside the first delegate.
             var delegate = jl.itemAtIndex ? jl.itemAtIndex(0) : null;
@@ -931,15 +936,15 @@ Item {
             keyClick(Qt.Key_5);
             compare(textField.text, "1.5", "Typing should not be overwritten by the goal binding");
             tryVerify(function () {
-                    return Math.abs(jl.model.get(0).goal - 1.5) < 0.02;
-                }, 3000, "Typing in TextField should update joint goal");
+                return Math.abs(jl.model.get(0).goal - 1.5) < 0.02;
+            }, 3000, "Typing in TextField should update joint goal");
 
             // Out-of-range input should be clamped to joint1's upper limit (1.57).
             textField.selectAll();
             keyClick(Qt.Key_9);
             tryVerify(function () {
-                    return Math.abs(jl.model.get(0).goal - 1.57) < 0.02;
-                }, 3000, "Out-of-range input should clamp to joint limits");
+                return Math.abs(jl.model.get(0).goal - 1.57) < 0.02;
+            }, 3000, "Out-of-range input should clamp to joint limits");
 
             // Leaving the field shows the clamped goal; goals set elsewhere (slider, named pose)
             // show in the field.
@@ -951,28 +956,28 @@ Item {
 
             // Return in a joint field bubbles up to the plugin and executes.
             tryVerify(function () {
-                    return find("moveitExecuteButton").enabled;
-                }, 5000);
+                return find("moveitExecuteButton").enabled;
+            }, 5000);
             textField.forceActiveFocus();
             keyClick(Qt.Key_Return);
             tryVerify(function () {
-                    return lastCallbacks !== null;
-                }, 3000, "Return in a joint field should execute");
+                return lastCallbacks !== null;
+            }, 3000, "Return in a joint field should execute");
             verify(find("moveitExecuteButton").activeFocus, "Execute/Cancel button should take focus after executing");
         }
         function test_move_group_population() {
             contextObj.actionServer = "/move_group";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
             injectSrdf();
             var groupCombo = find("moveitMoveGroupComboBox");
             verify(groupCombo !== null, "Move group ComboBox should exist");
             tryVerify(function () {
-                    return groupCombo.count === 3;
-                }, 3000, "Should have 3 move groups (arm, combined, partial)");
+                return groupCombo.count === 3;
+            }, 3000, "Should have 3 move groups (arm, combined, partial)");
 
             // Verify sorted alphabetically
             compare(groupCombo.model.get(0).name, "arm", "First group should be 'arm'");
@@ -988,8 +993,8 @@ Item {
             var posesFlow = find("moveitNamedPosesFlow");
             verify(posesFlow !== null, "Named poses flow should exist");
             tryVerify(function () {
-                    return posesFlow.visible && posesFlow.children.length > 0;
-                }, 3000, "Named pose buttons should be visible");
+                return posesFlow.visible && posesFlow.children.length > 0;
+            }, 3000, "Named pose buttons should be visible");
 
             // Should have "home" and "ready" buttons
             var buttonTexts = [];
@@ -1006,8 +1011,8 @@ Item {
             // Register a namespaced action server and topics at both global
             // and namespaced paths. The plugin should prefer the namespaced topic.
             Ros2.registerAction("/athena/move_group", "moveit_msgs/action/MoveGroup", function (goal, callbacks) {
-                    lastCallbacks = callbacks;
-                });
+                lastCallbacks = callbacks;
+            });
             Ros2.registerTopic("/joint_states", "sensor_msgs/msg/JointState");
             Ros2.registerTopic("/athena/joint_states", "sensor_msgs/msg/JointState");
             Ros2.registerTopic("/robot_description", "std_msgs/msg/String");
@@ -1018,8 +1023,8 @@ Item {
             contextObj.moveGroup = "arm";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
 
             // Inject URDF/SRDF on the namespaced topics
@@ -1040,16 +1045,16 @@ Item {
             // Verify joints resolved
             var jointList = find("moveitJointListView");
             tryVerify(function () {
-                    return jointList.count === 3;
-                }, 5000, "Joints should populate via namespaced topics");
+                return jointList.count === 3;
+            }, 5000, "Joints should populate via namespaced topics");
         }
         function test_namespace_prefers_closer_match() {
             // Given /athena/joint_states and /athena/sub_robot/joint_states,
             // with action server /athena/move_group, the direct-namespace
             // topic should win over the deeper descendant.
             Ros2.registerAction("/athena/move_group", "moveit_msgs/action/MoveGroup", function (goal, callbacks) {
-                    lastCallbacks = callbacks;
-                });
+                lastCallbacks = callbacks;
+            });
             Ros2.registerTopic("/athena/joint_states", "sensor_msgs/msg/JointState");
             Ros2.registerTopic("/athena/sub_robot/joint_states", "sensor_msgs/msg/JointState");
             Ros2.registerTopic("/athena/robot_description", "std_msgs/msg/String");
@@ -1058,8 +1063,8 @@ Item {
             contextObj.moveGroup = "arm";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
             var urdfPub = Ros2.createPublisher("/athena/robot_description", "std_msgs/msg/String");
             var urdfMsg = Ros2.createEmptyMessage("std_msgs/msg/String");
@@ -1073,8 +1078,8 @@ Item {
             tryCompare(find("moveitSrdfStatusLabel"), "text", "SRDF: Loaded", 3000);
             var jointList = find("moveitJointListView");
             tryVerify(function () {
-                    return jointList.count === 3;
-                }, 5000);
+                return jointList.count === 3;
+            }, 5000);
 
             // Publish on the deeper descendant — should NOT drive the model.
             var deepPub = Ros2.createPublisher("/athena/sub_robot/joint_states", "sensor_msgs/msg/JointState");
@@ -1098,8 +1103,8 @@ Item {
             directMsg.effort = [];
             directPub.publish(directMsg);
             tryVerify(function () {
-                    return jointList.model.get(0).initialized && Math.abs(jointList.model.get(0).position - 0.33) < 0.02;
-                }, 3000, "Direct-namespace topic should win over deeper descendant");
+                return jointList.model.get(0).initialized && Math.abs(jointList.model.get(0).position - 0.33) < 0.02;
+            }, 3000, "Direct-namespace topic should win over deeper descendant");
         }
         function test_planning_config_collapsible() {
             // Need a move group selected for the planning config to be visible
@@ -1107,8 +1112,8 @@ Item {
             contextObj.moveGroup = "arm";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
             injectSrdf();
             var srdfLabel = find("moveitSrdfStatusLabel");
@@ -1125,9 +1130,9 @@ Item {
             // Expand
             mouseClick(headerButton);
             tryVerify(function () {
-                    var vs = find("moveitVelocitySlider");
-                    return vs !== null && vs.visible;
-                }, 3000, "Velocity slider should be visible after expanding");
+                var vs = find("moveitVelocitySlider");
+                return vs !== null && vs.visible;
+            }, 3000, "Velocity slider should be visible after expanding");
             var accSlider = find("moveitAccelerationSlider");
             verify(accSlider !== null && accSlider.visible, "Acceleration slider should be visible");
             var timeSlider = find("moveitPlanningTimeSlider");
@@ -1138,9 +1143,9 @@ Item {
             // Collapse again
             mouseClick(headerButton);
             tryVerify(function () {
-                    var vs = find("moveitVelocitySlider");
-                    return vs === null || !vs.visible;
-                }, 3000, "Velocity slider should be hidden after collapsing");
+                var vs = find("moveitVelocitySlider");
+                return vs === null || !vs.visible;
+            }, 3000, "Velocity slider should be hidden after collapsing");
         }
 
         // ================================================================
@@ -1151,16 +1156,16 @@ Item {
             contextObj.moveGroup = "arm";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
             injectSrdf();
             tryCompare(find("moveitSrdfStatusLabel"), "text", "SRDF: Loaded", 3000);
             mouseClick(find("moveitPlanningConfigButton"));
             tryVerify(function () {
-                    var vs = find("moveitVelocitySlider");
-                    return vs !== null && vs.visible;
-                }, 3000);
+                var vs = find("moveitVelocitySlider");
+                return vs !== null && vs.visible;
+            }, 3000);
 
             // Slider.onMoved fires only on user input; simulate by setting
             // value + emitting the moved() signal (matches the binding path).
@@ -1168,26 +1173,26 @@ Item {
             velSlider.value = 0.42;
             velSlider.moved();
             tryVerify(function () {
-                    return Math.abs(contextObj.velocityScale - 0.42) < 0.001;
-                }, 3000, "Velocity slider should write velocityScale to context");
+                return Math.abs(contextObj.velocityScale - 0.42) < 0.001;
+            }, 3000, "Velocity slider should write velocityScale to context");
             var accSlider = find("moveitAccelerationSlider");
             accSlider.value = 0.27;
             accSlider.moved();
             tryVerify(function () {
-                    return Math.abs(contextObj.accelerationScale - 0.27) < 0.001;
-                }, 3000, "Acceleration slider should write accelerationScale to context");
+                return Math.abs(contextObj.accelerationScale - 0.27) < 0.001;
+            }, 3000, "Acceleration slider should write accelerationScale to context");
             var timeSlider = find("moveitPlanningTimeSlider");
             timeSlider.value = 12.5;
             timeSlider.moved();
             tryVerify(function () {
-                    return Math.abs(contextObj.planningTime - 12.5) < 0.01;
-                }, 3000, "Planning time slider should write planningTime to context");
+                return Math.abs(contextObj.planningTime - 12.5) < 0.01;
+            }, 3000, "Planning time slider should write planningTime to context");
             var attemptsSlider = find("moveitPlanningAttemptsSlider");
             attemptsSlider.value = 7;
             attemptsSlider.moved();
             tryVerify(function () {
-                    return contextObj.planningAttempts === 7;
-                }, 3000, "Attempts slider should write planningAttempts to context");
+                return contextObj.planningAttempts === 7;
+            }, 3000, "Attempts slider should write planningAttempts to context");
         }
 
         // ================================================================
@@ -1207,8 +1212,8 @@ Item {
             contextObj.actionServer = "/move_group";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
             var urdfLabel = find("moveitUrdfStatusLabel");
             var srdfLabel = find("moveitSrdfStatusLabel");
@@ -1240,14 +1245,14 @@ Item {
 
             // Wait for positions and goals to be initialized
             tryVerify(function () {
-                    return jointList.model.get(0).initialized;
-                }, 3000, "Joints should be initialized");
+                return jointList.model.get(0).initialized;
+            }, 3000, "Joints should be initialized");
 
             // Change goals away from positions by applying "ready" pose
             var posesFlow = find("moveitNamedPosesFlow");
             tryVerify(function () {
-                    return posesFlow.visible;
-                }, 3000);
+                return posesFlow.visible;
+            }, 3000);
             var readyButton = null;
             for (var i = 0; i < posesFlow.children.length; i++) {
                 if (posesFlow.children[i].text === "ready") {
@@ -1260,8 +1265,8 @@ Item {
 
             // Verify goals changed
             tryVerify(function () {
-                    return Math.abs(jointList.model.get(0).goal - 1.0) < 0.02;
-                }, 3000, "Goal should change to ready pose value");
+                return Math.abs(jointList.model.get(0).goal - 1.0) < 0.02;
+            }, 3000, "Goal should change to ready pose value");
 
             // Click Reset
             var resetBtn = find("moveitResetButton");
@@ -1270,13 +1275,13 @@ Item {
 
             // Goals should return to current positions
             tryVerify(function () {
-                    var j1 = jointList.model.get(0);
-                    return Math.abs(j1.goal - j1.position) < 0.02;
-                }, 3000, "joint1 goal should reset to position after reset");
+                var j1 = jointList.model.get(0);
+                return Math.abs(j1.goal - j1.position) < 0.02;
+            }, 3000, "joint1 goal should reset to position after reset");
             tryVerify(function () {
-                    var j2 = jointList.model.get(1);
-                    return Math.abs(j2.goal - j2.position) < 0.02;
-                }, 3000, "joint2 goal should reset to position after reset");
+                var j2 = jointList.model.get(1);
+                return Math.abs(j2.goal - j2.position) < 0.02;
+            }, 3000, "joint2 goal should reset to position after reset");
         }
         function test_srdf_before_urdf_order() {
             // SRDF arriving before URDF — groups should be stored and joints
@@ -1285,8 +1290,8 @@ Item {
             contextObj.moveGroup = "arm";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
 
             // Inject SRDF first
@@ -1297,8 +1302,8 @@ Item {
             // Move groups should be populated even without URDF
             var groupCombo = find("moveitMoveGroupComboBox");
             tryVerify(function () {
-                    return groupCombo.count === 3;
-                }, 3000, "Move groups should be available from SRDF alone");
+                return groupCombo.count === 3;
+            }, 3000, "Move groups should be available from SRDF alone");
 
             // But joints can't be resolved yet (no kinematic chain)
             var jointList = find("moveitJointListView");
@@ -1310,8 +1315,8 @@ Item {
 
             // Chain-resolved joints should now appear
             tryVerify(function () {
-                    return jointList.count === 3;
-                }, 5000, "Joints should be populated after URDF arrives (SRDF-first order)");
+                return jointList.count === 3;
+            }, 5000, "Joints should be populated after URDF arrives (SRDF-first order)");
             compare(jointList.model.get(0).name, "joint1");
             compare(jointList.model.get(1).name, "joint2");
             compare(jointList.model.get(2).name, "joint3");
@@ -1320,8 +1325,8 @@ Item {
             contextObj.actionServer = "/move_group";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
             var srdfLabel = find("moveitSrdfStatusLabel");
             verify(srdfLabel !== null, "SRDF status label should exist");
@@ -1346,8 +1351,8 @@ Item {
             contextObj.actionServer = "/move_group";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             var actionLabelAfter = find("moveitActionStatusLabel");
             tryCompare(actionLabelAfter, "text", "Action: Ready", 3000, "Action should be ready after setting action server");
         }
@@ -1356,8 +1361,8 @@ Item {
             contextObj.moveGroup = "combined";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
             injectUrdf();
             var urdfLabel = find("moveitUrdfStatusLabel");
@@ -1368,8 +1373,8 @@ Item {
             var jointList = find("moveitJointListView");
             verify(jointList !== null);
             tryVerify(function () {
-                    return jointList.count === 2;
-                }, 3000, "combined group should have 2 joints");
+                return jointList.count === 2;
+            }, 3000, "combined group should have 2 joints");
             compare(jointList.model.get(0).name, "joint1", "First joint from subgroup");
             compare(jointList.model.get(1).name, "joint2", "Second joint direct");
         }
@@ -1377,19 +1382,19 @@ Item {
             setupFullState();
             var jointList = find("moveitJointListView");
             tryVerify(function () {
-                    return jointList.count === 3;
-                }, 3000);
+                return jointList.count === 3;
+            }, 3000);
 
             // Inject joint states including an unknown joint
             injectJointStates(["joint1", "unknown_joint", "joint2"], [0.42, 99.0, -0.77]);
 
             // Known joints should update
             tryVerify(function () {
-                    return Math.abs(jointList.model.get(0).position - 0.42) < 0.02;
-                }, 3000, "joint1 should update");
+                return Math.abs(jointList.model.get(0).position - 0.42) < 0.02;
+            }, 3000, "joint1 should update");
             tryVerify(function () {
-                    return Math.abs(jointList.model.get(1).position - (-0.77)) < 0.02;
-                }, 3000, "joint2 should update");
+                return Math.abs(jointList.model.get(1).position - (-0.77)) < 0.02;
+            }, 3000, "joint2 should update");
 
             // Joint list count should remain unchanged (no phantom joints)
             compare(jointList.count, 3, "Unknown joint should not be added to the list");
@@ -1402,8 +1407,8 @@ Item {
             contextObj.actionServer = "/move_group";
             pluginLoader.reload();
             tryVerify(function () {
-                    return pluginLoader.status === Loader.Ready;
-                }, 2000);
+                return pluginLoader.status === Loader.Ready;
+            }, 2000);
             waitForDiscovery();
             var urdfLabel = find("moveitUrdfStatusLabel");
             verify(urdfLabel !== null, "URDF status label should exist");
@@ -1421,8 +1426,8 @@ Item {
         function waitForDiscovery() {
             var comboBox = find("moveitActionServerComboBox");
             tryVerify(function () {
-                    return comboBox && comboBox.count > 0;
-                }, 3000, "Discovery timer should fire and populate action servers");
+                return comboBox && comboBox.count > 0;
+            }, 3000, "Discovery timer should fire and populate action servers");
             // updateTopics() sets subscription topics (jointStateTopic, urdfTopic,
             // srdfTopic) after populating the combobox. Allow QML bindings to
             // propagate so subscriptions are active before injecting messages.

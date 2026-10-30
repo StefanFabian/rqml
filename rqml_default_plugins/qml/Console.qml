@@ -9,18 +9,22 @@ import "elements"
 
 Rectangle {
     id: root
-    anchors.fill: parent
+
     property var kddockwidgets_min_size: Qt.size(800, 300)
+
+    anchors.fill: parent
     color: palette.base
 
     ColumnLayout {
         id: mainLayout
+
         anchors.fill: parent
         anchors.margins: 8
 
         RowLayout {
             IconButton {
                 id: filterButton
+
                 objectName: "consoleFilterButton"
                 text: IconFont.iconFilter
                 tooltipText: "Set filters"
@@ -32,26 +36,30 @@ Rectangle {
             }
             TextField {
                 id: filterTextField
-                objectName: "consoleFilterTextField"
+
                 Layout.fillWidth: true
+                objectName: "consoleFilterTextField"
                 placeholderText: "Filter logs..."
+
                 onTextChanged: searchDebounceTimer.start()
             }
             IconButton {
                 objectName: "consoleSettingsButton"
                 text: IconFont.iconSettings
                 tooltipText: "Settings"
+
                 onClicked: {
                     settingsDialog.open();
                 }
             }
             IconToggleButton {
-                objectName: "consoleEnableToggle"
-                iconOn: IconFont.iconPause
-                iconOff: IconFont.iconPlay
-                tooltipTextOn: "Click to pause"
-                tooltipTextOff: "Click to start"
                 checked: context.enabled ?? true
+                iconOff: IconFont.iconPlay
+                iconOn: IconFont.iconPause
+                objectName: "consoleEnableToggle"
+                tooltipTextOff: "Click to start"
+                tooltipTextOn: "Click to pause"
+
                 onToggled: {
                     if (context.enabled === checked)
                         return;
@@ -62,15 +70,18 @@ Rectangle {
                 objectName: "consoleClearButton"
                 text: IconFont.iconTrash
                 tooltipText: "Clear logs"
+
                 onClicked: d.clear()
             }
         }
         Subscription {
             id: logSubscription
-            qos: Ros2.QoS().reliable().keep_last(1000).transient_local()
+
             messageType: "rcl_interfaces/msg/Log"
+            qos: Ros2.QoS().reliable().keep_last(1000).transient_local()
             throttleRate: 0
             topic: context.topic ?? "/rosout"
+
             onNewMessage: function (message) {
                 if (!(context.enabled ?? true))
                     return;
@@ -83,54 +94,51 @@ Rectangle {
                 });
             }
         }
-
         ListView {
             id: listView
-            objectName: "consoleListView"
-            Layout.fillWidth: true
+
             Layout.fillHeight: true
+            Layout.fillWidth: true
+            clip: true
+            objectName: "consoleListView"
+            reuseItems: true // When reusing items, the binding for the width in the truncated label breaks sometimes
+
             ScrollBar.vertical: ScrollBar {
                 policy: listView.contentHeight > listView.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
             }
-            onMovementStarted: {
-                if (context.autoScroll ?? true) {
-                    context.autoScroll = false;
-                }
-            }
-            reuseItems: true // When reusing items, the binding for the width in the truncated label breaks sometimes
-            clip: true
-            model: ListModel {
-                id: listModel
-            }
-
             delegate: Rectangle {
-                required property var model
                 required property int index
+                required property var model
+
+                border.color: palette.highlight
+                border.width: contextMenu.visible ? 2 : 0
+                color: index % 2 == 0 ? palette.base : palette.alternateBase
+                implicitHeight: rowLayout.implicitHeight
+                width: listView.width
+
                 ListView.onPooled: {
                     if (contextMenu.visible)
                         contextMenu.close();
                 }
-                implicitHeight: rowLayout.implicitHeight
-                width: listView.width
-                color: index % 2 == 0 ? palette.base : palette.alternateBase
-                border.width: contextMenu.visible ? 2 : 0
-                border.color: palette.highlight
+
                 RowLayout {
                     id: rowLayout
+
                     anchors.fill: parent
                     spacing: 8
+
                     LogLevelIndicator {
-                        Layout.margins: 8
                         Layout.alignment: Qt.AlignVCenter
+                        Layout.margins: 8
                         level: model.level
                     }
                     TruncatedLabel {
-                        Layout.margins: 8
                         Layout.fillWidth: true
+                        Layout.margins: 8
                         horizontalAlignment: Text.AlignLeft
-                        verticalAlignment: Text.AlignVCenter
                         maximumLineCount: 4
                         text: model.message
+                        verticalAlignment: Text.AlignVCenter
                     }
                     TruncatedLabel {
                         Layout.margins: 8
@@ -148,11 +156,10 @@ Rectangle {
                         text: model.timestamp
                     }
                 }
-
                 MouseArea {
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
                     anchors.fill: parent
 
-                    acceptedButtons: Qt.LeftButton | Qt.RightButton
                     onClicked: mouse => {
                         if (mouse.button === Qt.RightButton) {
                             contextMenu.popup();
@@ -166,80 +173,84 @@ Rectangle {
 
                     Menu {
                         id: contextMenu
+
                         objectName: "consoleContextMenu"
+
                         MenuItem {
                             objectName: "consoleCopyMessageAction"
                             text: qsTr("Copy Message")
+
                             onTriggered: RQml.copyTextToClipboard(model.message)
                         }
                         MenuItem {
                             objectName: "consoleCopyNodeNameAction"
                             text: qsTr("Copy Node Name")
+
                             onTriggered: RQml.copyTextToClipboard(model.name)
                         }
                         MenuItem {
                             objectName: "consoleCopyLocationAction"
                             text: qsTr("Copy Location")
+
                             onTriggered: RQml.copyTextToClipboard(model.location)
                         }
                     }
                 }
             }
-        }
+            model: ListModel {
+                id: listModel
 
+            }
+
+            onMovementStarted: {
+                if (context.autoScroll ?? true) {
+                    context.autoScroll = false;
+                }
+            }
+        }
         RowLayout {
             Layout.fillWidth: true
 
             Label {
                 text: qsTr("Total logs: %1 / %2").arg(listModel.count).arg(d.logCount)
             }
-
             Item {
                 Layout.fillWidth: true
             }
-
             CheckBox {
+                checked: context.autoScroll ?? true
                 objectName: "consoleAutoScrollCheckbox"
                 text: "Scroll to end"
-                checked: context.autoScroll ?? true
+
                 onToggled: {
                     context.autoScroll = checked;
                 }
             }
         }
     }
-
     Dialog {
         id: settingsDialog
-        objectName: "consoleSettingsDialog"
+
         anchors.centerIn: parent
-        width: Math.min(parent.width * 0.8, 400)
-        title: "Console Settings"
-        standardButtons: Dialog.Ok
         modal: true
+        objectName: "consoleSettingsDialog"
+        standardButtons: Dialog.Ok
+        title: "Console Settings"
+        width: Math.min(parent.width * 0.8, 400)
 
         ColumnLayout {
             anchors.fill: parent
+
             Label {
                 font.bold: true
                 text: "Rosout Topic:"
             }
             RowLayout {
                 Layout.fillWidth: true
+
                 ComboBox {
                     id: topicSelect
-                    objectName: "consoleSettingsTopicSelect"
-                    Layout.fillWidth: true
-                    editable: true
-                    selectTextByMouse: true
-                    editText: context.topic
-                    onEditTextChanged: {
-                        if (editText == null || editText == context.topic)
-                            return;
-                        if (!Ros2.isValidTopic(editText))
-                            return;
-                        context.topic = editText;
-                    }
+
                     function refresh() {
                         let topics = Ros2.queryTopics("rcl_interfaces/msg/Log");
                         if (!!context.topic) {
@@ -250,10 +261,25 @@ Rectangle {
                         }
                         model = topics;
                     }
+
+                    Layout.fillWidth: true
+                    editText: context.topic
+                    editable: true
+                    objectName: "consoleSettingsTopicSelect"
+                    selectTextByMouse: true
+
                     Component.onCompleted: refresh()
+                    onEditTextChanged: {
+                        if (editText == null || editText == context.topic)
+                            return;
+                        if (!Ros2.isValidTopic(editText))
+                            return;
+                        context.topic = editText;
+                    }
                 }
                 RefreshButton {
                     objectName: "consoleSettingsRefreshButton"
+
                     onClicked: {
                         animate = true;
                         topicSelect.refresh();
@@ -263,24 +289,23 @@ Rectangle {
             }
         }
     }
-
     Popup {
         id: filterPopup
-        objectName: "consoleFilterPopup"
+
         focus: true
+        objectName: "consoleFilterPopup"
         padding: 8
         x: filterButton.mapToItem(root, 0, filterButton.height).x + 8
         y: filterButton.mapToItem(root, 0, filterButton.height).y + 8
 
         ColumnLayout {
-
             Label {
-                text: "Filter logs by level:"
                 font.bold: true
+                text: "Filter logs by level:"
             }
-
             RowLayout {
                 Layout.fillWidth: true
+
                 Repeater {
                     model: [
                         {
@@ -309,13 +334,16 @@ Rectangle {
                             "level": 50
                         }
                     ]
+
                     IconButton {
                         id: debugCheckBox
+
+                        checkable: true
+                        checked: d.filter.levels.indexOf(modelData.level) !== -1
                         objectName: "filterLevelToggle_" + modelData.level
                         text: modelData.icon
                         tooltipText: modelData.text
-                        checkable: true
-                        checked: d.filter.levels.indexOf(modelData.level) !== -1
+
                         onToggled: {
                             let index = d.filter.levels.indexOf(modelData.level);
                             if (checked) {
@@ -331,23 +359,26 @@ Rectangle {
             }
         }
     }
-
     Timer {
         id: searchDebounceTimer
+
         interval: 300
         repeat: false
+
         onTriggered: {
             d.filter.searchText = filterTextField.text.toLowerCase();
             d.applyFilter();
         }
     }
-
     Timer {
         id: scrollTimer
+
         property int lastRowCount: 0
+
         interval: 50
         repeat: true
         running: context.autoScroll ?? true
+
         onTriggered: {
             if (listModel.count == lastRowCount) {
                 return;
@@ -356,15 +387,15 @@ Rectangle {
             listView.positionViewAtEnd();
         }
     }
-
     QtObject {
         id: d
+
         property var allLogs: []
-        property int logCount: 0
         property var filter: {
             "levels": [10, 20, 30, 40, 50],
             "searchText": ""
         }
+        property int logCount: 0
 
         function addLog(entry) {
             entry.searchString = (entry.message + "/" + entry.name + "/" + entry.location).toLowerCase();
@@ -378,19 +409,6 @@ Rectangle {
 
             listModel.append(entry);
         }
-
-        function matchesFilters(entry) {
-            if (d.filter.levels.indexOf(entry.level) === -1) {
-                return false;
-            }
-            if (d.filter.searchText?.length > 0) {
-                if (entry.searchString.indexOf(d.filter.searchText) === -1) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
         function applyFilter() {
             let modelIndex = 0;
             for (let i = 0; i < allLogs.length; i++) {
@@ -410,13 +428,11 @@ Rectangle {
                 }
             }
         }
-
         function clear() {
             allLogs = [];
             logCount = 0;
             listModel.clear();
         }
-
         function formatDate(date) {
             if (!date)
                 return "";
@@ -428,6 +444,17 @@ Rectangle {
             result += (date.getMonth() + 1).toString().padStart(2, '0') + "-";
             result += date.getDate().toString().padStart(2, '0') + ")";
             return result;
+        }
+        function matchesFilters(entry) {
+            if (d.filter.levels.indexOf(entry.level) === -1) {
+                return false;
+            }
+            if (d.filter.searchText?.length > 0) {
+                if (entry.searchString.indexOf(d.filter.searchText) === -1) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

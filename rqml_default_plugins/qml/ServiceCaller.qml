@@ -22,6 +22,7 @@ Rectangle {
 
             FuzzySelector {
                 id: serviceSelect
+
                 function refresh() {
                     let services = Ros2.queryServices();
                     if (!(context.showDefaultServices ?? false)) {
@@ -52,6 +53,7 @@ Rectangle {
             }
             RefreshButton {
                 id: refreshServicesButton
+
                 onClicked: {
                     animate = true;
                     serviceSelect.refresh();
@@ -60,6 +62,7 @@ Rectangle {
             }
             FuzzySelector {
                 id: typeSelect
+
                 function refresh() {
                     let types = !!context.service ? Ros2.getServiceTypes(context.service) : [];
                     if (types.length == 0)
@@ -99,6 +102,7 @@ Rectangle {
         }
         TabBar {
             id: tabBar
+
             Layout.fillWidth: true
             objectName: "serviceTabBar"
 
@@ -122,6 +126,7 @@ Rectangle {
 
                 MessageContentEditor {
                     id: requestEditor
+
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                     objectName: "serviceRequestEditor"
@@ -129,6 +134,7 @@ Rectangle {
 
                     model: MessageItemModel {
                         id: requestModel
+
                         Component.onCompleted: message = context.request ?? null
                         onModified: {
                             if (message == context.request)
@@ -174,6 +180,7 @@ Rectangle {
                 }
                 MessageContentEditor {
                     id: responseEditor
+
                     anchors.fill: parent
                     readonly: true
                     visible: !!d.client && !!d.response
@@ -194,6 +201,7 @@ Rectangle {
             }
             Label {
                 id: statusText
+
                 Layout.fillWidth: true
                 objectName: "serviceStatusLabel"
                 text: {
@@ -208,6 +216,7 @@ Rectangle {
             }
             CheckBox {
                 id: showDefaultServicesCheck
+
                 checked: context.showDefaultServices ?? false
                 objectName: "showDefaultServicesCheckbox"
                 text: qsTr("Show default services")
@@ -221,6 +230,7 @@ Rectangle {
             }
             Button {
                 id: sendButton
+
                 enabled: tabBar.currentIndex != 0 || (d.client?.ready ?? false)
                 implicitWidth: 120
                 objectName: "serviceSendButton"
@@ -239,16 +249,17 @@ Rectangle {
                     d.isActive = true;
                     tabBar.currentIndex = 1;
                     d.client.sendRequestAsync(requestEditor.model.message, function (response) {
-                            if (seq !== d.requestSeq)
-                                return;
-                            tabBar.currentIndex = 1;
-                            d.response = response;
-                            d.isActive = false;
-                        });
+                        if (seq !== d.requestSeq)
+                            return;
+                        tabBar.currentIndex = 1;
+                        d.response = response;
+                        d.isActive = false;
+                    });
                 }
             }
             HoldButton {
                 id: holdToDropButton
+
                 objectName: "serviceHoldDropButton"
                 text: qsTr("Hold to drop")
                 visible: d.isActive
@@ -314,5 +325,6 @@ Rectangle {
     }
     KeyActivationGuard {
         id: keyGuard
+
     }
 }

@@ -20,37 +20,37 @@ Object {
             return; // Already requesting
         Ros2.debug("ControllerManager: Loading unloaded controllers from parameters of " + controllerManager);
         d.parametersServiceClient.sendRequestAsync({}, function (response) {
-                if (!response) {
-                    Ros2.warn("ControllerManager: Failed to get parameters from " + controllerManager + ". Trying again.");
-                    root.addParameterControllers();
-                    return;
-                }
-                for (let i = 0; i < response.result.names.length; ++i) {
-                    const name = response.result.names.at(i);
-                    if (!name.endsWith(".type"))
-                        continue;
-                    const parts = name.split(".");
-                    if (parts.length > 2)
-                        continue;
-                    const controllerName = parts[0];
-                    let found = false;
-                    for (let j = 0; j < root.controllers.count; ++j) {
-                        const item = root.controllers.get(j);
-                        if (item.name === controllerName) {
-                            found = true;
-                            break;
-                        }
+            if (!response) {
+                Ros2.warn("ControllerManager: Failed to get parameters from " + controllerManager + ". Trying again.");
+                root.addParameterControllers();
+                return;
+            }
+            for (let i = 0; i < response.result.names.length; ++i) {
+                const name = response.result.names.at(i);
+                if (!name.endsWith(".type"))
+                    continue;
+                const parts = name.split(".");
+                if (parts.length > 2)
+                    continue;
+                const controllerName = parts[0];
+                let found = false;
+                for (let j = 0; j < root.controllers.count; ++j) {
+                    const item = root.controllers.get(j);
+                    if (item.name === controllerName) {
+                        found = true;
+                        break;
                     }
-                    if (found)
-                        continue;
-                    root.controllers.append({
-                            "name": controllerName,
-                            "state": "unloaded"
-                        });
                 }
-                d.loadingControllers = false;
-                Ros2.debug("ControllerManager: Done loading controllers from " + controllerManager + ". Total controllers: " + root.controllers.count);
-            });
+                if (found)
+                    continue;
+                root.controllers.append({
+                    "name": controllerName,
+                    "state": "unloaded"
+                });
+            }
+            d.loadingControllers = false;
+            Ros2.debug("ControllerManager: Done loading controllers from " + controllerManager + ". Total controllers: " + root.controllers.count);
+        });
     }
     function getTransitionServiceTopic(ns, action) {
         if (action == "load")
@@ -88,21 +88,21 @@ Object {
         d.loadingControllers = true;
         Ros2.debug("ControllerManager: Loading controllers from " + controllerManager);
         d.controllerServiceClient.sendRequestAsync({}, function (response) {
-                if (!response) {
-                    Ros2.warn("ControllerManager: Failed to get controllers from " + controllerManager + ". Trying again.");
-                    root.loadControllers();
-                    return;
-                }
-                Ros2.debug("ControllerManager: Received " + response.controller.length + " controllers from " + controllerManager);
-                root.controllers.clear();
-                for (let i = 0; i < response.controller.length; ++i) {
-                    const controller = response.controller.at(i);
-                    if (controller.name == null || controller.state == null)
-                        continue;
-                    root.controllers.append(MessageUtils.toListElement(controller));
-                }
-                addParameterControllers();
-            });
+            if (!response) {
+                Ros2.warn("ControllerManager: Failed to get controllers from " + controllerManager + ". Trying again.");
+                root.loadControllers();
+                return;
+            }
+            Ros2.debug("ControllerManager: Received " + response.controller.length + " controllers from " + controllerManager);
+            root.controllers.clear();
+            for (let i = 0; i < response.controller.length; ++i) {
+                const controller = response.controller.at(i);
+                if (controller.name == null || controller.state == null)
+                    continue;
+                root.controllers.append(MessageUtils.toListElement(controller));
+            }
+            addParameterControllers();
+        });
     }
     function loadHardwareComponents() {
         if (!root.controllerManager)
@@ -112,19 +112,19 @@ Object {
         d.loadingHardwareComponents = true;
         Ros2.debug("ControllerManager: Loading hardware components from " + controllerManager);
         d.componentsServiceClient.sendRequestAsync({}, function (response) {
-                if (!response) {
-                    Ros2.warn("ControllerManager: Failed to get hardware components from " + controllerManager + ". Trying again.");
-                    root.loadHardwareComponents();
-                    return;
-                }
-                Ros2.debug("ControllerManager: Received " + response.component.length + " components from " + controllerManager);
-                root.hardwareComponents.clear();
-                for (let i = 0; i < response.component.length; ++i) {
-                    const component = response.component.at(i);
-                    root.hardwareComponents.append(MessageUtils.toJavaScriptObject(component));
-                }
-                d.loadingHardwareComponents = false;
-            });
+            if (!response) {
+                Ros2.warn("ControllerManager: Failed to get hardware components from " + controllerManager + ". Trying again.");
+                root.loadHardwareComponents();
+                return;
+            }
+            Ros2.debug("ControllerManager: Received " + response.component.length + " components from " + controllerManager);
+            root.hardwareComponents.clear();
+            for (let i = 0; i < response.component.length; ++i) {
+                const component = response.component.at(i);
+                root.hardwareComponents.append(MessageUtils.toJavaScriptObject(component));
+            }
+            d.loadingHardwareComponents = false;
+        });
     }
     function refresh() {
         if (!root.controllerManager || !d.controllerServiceClient)
@@ -155,23 +155,23 @@ Object {
             request.name = controllerName;
         }
         client.sendRequestAsync(request, function (response) {
-                if (!response) {
-                    Ros2.warn("ControllerManager: Failed to call service " + serviceName + ". Trying again.");
-                    transitionController(controllerName, actions);
-                    return;
-                }
-                if (!response.ok) {
-                    errorDialog.title = "Controller Transition Error";
-                    errorDialog.text = "Failed to " + action + " controller " + controllerName + ".";
-                    if (response.message) {
-                        errorDialog.informativeText = "Reason: " + response.message;
-                    }
-                    errorDialog.open();
-                    return;
-                }
-                actions.shift();
+            if (!response) {
+                Ros2.warn("ControllerManager: Failed to call service " + serviceName + ". Trying again.");
                 transitionController(controllerName, actions);
-            });
+                return;
+            }
+            if (!response.ok) {
+                errorDialog.title = "Controller Transition Error";
+                errorDialog.text = "Failed to " + action + " controller " + controllerName + ".";
+                if (response.message) {
+                    errorDialog.informativeText = "Reason: " + response.message;
+                }
+                errorDialog.open();
+                return;
+            }
+            actions.shift();
+            transitionController(controllerName, actions);
+        });
     }
     function transitionHardwareComponent(componentName, target_state) {
         if (!componentName || !target_state)
@@ -183,19 +183,19 @@ Object {
             "target_state": target_state
         };
         d.setComponentStateServiceClient.sendRequestAsync(request, function (response) {
-                if (!response) {
-                    Ros2.warn("ControllerManager: Failed to call service " + serviceName + ". Trying again.");
-                    transitionHardwareComponent(componentName, target_state);
-                    return;
-                }
-                if (!response.ok) {
-                    errorDialog.title = "Hardware Component Transition Error";
-                    errorDialog.text = "Failed to transition hardware component " + componentName + " to " + target_state + ".";
-                    errorDialog.informativeText = "Component now in state: " + response.state.label + " (" + response.state.id + ")";
-                    errorDialog.open();
-                }
-                root.loadHardwareComponents();
-            });
+            if (!response) {
+                Ros2.warn("ControllerManager: Failed to call service " + serviceName + ". Trying again.");
+                transitionHardwareComponent(componentName, target_state);
+                return;
+            }
+            if (!response.ok) {
+                errorDialog.title = "Hardware Component Transition Error";
+                errorDialog.text = "Failed to transition hardware component " + componentName + " to " + target_state + ".";
+                errorDialog.informativeText = "Component now in state: " + response.state.label + " (" + response.state.id + ")";
+                errorDialog.open();
+            }
+            root.loadHardwareComponents();
+        });
     }
 
     onControllerManagerChanged: {
@@ -220,6 +220,7 @@ Object {
 
     MessageDialog {
         id: errorDialog
+
         buttons: MessageDialog.Ok
         modality: Qt.WindowModal
     }
@@ -236,6 +237,7 @@ Object {
     }
     Subscription {
         id: activitySub
+
         messageType: "controller_manager_msgs/msg/ControllerManagerActivity"
         topic: (root.controllerManager && root.controllerManager + "/activity") || ""
 

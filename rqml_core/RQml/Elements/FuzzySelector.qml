@@ -32,18 +32,8 @@ import RQml.Utils
 Item {
     id: control
 
-    signal accepted(string text)
-
-    implicitHeight: field.implicitHeight
-    implicitWidth: field.implicitWidth
-
-    // The current text value. Initialise from outside; updated by user typing or item selection.
-    property string text: ""
-
-    property string placeholderText: ""
-
-    // Full item list to search through.
-    property var model: []
+    // Internal state to show all items (browse mode) instead of just filtered ones.
+    property bool _showAll: false
 
     // Index of the selected item in the original (unfiltered) model. -1 if none.
     property int currentIndex: -1
@@ -51,15 +41,11 @@ Item {
     // Text of the currently selected item (read-only).
     readonly property string currentText: currentIndex >= 0 && currentIndex < (model ? model.length : 0) ? model[currentIndex] : ""
 
-    // Whether the user can type freely. When false, only selection from the dropdown is allowed.
-    property bool editable: true
-
     // Alias for text - the string shown in the edit field.
     property alias editText: control.text
 
-
-    // Internal state to show all items (browse mode) instead of just filtered ones.
-    property bool _showAll: false
+    // Whether the user can type freely. When false, only selection from the dropdown is allowed.
+    property bool editable: true
 
     // Filtered and sorted subset of model based on the current text.
     readonly property var filteredItems: {
@@ -89,6 +75,18 @@ Item {
         return result;
     }
 
+    // Full item list to search through.
+    property var model: []
+    property string placeholderText: ""
+
+    // The current text value. Initialise from outside; updated by user typing or item selection.
+    property string text: ""
+
+    signal accepted(string text)
+
+    implicitHeight: field.implicitHeight
+    implicitWidth: field.implicitWidth
+
     // When currentIndex is set programmatically, update text to match.
     onCurrentIndexChanged: {
         if (currentIndex >= 0 && currentIndex < (model ? model.length : 0)) {
@@ -96,6 +94,10 @@ Item {
             if (text !== item)
                 text = item;
         }
+    }
+    onFilteredItemsChanged: {
+        if (filteredItems.length === 0 && popup.visible)
+            popup.close();
     }
 
     // Sync field text when control.text is changed programmatically.
@@ -109,68 +111,18 @@ Item {
             currentIndex = idx;
     }
 
-    onFilteredItemsChanged: {
-        if (filteredItems.length === 0 && popup.visible)
-            popup.close();
-    }
-
     TextField {
         id: field
+
         anchors.fill: parent
         placeholderText: control.placeholderText
-        selectByMouse: true
         readOnly: !control.editable
         rightPadding: chevron.width + 12
-
-        onActiveFocusChanged: {
-            if (!activeFocus) {
-                popup.close();
-                return;
-            }
-            if (!control.editable) return
-            if (!popup.visible && control.filteredItems.length > 0)
-                popup.open();
-        }
-
-        Text {
-            id: chevron
-            anchors.right: parent.right
-            anchors.rightMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-            font.family: IconFont.name
-            text: IconFont.iconChevronDown
-            color: field.palette.text
-            opacity: chevronMouseArea.pressed ? 0.7 : (chevronMouseArea.containsMouse ? 1.0 : 0.5)
-
-            MouseArea {
-                id: chevronMouseArea
-                anchors.fill: parent
-                hoverEnabled: true
-                onClicked: {
-                    if (!control.editable) return
-                    if (popup.visible) {
-                        popup.close();
-                    } else {
-                        control._showAll = true;
-                        field.forceActiveFocus();
-                        popup.open();
-                    }
-                }
-            }
-        }
-
-        onTextEdited: {
-            if (!control.editable)
-                return;
-            control._showAll = false;
-            control.text = text;
-            if (!popup.visible && control.filteredItems.length > 0)
-                popup.open();
-            listView.currentIndex = -1;
-        }
+        selectByMouse: true
 
         Keys.onDownPressed: function (event) {
-            if (!control.editable) return
+            if (!control.editable)
+                return;
             if (!popup.visible) {
                 control._showAll = true;
                 if (control.filteredItems.length > 0)
@@ -184,16 +136,10 @@ Item {
             }
             event.accepted = true;
         }
-
-        Keys.onUpPressed: function (event) {
-            if (listView.currentIndex > 0) {
-                const prev = listView.currentIndex - 1;
-                listView.currentIndex = prev;
-                listView.positionViewAtIndex(prev, ListView.Contain);
-            }
+        Keys.onEscapePressed: function (event) {
+            popup.close();
             event.accepted = true;
         }
-
         Keys.onPressed: function (event) {
             if (event.key !== Qt.Key_Return && event.key !== Qt.Key_Enter)
                 return;
@@ -204,47 +150,105 @@ Item {
             control.accepted(control.text);
             event.accepted = true;
         }
-
-        Keys.onEscapePressed: function (event) {
-            popup.close();
+        Keys.onUpPressed: function (event) {
+            if (listView.currentIndex > 0) {
+                const prev = listView.currentIndex - 1;
+                listView.currentIndex = prev;
+                listView.positionViewAtIndex(prev, ListView.Contain);
+            }
             event.accepted = true;
         }
-    }
+        onActiveFocusChanged: {
+            if (!activeFocus) {
+                popup.close();
+                return;
+            }
+            if (!control.editable)
+                return;
+            if (!popup.visible && control.filteredItems.length > 0)
+                popup.open();
+        }
+        onTextEdited: {
+            if (!control.editable)
+                return;
+            control._showAll = false;
+            control.text = text;
+            if (!popup.visible && control.filteredItems.length > 0)
+                popup.open();
+            listView.currentIndex = -1;
+        }
 
+        Text {
+            id: chevron
+
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            color: field.palette.text
+            font.family: IconFont.name
+            opacity: chevronMouseArea.pressed ? 0.7 : (chevronMouseArea.containsMouse ? 1.0 : 0.5)
+            text: IconFont.iconChevronDown
+
+            MouseArea {
+                id: chevronMouseArea
+
+                anchors.fill: parent
+                hoverEnabled: true
+
+                onClicked: {
+                    if (!control.editable)
+                        return;
+                    if (popup.visible) {
+                        popup.close();
+                    } else {
+                        control._showAll = true;
+                        field.forceActiveFocus();
+                        popup.open();
+                    }
+                }
+            }
+        }
+    }
     Popup {
         id: popup
-        x: 0
-        y: control.height
-        width: control.width
-        padding: 0
+
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        focus: false
         margins: 0
         modal: false
-        focus: false
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        padding: 0
+        width: control.width
+        x: 0
+        y: control.height
 
-        onOpened: listView.currentIndex = -1
-        onClosed: control._showAll = false
-
+        background: Rectangle {
+            border.color: control.palette.mid
+            border.width: 1
+            color: control.palette.base
+        }
         contentItem: ListView {
             id: listView
-            implicitHeight: Math.min(contentHeight, 300)
-            model: control.filteredItems
-            clip: true
-            currentIndex: -1
+
             // Proxy properties: required properties in the delegate cut off outer scope access.
             property Item theControl: control
             property Popup thePopup: popup
 
-            ScrollBar.vertical: ScrollBar {}
+            clip: true
+            currentIndex: -1
+            implicitHeight: Math.min(contentHeight, 300)
+            model: control.filteredItems
 
+            ScrollBar.vertical: ScrollBar {
+            }
             delegate: ItemDelegate {
-                required property string modelData
                 required property int index
-                width: ListView.view.width
+                required property string modelData
+
                 // Keep focus in the field, which closes the popup when it loses focus.
                 focusPolicy: Qt.NoFocus
-                text: modelData
                 highlighted: ListView.isCurrentItem
+                text: modelData
+                width: ListView.view.width
 
                 onClicked: {
                     ListView.view.theControl.text = modelData;
@@ -254,10 +258,7 @@ Item {
             }
         }
 
-        background: Rectangle {
-            color: control.palette.base
-            border.color: control.palette.mid
-            border.width: 1
-        }
+        onClosed: control._showAll = false
+        onOpened: listView.currentIndex = -1
     }
 }

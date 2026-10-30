@@ -278,12 +278,12 @@ Object {
             if (!joint.active)
                 continue;
             goalConstraints.joint_constraints.push({
-                    "joint_name": joint.name,
-                    "position": joint.goal,
-                    "tolerance_above": 0.01,
-                    "tolerance_below": 0.01,
-                    "weight": 1.0
-                });
+                "joint_name": joint.name,
+                "position": joint.goal,
+                "tolerance_above": 0.01,
+                "tolerance_below": 0.01,
+                "weight": 1.0
+            });
         }
         if (goalConstraints.joint_constraints.length === 0) {
             Ros2.warn("MoveIt: No active joints to send");
@@ -297,35 +297,35 @@ Object {
         msg.planning_options.replan = false;
         root.isGoalActive = true;
         d.moveGroupClient.sendGoalAsync(msg, {
-                "onGoalResponse": function (goalHandle) {
-                    if (!goalHandle) {
-                        Ros2.warn("MoveIt: Goal rejected by action server");
-                        root.isGoalActive = false;
-                        root.motionFailed("Goal Rejected", "The action server rejected the goal request.");
-                        return;
-                    }
-                    root.goalAccepted();
-                },
-                "onResult": function (result) {
+            "onGoalResponse": function (goalHandle) {
+                if (!goalHandle) {
+                    Ros2.warn("MoveIt: Goal rejected by action server");
                     root.isGoalActive = false;
-                    let errorCode = 0;
-                    try {
-                        if (result && result.result && result.result.error_code) {
-                            errorCode = result.result.error_code.val;
-                        } else {
-                            Ros2.warn("MoveIt: Unexpected result structure");
-                            return;
-                        }
-                    } catch (e) {
-                        Ros2.error("MoveIt: Error parsing result: " + e);
+                    root.motionFailed("Goal Rejected", "The action server rejected the goal request.");
+                    return;
+                }
+                root.goalAccepted();
+            },
+            "onResult": function (result) {
+                root.isGoalActive = false;
+                let errorCode = 0;
+                try {
+                    if (result && result.result && result.result.error_code) {
+                        errorCode = result.result.error_code.val;
+                    } else {
+                        Ros2.warn("MoveIt: Unexpected result structure");
                         return;
                     }
-                    if (errorCode !== 1) {
-                        // SUCCESS = 1
-                        root.motionFailed(_getErrorTitle(errorCode), _getErrorDescription(errorCode));
-                    }
+                } catch (e) {
+                    Ros2.error("MoveIt: Error parsing result: " + e);
+                    return;
                 }
-            });
+                if (errorCode !== 1) {
+                    // SUCCESS = 1
+                    root.motionFailed(_getErrorTitle(errorCode), _getErrorDescription(errorCode));
+                }
+            }
+        });
     }
 
     onActionServerChanged: {
@@ -357,6 +357,7 @@ Object {
     // ========================================================================
     Subscription {
         id: jointStateSubscription
+
         messageType: "sensor_msgs/msg/JointState"
         throttleRate: 5
         topic: d.jointStateTopic
@@ -382,6 +383,7 @@ Object {
     }
     Subscription {
         id: urdfSubscription
+
         messageType: "std_msgs/msg/String"
         qos: Ros2.QoS().transient_local().reliable()
         topic: d.urdfTopic
@@ -394,6 +396,7 @@ Object {
     }
     Subscription {
         id: srdfSubscription
+
         messageType: "std_msgs/msg/String"
         qos: Ros2.QoS().transient_local().reliable()
         topic: d.srdfTopic
@@ -550,8 +553,8 @@ Object {
             const poseNames = poseNamesPerGroup[root.moveGroupName] || [];
             for (let i = 0; i < poseNames.length; i++)
                 root.namedPoses.append({
-                        "name": poseNames[i]
-                    });
+                    "name": poseNames[i]
+                });
         }
         function _updateActiveJointCount() {
             let count = 0;
@@ -593,8 +596,8 @@ Object {
                 root.actionServers.clear();
                 for (let i = 0; i < moveGroupActions.length; i++) {
                     root.actionServers.append({
-                            "name": moveGroupActions[i]
-                        });
+                        "name": moveGroupActions[i]
+                    });
                 }
             }
             if (!root.actionServer)
@@ -704,9 +707,9 @@ Object {
                         const tipLink = XmlUtils.getAttributeValue(chainRefs[j], "tip_link");
                         if (baseLink && tipLink) {
                             chains.push({
-                                    "base_link": baseLink,
-                                    "tip_link": tipLink
-                                });
+                                "base_link": baseLink,
+                                "tip_link": tipLink
+                            });
                         }
                     }
 
@@ -734,8 +737,8 @@ Object {
                 root.moveGroups.clear();
                 for (let i = 0; i < d.moveGroupNames.length; i++) {
                     root.moveGroups.append({
-                            "name": d.moveGroupNames[i]
-                        });
+                        "name": d.moveGroupNames[i]
+                    });
                 }
 
                 // Parse named poses (group_state elements)
@@ -759,9 +762,9 @@ Object {
                         const jointValue = parseFloat(XmlUtils.getAttributeValue(jointRefs[j], "value"));
                         if (jointName && !isNaN(jointValue)) {
                             jointValues.push({
-                                    "name": jointName,
-                                    "value": jointValue
-                                });
+                                "name": jointName,
+                                "value": jointValue
+                            });
                         }
                     }
                     d.allNamedPoses[groupName][stateName] = jointValues;
@@ -842,17 +845,17 @@ Object {
                             limitLower = -Math.PI;
                     }
                     d.addJoint({
-                            "name": name,
-                            "type": type,
-                            "limits": {
-                                "upper": limitUpper,
-                                "lower": limitLower
-                            },
-                            "position": 0.0,
-                            "goal": 0.0,
-                            "initialized": false,
-                            "active": false
-                        });
+                        "name": name,
+                        "type": type,
+                        "limits": {
+                            "upper": limitUpper,
+                            "lower": limitLower
+                        },
+                        "position": 0.0,
+                        "goal": 0.0,
+                        "initialized": false,
+                        "active": false
+                    });
                 }
                 root.hasRobotDescription = true;
                 d._rebuildJointsModel();
